@@ -51,22 +51,22 @@ const data = {
   masterData: [
     {
       name: "Customer",
-      url: "#",
+      url: "/dashboard/customers",
       icon: IconUsersGroup,
     },
     {
       name: "Vendor",
-      url: "#",
+      url: "/dashboard/vendors",
       icon: IconBuildingWarehouse,
     },
     {
       name: "Port",
-      url: "#",
+      url: "/dashboard/ports",
       icon: IconBuildingLighthouse,
     },
     {
       name: "Vessel",
-      url: "#",
+      url: "/dashboard/vessels",
       icon: IconShip,
     },
   ],
