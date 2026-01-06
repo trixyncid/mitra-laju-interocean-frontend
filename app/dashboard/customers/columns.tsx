@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { IconEdit } from "@tabler/icons-react"
+import { IconEdit, IconInfoCircle } from "@tabler/icons-react"
+
+import Link from "next/link"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
+
 
 export type Customer = {
     customerCode: string
@@ -39,9 +42,9 @@ export const columns: ColumnDef<Customer>[] = [
     {
         accessorKey: "",
         header: "Action",
-        cell: ({  }) => {
+        cell: ({ row }) => {
             return (
-                <div>
+                <div className="flex items-center">
                     <Dialog>
                         <form>
                             <DialogTrigger asChild>
@@ -49,7 +52,7 @@ export const columns: ColumnDef<Customer>[] = [
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Edit Port</DialogTitle>
+                                    <DialogTitle>Edit Customer</DialogTitle>
                                 </DialogHeader>
                                 <div>
                                     <div className="my-3">
@@ -72,6 +75,10 @@ export const columns: ColumnDef<Customer>[] = [
                             </DialogContent>
                         </form>
                     </Dialog>
+
+                    <Button asChild className="ml-3">
+                        <Link href={`/dashboard/customers/${row.original.customerCode}`}><IconInfoCircle /></Link>
+                    </Button>
                 </div>
             )
         }
