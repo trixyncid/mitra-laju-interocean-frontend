@@ -4,9 +4,9 @@ import * as React from "react"
 import {
   IconBuildingLighthouse,
   IconBuildingWarehouse,
-  IconDashboard,
   IconFileDollar,
   IconInnerShadowTop,
+  IconLayoutDashboard,
   IconShip,
   IconTruck,
   IconUsersGroup,
@@ -34,17 +34,17 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
-      icon: IconDashboard,
+      url: "/dashboard",
+      icon: IconLayoutDashboard,
     },
     {
       title: "Shipment",
-      url: "#",
+      url: "/dashboard/shipments",
       icon: IconTruck,
     },
     {
       title: "Costing",
-      url: "#",
+      url: "/dashboard/costings",
       icon: IconFileDollar,
     },
   ],

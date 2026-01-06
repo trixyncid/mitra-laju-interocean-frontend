@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label"
 
 import { IconBuildingCommunity, IconEdit, IconNavigationPin, IconPlus } from "@tabler/icons-react"
 
-export default async function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
-    const { customerId } = await params
+export default async function CustomerDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
+    const { vendorId } = await params
 
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
             <div className="mb-5">
-                <h1 className="text-xl font-bold">Customer Detail - asdf </h1>
-                <p>Details and information about customer ID asdf will be displayed here.</p>
+                <h1 className="text-xl font-bold">Vendor Detail - asdf </h1>
+                <p>Details and information about vendor ID asdf will be displayed here.</p>
             </div>
 
             {/* Metrics */}
