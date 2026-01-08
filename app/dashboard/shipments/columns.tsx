@@ -5,12 +5,17 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { IconEdit } from "@tabler/icons-react"
+
+import Link from "next/link"
+
+import { IconEdit, IconInfoCircle } from "@tabler/icons-react"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 
+
 export type Shipment = {
+    id: string
     orderNumber: string
     customerCode: string
     customerShipper: string
@@ -42,9 +47,9 @@ export const columns: ColumnDef<Shipment>[] = [
     {
         accessorKey: "",
         header: "Action",
-        cell: ({  }) => {
+        cell: ({ row }) => {
             return (
-                <div>
+                <div className="flex items-center">
                     <Dialog>
                         <form>
                             <DialogTrigger asChild>
@@ -95,9 +100,14 @@ export const columns: ColumnDef<Shipment>[] = [
                             </DialogContent>
                         </form>
                     </Dialog>
+  
+                    <Button asChild className="ml-3">
+                        <Link href={`/dashboard/shipments/${row.original.id}`}>
+                            <IconInfoCircle />
+                        </Link>
+                    </Button>                    
                 </div>
             )
         },
-        enableGlobalFilter: false
     },
 ]

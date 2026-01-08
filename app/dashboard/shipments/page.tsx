@@ -10,6 +10,7 @@ import { columns, Shipment } from "./columns";
 async function getData(): Promise<Shipment[]> {
     return [
         {
+            id: "1",
             orderNumber: "123",
             customerCode: "XHE",
             customerShipper: "Winsten",
