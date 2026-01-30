@@ -1,10 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { IconEdit } from "@tabler/icons-react"
+import VesselForm from "@/components/forms/vessel-form"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
@@ -44,45 +40,8 @@ export const columns: ColumnDef<Vessel>[] = [
     {
         accessorKey: "",
         header: "Action",
-        cell: ({  }) => {
-            return (
-                <div>
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconEdit /></Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Edit Port</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="portName" className="my-2">Vessel Name</Label>
-                                        <Input name="portName" type="text"/>
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="country" className="my-2">Voyage</Label>
-                                        <Input name="country" type="text"/>
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="country" className="my-2">ETD</Label>
-                                        <Input name="etd" type="date" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="country" className="my-2">Closing Reefer</Label>
-                                        <Input name="country" type="date"/>
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                    <Button type="submit">Save Changes</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
-                </div>
-            )
+        cell: ({ row }) => {
+            return <VesselForm mode="edit" vesselName={ row.original.vesselName } voyage={ row.original.voyage } etd={ row.original.etd } closingReefer={ row.original.closingReefer } />
         }
     },
 ]

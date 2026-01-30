@@ -7,7 +7,15 @@ import { Label } from "@/components/ui/label"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 
-export default function PortForm({ mode, portName, country }: { mode: "edit" | "create", portName: string, country: string}) {
+export default function PortForm({
+    mode,
+    portName,
+    country
+}: {
+    mode: "edit" | "create",
+    portName: string | undefined,
+    country: string | undefined
+}) {
     const form = useForm({
         defaultValues: {
             portName: portName ?? "",
@@ -28,7 +36,7 @@ export default function PortForm({ mode, portName, country }: { mode: "edit" | "
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>{mode === "edit" ? "Edit Port": "Create Port"}</DialogTitle>
+                            <DialogTitle>{mode === "edit" ? "Edit Port": "Create New Port"}</DialogTitle>
                         </DialogHeader>
                         <form
                             onSubmit={(e) => {
@@ -90,7 +98,7 @@ export default function PortForm({ mode, portName, country }: { mode: "edit" | "
                             </div>
                             <DialogFooter>
                                 { mode === "edit" ? <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button> : <></>}
-                                <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create New Port"}</Button>
+                                <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>

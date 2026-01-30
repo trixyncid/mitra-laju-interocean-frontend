@@ -4,10 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ISOFormat } from "@/lib/utils";
 import { IconPlus, IconEdit } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 
-export default function VesselForm({ mode, vesselName, voyage, etd, closingReefer }: { mode: "edit" | "create", vesselName: string, voyage: string, etd: string, closingReefer: string }) {
+export default function VesselForm({
+    mode,
+    vesselName,
+    voyage,
+    etd,
+    closingReefer
+}: {
+    mode: "edit" | "create",
+    vesselName: string | undefined,
+    voyage: string | undefined,
+    etd: string | undefined,
+    closingReefer: string | undefined
+}) {
     const form = useForm({
         defaultValues: {
             vesselName: vesselName ?? "",
@@ -22,7 +35,9 @@ export default function VesselForm({ mode, vesselName, voyage, etd, closingReefe
 
     return (
         <div>
-            <Dialog>
+            <Dialog onOpenChange={(open) => {
+                if (!open) form.reset()
+            }}>
                 <DialogTrigger asChild>
                     <Button>{ mode === "edit" ? <IconEdit /> : <><IconPlus /> Add Vessel</>}</Button>
                 </DialogTrigger>
@@ -93,8 +108,8 @@ export default function VesselForm({ mode, vesselName, voyage, etd, closingReefe
                                         <Input
                                             id={field.name}
                                             name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(new Date(e.target.value).toISOString())}
+                                            value={field.state.value ? field.state.value.split('T')[0] : ''}
+                                            onChange={(e) => field.handleChange(ISOFormat(e.target.value))}
                                             type="date"
                                         />
                                         { field.state.meta.errors ? (
@@ -112,8 +127,8 @@ export default function VesselForm({ mode, vesselName, voyage, etd, closingReefe
                                         <Input
                                             id={field.name}
                                             name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(new Date(e.target.value).toISOString())}
+                                            value={field.state.value ? field.state.value.split('T')[0] : ''}
+                                            onChange={(e) => field.handleChange(ISOFormat(e.target.value))}
                                             type="date"
                                         />
                                         { field.state.meta.errors ? (
@@ -125,7 +140,7 @@ export default function VesselForm({ mode, vesselName, voyage, etd, closingReefe
                         </div>
                         <DialogFooter>
                             { mode === "edit" ? <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button> : <></>}
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create New Vessel"}</Button>
+                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

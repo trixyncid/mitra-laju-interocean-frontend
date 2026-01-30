@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { IconPlus } from "@tabler/icons-react";
 import { columns, Vessel } from "./columns";
 import { DataTable } from "./data-table";
+import VesselForm from "@/components/forms/vessel-form";
 
 async function getData(): Promise<Vessel[]> {
     return [
@@ -44,42 +45,7 @@ export default async function VesselMasterDataPage() {
                     <p>View and manage vessels based on name, voyage, etd, and closing reefer.</p>
                 </div>
 
-                <Dialog>
-                    <form>
-                        <DialogTrigger asChild>
-                            <Button><IconPlus /> Add Vessel</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Vessel</DialogTitle>
-                            </DialogHeader>
-                            <div>
-                                <div className="my-3">
-                                    <Label htmlFor="portName" className="my-2">Vessel Name</Label>
-                                    <Input name="portName" type="text"/>
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="country" className="my-2">Voyage</Label>
-                                    <Input name="country" type="text"/>
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="country" className="my-2">ETD</Label>
-                                    <Input name="etd" type="date" />
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="country" className="my-2">Closing Reefer</Label>
-                                    <Input name="country" type="date"/>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit">Submit</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </form>
-                </Dialog>
+                <VesselForm mode="create" vesselName={undefined} voyage={undefined} etd={undefined} closingReefer={undefined} />
             </div>
 
             {/* Table */}

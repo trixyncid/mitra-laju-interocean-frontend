@@ -1,18 +1,14 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { IconEdit, IconInfoCircle } from "@tabler/icons-react"
-
-import Link from "next/link"
-
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
-
+import CustomerForm from "@/components/forms/customer-form"
+import Link from "next/link"
+import { IconInfoCircle } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
 
 export type Customer = {
+    id: string
     customerCode: string
     customerName: string
     npwp: string
@@ -44,40 +40,10 @@ export const columns: ColumnDef<Customer>[] = [
         header: "Action",
         cell: ({ row }) => {
             return (
-                <div className="flex items-center">
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconEdit /></Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Edit Customer</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="customerCode" className="my-2">Customer Code</Label>
-                                        <Input name="customerCode" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="customerName" className="my-2">Customer Name</Label>
-                                        <Input name="customerName" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="npwp" className="my-2">NPWP</Label>
-                                        <Input name="npwp" />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                    <Button type="submit">Save Changes</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
-
-                    <Button asChild className="ml-3">
-                        <Link href={`/dashboard/customers/${row.original.customerCode}`}><IconInfoCircle /></Link>
+                <div className="flex gap-x-2">
+                    <CustomerForm mode="edit" customerCode={ row.original.customerCode } customerName={ row.original.customerName } npwp={ row.original.npwp } />
+                    <Button asChild>
+                        <Link href={`/dashboard/customers/${row.original.id}`}><IconInfoCircle /></Link>
                     </Button>
                 </div>
             )

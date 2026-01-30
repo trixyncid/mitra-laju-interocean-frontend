@@ -1,14 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { IconPlus } from "@tabler/icons-react";
 import { DataTable } from "./data-table";
 import { columns, Customer } from "./columns";
+import CustomerForm from "@/components/forms/customer-form";
 
 async function getData(): Promise<Customer[]> {
     return [
         {
+            id: "13",
             customerCode: "WIN",
             customerName: "PT Winsten",
             npwp: "1234567",
@@ -29,38 +26,7 @@ export default async function CustomerMasterDataPage() {
                     <p>View and manage your client database, view profiles, and update contact information.</p>
                 </div>
 
-                <Dialog>
-                    <form>
-                        <DialogTrigger asChild>
-                            <Button><IconPlus /> Add Customer</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Customer</DialogTitle>
-                            </DialogHeader>
-                            <div>
-                                <div className="my-3">
-                                    <Label htmlFor="customerCode" className="my-2">Customer Code</Label>
-                                    <Input name="customerCode" />
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="customerName" className="my-2">Customer Name</Label>
-                                    <Input name="customerName" />
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="npwp" className="my-2">NPWP</Label>
-                                    <Input name="npwp" />
-                                </div>
-                                </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit">Submit</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </form>
-                </Dialog>
+                <CustomerForm mode="create" customerCode={undefined} customerName={undefined} npwp={undefined} />
             </div>
 
             {/* Table */}
