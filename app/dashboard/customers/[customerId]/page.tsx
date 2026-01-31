@@ -1,3 +1,5 @@
+import CustomerContactForm from "@/components/forms/customer-contact-form"
+import CustomerLocationForm from "@/components/forms/customer-location-form"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -5,16 +7,16 @@ import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogT
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { IconBuildingCommunity, IconEdit, IconNavigationPin, IconPlus } from "@tabler/icons-react"
+import { IconBuildingCommunity, IconEdit, IconPlus } from "@tabler/icons-react"
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
     const { customerId } = await params
-
+    
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
             <div className="mb-5">
-                <h1 className="text-xl font-bold">Customer Detail - asdf </h1>
+                <h1 className="text-xl font-bold">Customer Detail - {`${customerId}`} </h1>
                 <p>Details and information about customer ID asdf will be displayed here.</p>
             </div>
 
@@ -64,50 +66,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <div className="mt-10">
                 <div className="flex items-center justify-between">
                     <Input type="text" placeholder="Search by location..." className="my-4 max-w-sm"/>
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconNavigationPin /> Add Location</Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Location</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="address" className="my-2">Address Line 1</Label>
-                                        <Input name="addressLin1" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="addressLine2" className="my-2">Address Line 2</Label>
-                                        <Input name="addressLine2" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="addressLine3" className="my-2">Address Line 3</Label>
-                                        <Input name="addressLine3" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="city" className="my-2">City</Label>
-                                        <Input name="city" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="state" className="my-2">State/Province</Label>
-                                        <Input name="state" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="country" className="my-2">Country</Label>
-                                        <Input name="country" />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="outline">Cancel</Button>
-                                    </DialogClose>
-                                    <Button type="submit">Submit</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
+                    <CustomerLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
                 </div>
             </div>
 
@@ -125,38 +84,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                             <div className="flex items-center justify-between py-4">
                                 <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
 
-                                <Dialog>
-                                    <form>
-                                        <DialogTrigger asChild>
-                                            <Button className="mb-4"><IconPlus /> Add Contact</Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Add New Contact</DialogTitle>
-                                            </DialogHeader>
-                                            <div>
-                                                <div className="my-3">
-                                                    <Label htmlFor="contactName" className="my-2">Contact Name</Label>
-                                                    <Input name="contactName" />
-                                                </div>
-                                                <div className="my-3">
-                                                    <Label htmlFor="phoneNumber" className="my-2">Phone Number</Label>
-                                                    <Input name="phoneNumber" />
-                                                </div>
-                                                <div className="my-3">
-                                                    <Label htmlFor="email" className="my-2">Email</Label>
-                                                    <Input name="email" />
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <DialogClose asChild>
-                                                    <Button variant="outline">Cancel</Button>
-                                                </DialogClose>
-                                                <Button type="submit">Submit</Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </form>
-                                </Dialog>
+                                <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} />
                             </div>
 
                             <table className="w-full px-4 lg:px-6 table-auto text-xs">
