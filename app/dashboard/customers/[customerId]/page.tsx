@@ -1,7 +1,6 @@
 import CustomerContactForm from "@/components/forms/customer-contact-form"
 import CustomerLocationForm from "@/components/forms/customer-location-form"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import CustomerForm from "@/components/forms/customer-form"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
