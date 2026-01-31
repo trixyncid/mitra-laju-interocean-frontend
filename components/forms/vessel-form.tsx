@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ISOFormat } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { IconPlus, IconEdit } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 
@@ -13,20 +14,23 @@ export default function VesselForm({
     vesselName,
     voyage,
     etd,
-    closingReefer
+    closingReefer,
+    isActive
 }: {
     mode: "edit" | "create",
     vesselName: string | undefined,
     voyage: string | undefined,
     etd: string | undefined,
-    closingReefer: string | undefined
+    closingReefer: string | undefined,
+    isActive: boolean | undefined
 }) {
     const form = useForm({
         defaultValues: {
             vesselName: vesselName ?? "",
             voyage: voyage ?? "",
             etd: etd ?? "",
-            closingReefer: closingReefer ?? ""
+            closingReefer: closingReefer ?? "",
+            isActive: isActive ?? true,
         },
         onSubmit: ({ value }) => {
             console.log(value)
@@ -137,9 +141,18 @@ export default function VesselForm({
                                     </div>
                                 )}
                             </form.Field>
+                            { mode === "edit" ? <form.Field
+                                name="isActive"
+                            >
+                                {( field ) => (
+                                    <div className="my-3">
+                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
+                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                    </div>
+                                )}
+                            </form.Field> : null}
                         </div>
                         <DialogFooter>
-                            { mode === "edit" ? <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button> : <></>}
                             <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
                         </DialogFooter>
                     </form>

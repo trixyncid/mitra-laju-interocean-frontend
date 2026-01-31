@@ -1,11 +1,10 @@
+import VendorContactForm from "@/components/forms/vendor-contact-form"
+import VendorLocationForm from "@/components/forms/vendor-location-form"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
-import { IconBuildingCommunity, IconEdit, IconNavigationPin, IconPlus } from "@tabler/icons-react"
+import { IconBuildingCommunity } from "@tabler/icons-react"
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
     const { vendorId } = await params
@@ -64,50 +63,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <div className="mt-10">
                 <div className="flex items-center justify-between">
                     <Input type="text" placeholder="Search by location..." className="my-4 max-w-sm"/>
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconNavigationPin /> Add Location</Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Location</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="address" className="my-2">Address Line 1</Label>
-                                        <Input name="addressLin1" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="addressLine2" className="my-2">Address Line 2</Label>
-                                        <Input name="addressLine2" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="addressLine3" className="my-2">Address Line 3</Label>
-                                        <Input name="addressLine3" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="city" className="my-2">City</Label>
-                                        <Input name="city" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="state" className="my-2">State/Province</Label>
-                                        <Input name="state" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="country" className="my-2">Country</Label>
-                                        <Input name="country" />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="outline">Cancel</Button>
-                                    </DialogClose>
-                                    <Button type="submit">Submit</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
+                    <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
                 </div>
             </div>
 
@@ -125,38 +81,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                             <div className="flex items-center justify-between py-4">
                                 <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
 
-                                <Dialog>
-                                    <form>
-                                        <DialogTrigger asChild>
-                                            <Button className="mb-4"><IconPlus /> Add Contact</Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Add New Contact</DialogTitle>
-                                            </DialogHeader>
-                                            <div>
-                                                <div className="my-3">
-                                                    <Label htmlFor="contactName" className="my-2">Contact Name</Label>
-                                                    <Input name="contactName" />
-                                                </div>
-                                                <div className="my-3">
-                                                    <Label htmlFor="phoneNumber" className="my-2">Phone Number</Label>
-                                                    <Input name="phoneNumber" />
-                                                </div>
-                                                <div className="my-3">
-                                                    <Label htmlFor="email" className="my-2">Email</Label>
-                                                    <Input name="email" />
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <DialogClose asChild>
-                                                    <Button variant="outline">Cancel</Button>
-                                                </DialogClose>
-                                                <Button type="submit">Submit</Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </form>
-                                </Dialog>
+                                <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={true} />
                             </div>
 
                             <table className="w-full px-4 lg:px-6 table-auto text-xs">
@@ -176,36 +101,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                                         <td className="p-2">locationa@example.com</td>
                                         <td className="p-2 pr-8">Active</td>
                                         <td className="p-2 pr-8">
-                                            <Dialog>
-                                                <form>
-                                                    <DialogTrigger asChild>
-                                                        <Button><IconEdit /></Button>
-                                                    </DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader>
-                                                            <DialogTitle>Edit Contact</DialogTitle>
-                                                        </DialogHeader>
-                                                        <div>
-                                                            <div className="my-3">
-                                                                <Label htmlFor="contactName" className="my-2">Contact Name</Label>
-                                                                <Input name="contactName" />
-                                                            </div>
-                                                            <div className="my-3">
-                                                                <Label htmlFor="phoneNumber" className="my-2">Phone Number</Label>
-                                                                <Input name="phoneNumber" />
-                                                            </div>
-                                                            <div className="my-3">
-                                                                <Label htmlFor="email" className="my-2">Email</Label>
-                                                                <Input name="email" />
-                                                            </div>
-                                                        </div>
-                                                        <DialogFooter>
-                                                            <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                                            <Button type="submit">Save Changes</Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </form>
-                                            </Dialog>
+                                            <div className="flex gap-x-2">
+                                                <VendorContactForm mode="edit" contactName={"Location A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} />
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>

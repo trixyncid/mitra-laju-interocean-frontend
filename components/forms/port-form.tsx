@@ -4,22 +4,26 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 
 export default function PortForm({
     mode,
     portName,
-    country
+    country,
+    isActive
 }: {
     mode: "edit" | "create",
     portName: string | undefined,
-    country: string | undefined
+    country: string | undefined,
+    isActive: boolean | undefined
 }) {
     const form = useForm({
         defaultValues: {
             portName: portName ?? "",
-            country: country ?? ""
+            country: country ?? "",
+            isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
             console.log(value)
@@ -95,14 +99,23 @@ export default function PortForm({
                                         )
                                     }
                                 </form.Field>
+                                { mode === "edit" ? <form.Field
+                                    name="isActive"
+                                >
+                                    {( field ) => (
+                                        <div className="my-3">
+                                            <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
+                                            <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                        </div>
+                                    )}
+                                </form.Field> : null}
                             </div>
                             <DialogFooter>
-                                { mode === "edit" ? <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button> : <></>}
                                 <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
-            </Dialog>
-        </div>
-    )
+                </Dialog>
+            </div>
+        );
 }

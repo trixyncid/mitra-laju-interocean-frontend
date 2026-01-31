@@ -1,16 +1,14 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { IconEdit, IconInfoCircle } from "@tabler/icons-react"
-
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
+import VendorForm from "@/components/forms/vendor-form"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { IconInfoCircle } from "@tabler/icons-react"
 
 export type Vendor = {
+    id: string | undefined
     vendorCode: string
     vendorName: string
     npwp: string | null
@@ -45,40 +43,10 @@ export const columns: ColumnDef<Vendor>[] = [
         header: "Action",
         cell: ({ row }) => {
             return (
-                <div className="flex items-center">
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconEdit /></Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Edit Vendor</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="vendorCode" className="my-2">Vendor Code</Label>
-                                        <Input name="vendorCode" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="vendorName" className="my-2">Vendor Name</Label>
-                                        <Input name="vendorName" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="npwp" className="my-2">NPWP</Label>
-                                        <Input name="npwp" />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                    <Button type="submit">Save Changes</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
-
-                    <Button asChild className="ml-3">
-                        <Link href={`/dashboard/vendors/${row.original.vendorCode}`}><IconInfoCircle /></Link>
+                <div className="flex gap-x-2">
+                    <VendorForm mode="edit" vendorName={row.original.vendorName} vendorCode={row.original.vendorCode} npwp={`${row.original.npwp ?? undefined}`} isActive={row.original.isActive} />
+                    <Button asChild>
+                        <Link href={`/dashboard/vendors/${row.original.id}`}><IconInfoCircle /></Link>
                     </Button>
                 </div>
             )

@@ -196,7 +196,6 @@ export default function CustomerLocationForm({
                         </form.Field>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
                         <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
                     </DialogFooter>
                 </form>

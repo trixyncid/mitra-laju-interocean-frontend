@@ -1,13 +1,11 @@
 import CustomerContactForm from "@/components/forms/customer-contact-form"
 import CustomerLocationForm from "@/components/forms/customer-location-form"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
+import CustomerForm from "@/components/forms/customer-form"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
-import { IconBuildingCommunity, IconEdit, IconPlus } from "@tabler/icons-react"
+import { IconBuildingCommunity } from "@tabler/icons-react"
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
     const { customerId } = await params
@@ -84,7 +82,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                             <div className="flex items-center justify-between py-4">
                                 <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
 
-                                <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} />
+                                <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
                             </div>
 
                             <table className="w-full px-4 lg:px-6 table-auto text-xs">
@@ -104,36 +102,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                                         <td className="p-2">locationa@example.com</td>
                                         <td className="p-2 pr-8">Active</td>
                                         <td className="p-2 pr-8">
-                                            <Dialog>
-                                                <form>
-                                                    <DialogTrigger asChild>
-                                                        <Button><IconEdit /></Button>
-                                                    </DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader>
-                                                            <DialogTitle>Edit Contact</DialogTitle>
-                                                        </DialogHeader>
-                                                        <div>
-                                                            <div className="my-3">
-                                                                <Label htmlFor="contactName" className="my-2">Contact Name</Label>
-                                                                <Input name="contactName" />
-                                                            </div>
-                                                            <div className="my-3">
-                                                                <Label htmlFor="phoneNumber" className="my-2">Phone Number</Label>
-                                                                <Input name="phoneNumber" />
-                                                            </div>
-                                                            <div className="my-3">
-                                                                <Label htmlFor="email" className="my-2">Email</Label>
-                                                                <Input name="email" />
-                                                            </div>
-                                                        </div>
-                                                        <DialogFooter>
-                                                            <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                                            <Button type="submit">Save Changes</Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </form>
-                                            </Dialog>
+                                            <CustomerContactForm mode="edit" contactName={"Loc A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} />
                                         </td>
                                     </tr>
                                 </tbody>
