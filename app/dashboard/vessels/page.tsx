@@ -1,8 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { IconPlus } from "@tabler/icons-react";
 import { columns, Vessel } from "./columns";
 import { DataTable } from "./data-table";
 import VesselForm from "@/components/forms/vessel-form";
@@ -45,7 +40,7 @@ export default async function VesselMasterDataPage() {
                     <p>View and manage vessels based on name, voyage, etd, and closing reefer.</p>
                 </div>
 
-                <VesselForm mode="create" vesselName={undefined} voyage={undefined} etd={undefined} closingReefer={undefined} />
+                <VesselForm mode="create" vesselName={undefined} voyage={undefined} etd={undefined} closingReefer={undefined} isActive={true} />
             </div>
 
             {/* Table */}

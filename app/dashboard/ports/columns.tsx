@@ -30,7 +30,7 @@ export const columns: ColumnDef<Port>[] = [
         accessorKey: "",
         header: "Action",
         cell: ({ row }) => {
-            return <PortForm mode="edit" portName={row.original.portName} country={row.original.country} />
+            return <PortForm mode="edit" portName={row.original.portName} country={row.original.country} isActive={row.original.isActive} />
         }
     },
 ]

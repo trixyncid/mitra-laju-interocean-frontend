@@ -84,7 +84,7 @@ export default async function PortMasterDataPage() {
                     <p>View and manage global port destinations based on country, and port name.</p>
                 </div>
 
-                <PortForm mode="create" portName="" country="" />
+                <PortForm mode="create" portName={undefined} country={undefined} isActive={true} />
             </div>
 
             {/* Table */}

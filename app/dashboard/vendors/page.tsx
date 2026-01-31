@@ -48,7 +48,7 @@ export default async function VendorMasterDataPage() {
                     </div>
 
                     <div>
-                        <VendorForm mode="create" vendorName={undefined} vendorCode={undefined} npwp={undefined} isActive={"true"} />
+                        <VendorForm mode="create" vendorName={undefined} vendorCode={undefined} npwp={undefined} isActive={true} />
                     </div>
                 </div>
 

@@ -26,7 +26,7 @@ export default async function CustomerMasterDataPage() {
                     <p>View and manage your client database, view profiles, and update contact information.</p>
                 </div>
 
-                <CustomerForm mode="create" customerCode={undefined} customerName={undefined} npwp={undefined} />
+                <CustomerForm mode="create" customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
             </div>
 
             {/* Table */}

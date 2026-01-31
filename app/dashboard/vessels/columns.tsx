@@ -41,7 +41,7 @@ export const columns: ColumnDef<Vessel>[] = [
         accessorKey: "",
         header: "Action",
         cell: ({ row }) => {
-            return <VesselForm mode="edit" vesselName={ row.original.vesselName } voyage={ row.original.voyage } etd={ row.original.etd } closingReefer={ row.original.closingReefer } />
+            return <VesselForm mode="edit" vesselName={ row.original.vesselName } voyage={ row.original.voyage } etd={ row.original.etd } closingReefer={ row.original.closingReefer } isActive={ row.original.isActive } />
         }
     },
 ]
