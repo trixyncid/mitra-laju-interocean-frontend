@@ -26,7 +26,7 @@ export default function VendorForm({
             vendorName: vendorName ?? "",
             vendorCode: vendorCode ?? "",
             npwp: npwp ?? "",
-            isActive: isActive ?? "true",
+            isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
             console.log(value)
