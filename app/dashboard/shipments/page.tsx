@@ -6,6 +6,7 @@ import { Select, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValu
 import { IconPlus } from "@tabler/icons-react";
 import { DataTable } from "./data-table";
 import { columns, Shipment } from "./columns";
+import ShipmentForm from "@/components/forms/shipment-form";
 
 async function getData(): Promise<Shipment[]> {
     return [
@@ -31,58 +32,7 @@ export default async function ShipmentPage() {
                     <p>Manage shipments, track status, and record costs.</p>
                 </div>
 
-                <Dialog>
-                    <form>
-                        <DialogTrigger asChild>
-                            <Button><IconPlus /> Add Shipment</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Shipment</DialogTitle>
-                            </DialogHeader>
-                            <div>
-                                <div className="my-3">
-                                    <Label htmlFor="orderNumber" className="my-2">Order Number</Label>
-                                    <Input name="orderNumber" />
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="customerCode" className="my-2">Customer Code</Label>
-                                    <Select>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select customer code" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Customer Name (Code)</SelectLabel>
-                                                <SelectItem value="value">Apple</SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="my-3">
-                                    <Label htmlFor="customerCode" className="my-2">Shipper</Label>
-                                    <Select>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select customer shipper" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Customer Name (Code)</SelectLabel>
-                                                <SelectItem value="value">Apple</SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit">Submit</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </form>
-                </Dialog>
+                <ShipmentForm mode="create" orderNumber={undefined} customerCode={undefined} customerShipper={undefined} />
             </div>
 
             {/* Table */}

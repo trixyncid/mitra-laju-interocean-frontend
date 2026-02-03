@@ -12,6 +12,7 @@ import { IconEdit, IconInfoCircle } from "@tabler/icons-react"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
+import ShipmentForm from "@/components/forms/shipment-form"
 
 
 export type Shipment = {
@@ -50,56 +51,7 @@ export const columns: ColumnDef<Shipment>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex items-center">
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconEdit /></Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Edit Port</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="orderNumber" className="my-2">Order Number</Label>
-                                        <Input name="orderNumber" />
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="customerCode" className="my-2">Customer Code</Label>
-                                        <Select>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select customer code" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Customer Name (Code)</SelectLabel>
-                                                    <SelectItem value="value">Apple</SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="my-3">
-                                        <Label htmlFor="customerCode" className="my-2">Shipper</Label>
-                                        <Select>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select customer shipper" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Customer Name (Code)</SelectLabel>
-                                                    <SelectItem value="value">Apple</SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                    <Button type="submit">Save Changes</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
+                    <ShipmentForm mode="edit" orderNumber={row.original.orderNumber} customerCode={row.original.customerCode} customerShipper={row.original.customerShipper} />
   
                     <Button asChild className="ml-3">
                         <Link href={`/dashboard/shipments/${row.original.id}`}>
