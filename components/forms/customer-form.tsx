@@ -5,31 +5,55 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 
 export default function CustomerForm({
     mode,
+    id,
     customerName,
     customerCode,
     npwp,
     isActive
 }: {
     mode: "edit" | "create"
+    id: string | undefined,
     customerName: string | undefined,
     customerCode: string | undefined,
     npwp: string | undefined,
     isActive: boolean | undefined
 }) {
+    const createCustomer = useCreateCustomer()
+    const updateCustomer = useUpdateCustomer()
+
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
             customerName: customerName ?? "",
             customerCode: customerCode ?? "",
             npwp: npwp ?? "",
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createCustomer.mutate({
+                    customerName: value.customerName,
+                    customerCode: value.customerCode,
+                    npwp: value.npwp,
+                    isActive: value.isActive,
+                })
+            } else {
+                updateCustomer.mutate({
+                    id: value.id,
+                    customer: {
+                        customerName: value.customerName,
+                        customerCode: value.customerCode,
+                        npwp: value.npwp,
+                        isActive: value.isActive,
+                    }
+                })
+            }
         }
     })
 

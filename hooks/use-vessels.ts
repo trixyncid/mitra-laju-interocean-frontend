@@ -1,0 +1,41 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { vesselsService } from "@/services/vessels.service";
+import { toast } from "sonner";
+import { Vessel } from "@/app/dashboard/vessels/columns";
+
+export const useVessels = () => {
+    return useQuery({
+        queryKey: ["vessels"],
+        queryFn: vesselsService.getAll,
+    });
+}
+
+export const useCreateVessel = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: vesselsService.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["vessels"] });
+            toast.success("Vessel created successfully");
+        },
+        onError: (error: Error) => {
+            toast.warning(error.message);
+        },
+    });
+}
+
+export const useUpdateVessel = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, vessel }: { id: string, vessel: Partial<Vessel> }) => vesselsService.update(id, vessel),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["vessels"] });
+            toast.success("Vessel updated successfully");
+        },
+        onError: (error: Error) => {
+            toast.warning(error.message);
+        },
+    });
+}

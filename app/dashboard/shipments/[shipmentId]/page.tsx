@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import ShipmentContainerForm from "@/components/forms/shipment-container-form";
 
 export default function ShipmentDetailPage() {
     const [ empty, setEmpty ] = useState<boolean>(false);
@@ -191,34 +192,7 @@ export default function ShipmentDetailPage() {
                                             <p className="bg-purple-50 text-purple-500 rounded-full px-3 py-1 ml-3 border border-purple-500">Size: 40RF</p>
                                         </div>
 
-                                        <Dialog>
-                                            <form>
-                                                <DialogTrigger asChild>
-                                                    <Button className="mt-4"><IconPlus /> Add Container</Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Add New Container</DialogTitle>
-                                                    </DialogHeader>
-                                                    <div>
-                                                        <div className="my-3">
-                                                            <Label htmlFor="containerNumber" className="my-2">Container Number</Label>
-                                                            <Input name="containerNumber" />
-                                                        </div>
-                                                        <div className="my-3">
-                                                            <Label htmlFor="size" className="my-2">Seal Number</Label>
-                                                            <Input name="sealNumber" />
-                                                        </div>
-                                                    </div>
-                                                    <DialogFooter>
-                                                        <DialogClose asChild>
-                                                            <Button variant="outline">Cancel</Button>
-                                                        </DialogClose>
-                                                        <Button type="submit">Submit</Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </form>
-                                        </Dialog>
+                                        <ShipmentContainerForm mode="create" containerNumber={undefined} sealNumber={undefined} isActive={undefined} />
                                     </div>
 
                                     <div>
@@ -235,32 +209,7 @@ export default function ShipmentDetailPage() {
                                                     <td className="px-4 py-2">MLCU1234567</td>
                                                     <td className="px-4 py-2">SEAL001</td>
                                                     <td className="px-4 py-2">
-                                                        <Dialog>
-                                                            <form>
-                                                                <DialogTrigger asChild>
-                                                                    <Button><IconEdit /></Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent>
-                                                                    <DialogHeader>
-                                                                        <DialogTitle>Edit Container</DialogTitle>
-                                                                    </DialogHeader>
-                                                                    <div>
-                                                                        <div className="my-3">
-                                                                            <Label htmlFor="containerNumber" className="my-2">Container Number</Label>
-                                                                            <Input name="containerNumber" />
-                                                                        </div>
-                                                                        <div className="my-3">
-                                                                            <Label htmlFor="size" className="my-2">Seal Number</Label>
-                                                                            <Input name="sealNumber" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <DialogFooter>
-                                                                        <Button variant="outline">Delete</Button>
-                                                                        <Button type="submit">Submit</Button>
-                                                                    </DialogFooter>
-                                                                </DialogContent>
-                                                            </form>
-                                                        </Dialog>
+                                                        <ShipmentContainerForm mode="edit" containerNumber="MLCU1234567" sealNumber="SEAL001" isActive={true} />
                                                     </td>
                                                 </tr>
                                             </tbody>

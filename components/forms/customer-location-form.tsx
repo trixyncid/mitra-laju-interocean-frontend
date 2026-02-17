@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useCreateCustomerLocation } from "@/hooks/use-customers"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 
@@ -16,7 +17,8 @@ export default function CustomerLocationForm({
     city,
     province,
     country,
-    postalCode
+    postalCode,
+    customerId
  }: {
     mode: "edit" | "create",
     id: string | undefined,
@@ -27,9 +29,13 @@ export default function CustomerLocationForm({
     province: string | undefined,
     country: string | undefined,
     postalCode: string | undefined
+    customerId: string
  }) {
+    const createCustomerLocation = useCreateCustomerLocation(customerId)
+
     const form = useForm({
         defaultValues: {
+            customerId: customerId,
             addressLine1: addressLine1 ?? "",
             addressLine2: addressLine2 ?? "",
             addressLine3: addressLine3 ?? "",
@@ -39,7 +45,22 @@ export default function CustomerLocationForm({
             postalCode: postalCode ?? ""
         },
         onSubmit: async ({ value }) => {
-            console.log(value, id)
+            if (mode === "create") {
+                createCustomerLocation.mutate({
+                    customerId: customerId,
+                    location: {
+                        addressLine1: value.addressLine1,
+                        addressLine2: value.addressLine2,
+                        addressLine3: value.addressLine3,
+                        city: value.city,
+                        province: value.province,
+                        country: value.country,
+                        postalCode: value.postalCode
+                    }
+                })
+            } else {
+                console.log(value, id)
+            }
         }
     })
 

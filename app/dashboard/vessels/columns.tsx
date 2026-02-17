@@ -1,15 +1,17 @@
 "use client"
 
 import VesselForm from "@/components/forms/vessel-form"
+import { formatDate } from "@/lib/utils"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 
 export type Vessel = {
+    id?: string
     vesselName: string
-    voyage: string
-    etd: string
-    closingReefer: string
+    voyageNumber: string
+    etd: string | null | undefined
+    closingReefer: string | null | undefined
     isActive: boolean
 }
 
@@ -19,16 +21,22 @@ export const columns: ColumnDef<Vessel>[] = [
         header: "Vessel Name"
     },
     {
-        accessorKey: "voyage",
-        header: "Voyage"
+        accessorKey: "voyageNumber",
+        header: "Voyage Number"
     },
     {
         accessorKey: "etd",
-        header: "ETD"
+        header: "ETD",
+        cell: ({ row }) => {
+            return <div className="">{ row.original.etd === null || row.original.etd === undefined ? "-" : formatDate(row.original.etd) }</div>   
+        }
     },
     {
         accessorKey: "closingReefer",
-        header: "Closing Reefer"
+        header: "Closing Reefer",
+        cell: ({ row }) => {
+            return <div className="">{ row.original.closingReefer === null || row.original.closingReefer === undefined ? "-" : formatDate(row.original.closingReefer) }</div>   
+        }
     },
     {
         accessorKey: "isActive",
@@ -41,7 +49,7 @@ export const columns: ColumnDef<Vessel>[] = [
         accessorKey: "",
         header: "Action",
         cell: ({ row }) => {
-            return <VesselForm mode="edit" vesselName={ row.original.vesselName } voyage={ row.original.voyage } etd={ row.original.etd } closingReefer={ row.original.closingReefer } isActive={ row.original.isActive } />
+            return <VesselForm mode="edit" vesselName={ row.original.vesselName } voyageNumber={ row.original.voyageNumber } etd={ row.original.etd ?? undefined } closingReefer={ row.original.closingReefer ?? undefined } isActive={ row.original.isActive } id={ row.original.id ?? undefined } />
         }
     },
 ]

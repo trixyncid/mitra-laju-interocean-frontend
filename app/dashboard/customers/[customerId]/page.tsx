@@ -1,20 +1,64 @@
+"use client"
+
 import CustomerContactForm from "@/components/forms/customer-contact-form"
 import CustomerLocationForm from "@/components/forms/customer-location-form"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-
+import { use } from "react"
 import { IconBuildingCommunity } from "@tabler/icons-react"
+import { useCustomerById } from "@/hooks/use-customers"
+import ErrorPage from "@/components/error-page"
+import DetailPageSkeleton from "@/components/detail-page-skeleton"
+import { formatDate } from "@/lib/utils"
+import { BookUser } from "lucide-react"
+import clsx from "clsx"
 
-export default async function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
-    const { customerId } = await params
+type CustomerContact = {
+    id: string
+    contactName: string
+    phoneNumber: string
+    email: string
+    isActive: boolean
+}
+
+type CustomerLocation = {
+    id: string
+    addressLine1: string
+    addressLine2: string
+    addressLine3: string
+    city: string
+    province: string
+    country: string
+    postalCode: string
+    customerContacts: CustomerContact[]
+}
+
+export default function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
+    const { customerId } = use(params)
+    const { data, isLoading, error } = useCustomerById(customerId)
+
+    console.log('data', data)
+    
+    if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
+
+    if (isLoading) return <DetailPageSkeleton />
+
+    const getTotalContacts = () => {
+        let totalContacts = 0
+
+        for (let i = 0; i < data.customerLocations.length; i++) {
+            totalContacts += data.customerLocations[i].customerContacts.length
+        }
+        return totalContacts
+    }
     
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
             <div className="mb-5">
-                <h1 className="text-xl font-bold">Customer Detail - {`${customerId}`} </h1>
-                <p>Details and information about customer ID asdf will be displayed here.</p>
+                <h1 className="text-xl font-bold">Customer Detail - {`${data.customerName}`} </h1>
+                <em className="text-sm text-slate-400">Last updated on {`${formatDate(data.updatedAt.split('T')[0])}`} by {`${data.updatedBy}`} </em>
             </div>
 
             {/* Metrics */}
@@ -23,7 +67,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     <CardContent className="flex items-center justify-between">
                         <div>
                             <h4 className="mb-1 text-sm">Total Locations</h4>
-                            <h2 className="text-xl font-semibold">10</h2>
+                            <h2 className="text-xl font-semibold">{data.customerLocations.length}</h2>
                         </div>
 
                         <div className="bg-blue-50 px-3 py-3 rounded-full">
@@ -35,12 +79,12 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                 <Card>
                     <CardContent className="flex items-center justify-between">
                         <div>
-                            <h4 className="mb-1 text-sm">Total Locations</h4>
-                            <h2 className="text-xl font-semibold">10</h2>
+                            <h4 className="mb-1 text-sm">Total Contacts</h4>
+                            <h2 className="text-xl font-semibold">{getTotalContacts()}</h2>
                         </div>
 
                         <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <IconBuildingCommunity className="text-2xl text-blue-500"/>
+                            <BookUser className="text-2xl text-blue-500"/>
                         </div>
                     </CardContent>
                 </Card>
@@ -57,59 +101,67 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </div>  
 
             {/* Location Actions */}
             <div className="mt-10">
                 <div className="flex items-center justify-between">
                     <Input type="text" placeholder="Search by location..." className="my-4 max-w-sm"/>
-                    <CustomerLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                    <CustomerLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} customerId={customerId} />
                 </div>
             </div>
 
             {/* Location List */}
-            <Accordion type="single" collapsible className="my-4">
-                <AccordionItem value="location-1">
-                    <AccordionTrigger className="border border-slate-200 px-4 lg:px-6 flex items-center">
-                        <div>
-                            <h3>Location 1</h3>
-                            <p className="text-slate-400 text-xs">New Jersey, PHI, United States</p>
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="border border-slate-100">
-                        <div className="px-4 lg:px-6 py-4">
-                            <div className="flex items-center justify-between py-4">
-                                <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
+            {
+                data.customerLocations.map((location: CustomerLocation) => (
+                    <Accordion key={location.id} type="single" collapsible className="my-4">
+                        <AccordionItem value="location-1">
+                            <AccordionTrigger className="border border-slate-200 px-4 lg:px-6 flex items-center">
+                                <div>
+                                    <h3 className="font-semibold text-lg">{location.addressLine1}</h3>
+                                    <p className="text-slate-400 text-sm">{location.city}, {location.province}, {location.country}</p>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="border border-slate-100">
+                                <div className="px-4 lg:px-6 py-4">
+                                    <div className="flex items-center justify-between py-4">
+                                        <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
 
-                                <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
-                            </div>
+                                        <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                    </div>
 
-                            <table className="w-full px-4 lg:px-6 table-auto text-xs">
-                                <thead className="border-b border-t">
-                                    <tr>
-                                        <th className="text-left font-medium p-2 pl-8">Contact Name</th>
-                                        <th className="text-left font-medium p-2">Phone Number</th>
-                                        <th className="text-left font-medium p-2">Email</th>
-                                        <th className="text-left font-medium p-2 pr-8">Status</th>
-                                        <th className="text-left font-medium p-2 pr-8">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="border-b">
-                                        <td className="p-2 pl-8">Location A</td>
-                                        <td className="p-2">08123456789</td>
-                                        <td className="p-2">locationa@example.com</td>
-                                        <td className="p-2 pr-8">Active</td>
-                                        <td className="p-2 pr-8">
-                                            <CustomerContactForm mode="edit" contactName={"Loc A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} />
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
+                                    <table className="w-full px-4 lg:px-6 table-auto text-xs">
+                                        <thead className="border-b border-t">
+                                            <tr>
+                                                <th className="text-left font-medium p-2 pl-8">Contact Name</th>
+                                                <th className="text-left font-medium p-2">Phone Number</th>
+                                                <th className="text-left font-medium p-2">Email</th>
+                                                <th className="text-left font-medium p-2 pr-8">Status</th>
+                                                <th className="text-left font-medium p-2 pr-8">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {
+                                                location.customerContacts.map((contact: CustomerContact) => (
+                                                    <tr className="border-b" key={contact.id}>
+                                                        <td className="p-2 pl-8">{contact.contactName}</td>
+                                                        <td className="p-2">{contact.phoneNumber}</td>
+                                                        <td className="p-2">{contact.email}</td>
+                                                        <td className="p-2 pr-8"><p className={clsx("px-3 py-1 w-fit rounded-full border font-semibold", contact.isActive ? "bg-green-100 text-green-500" : "bg-red-100 text-red-500")}>{contact.isActive ? "Active" : "Inactive"}</p></td>
+                                                        <td className="p-2 pr-8">
+                                                            <CustomerContactForm mode="edit" contactName={"Loc A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} />
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                ))
+            }
         </div>
     )
 }

@@ -7,26 +7,53 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { useCreatePort, useUpdatePort } from "@/hooks/use-ports"
 
 export default function PortForm({
     mode,
     portName,
-    country,
-    isActive
+    portCountry,
+    isActive,
+    id,
 }: {
     mode: "edit" | "create",
     portName: string | undefined,
-    country: string | undefined,
-    isActive: boolean | undefined
+    portCountry: string | undefined,
+    isActive: boolean | undefined,
+    id: string | undefined
 }) {
+    const createPort = useCreatePort()
+    const updatePort = useUpdatePort()
+
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
             portName: portName ?? "",
-            country: country ?? "",
+            portCountry: portCountry ?? "",
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createPort.mutate({
+                    portName: value.portName,
+                    portCountry: value.portCountry,
+                    isActive: value.isActive,
+                })
+            } else {
+                const portId = value.id
+
+                console.log(portId)
+
+                updatePort.mutate({
+                    id: portId,
+                    port: {
+                        id: value.id,
+                        portName: value.portName,
+                        portCountry: value.portCountry,
+                        isActive: value.isActive,
+                    }
+                })
+            }
         }
     })
 
@@ -75,7 +102,7 @@ export default function PortForm({
                                     }
                                 </form.Field>
                                 <form.Field
-                                    name="country"
+                                    name="portCountry"
                                     validators={{
                                         onChange: (({ value }) =>
                                             !value ? "Country is required" : undefined
@@ -111,7 +138,7 @@ export default function PortForm({
                                 </form.Field> : null}
                             </div>
                             <DialogFooter>
-                                <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                                <Button type="submit" disabled={ mode === "create" ? createPort.isPending : false}>{ mode === "edit" ? (updatePort.isPending ? "Updating..." : "Save Changes") : (createPort.isPending ? "Creating..." : "Create")}</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>

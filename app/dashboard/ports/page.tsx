@@ -1,79 +1,16 @@
-import { columns, Port } from "./columns";
+"use client"
+
+import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import PortForm from "@/components/forms/port-form";
+import { usePorts } from "@/hooks/use-ports";
+import TableSkeleton from "@/components/table-skeleton";
+import ErrorPage from "@/components/error-page";
 
-async function getData(): Promise<Port[]> {
-    return [
-        {
-            portName: "Singapore",
-            country: "Singapore",
-            isActive: true
-        },
-        {
-            portName: "Belawan",
-            country: "Indonesia",
-            isActive: true
-        },
-        {
-            portName: "Los Angeles",
-            country: "United States",
-            isActive: true
-        },
-        {
-            portName: "New York",
-            country: "United States",
-            isActive: true
-        },
-        {
-            portName: "Long Beach",
-            country: "United States",
-            isActive: true
-        },
-        {
-            portName: "Mumbai",
-            country: "India",
-            isActive: true
-        },
-        {
-            portName: "Manzanillo",
-            country: "Mexico",
-            isActive: true
-        },
-        {
-            portName: "Altamira",
-            country: "Mexico",
-            isActive: true
-        },
-        {
-            portName: "Veracruz",
-            country: "Mexico",
-            isActive: true
-        },
-        {
-            portName: "Busan",
-            country: "Korea",
-            isActive: true
-        },
-        {
-            portName: "Surabaya",
-            country: "Indonesia",
-            isActive: true
-        },
-        {
-            portName: "Makassar",
-            country: "Indonesia",
-            isActive: true
-        },
-        {
-            portName: "Tanjong Priok",
-            country: "Indonesia",
-            isActive: true
-        },
-    ]
-}
+export default function PortMasterDataPage() {
+    const { data, isLoading, error } = usePorts()
 
-export default async function PortMasterDataPage() {
-    const data = await getData()
+    if (error) return <ErrorPage />
 
     return (
         <div className="px-4 lg:px-6">
@@ -84,12 +21,12 @@ export default async function PortMasterDataPage() {
                     <p>View and manage global port destinations based on country, and port name.</p>
                 </div>
 
-                <PortForm mode="create" portName={undefined} country={undefined} isActive={true} />
+                <PortForm mode="create" portName={undefined} portCountry={undefined} isActive={true} id={undefined} />
             </div>
 
             {/* Table */}
             <div className='container mx-auto py-10'>
-                <DataTable columns={columns} data={data} />
+                { isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
             </div>
         </div>
     )

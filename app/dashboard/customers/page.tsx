@@ -1,21 +1,16 @@
+"use client"
+
 import { DataTable } from "./data-table";
-import { columns, Customer } from "./columns";
+import { columns } from "./columns";
 import CustomerForm from "@/components/forms/customer-form";
+import { useCustomers } from "@/hooks/use-customers";
+import TableSkeleton from "@/components/table-skeleton";
+import ErrorPage from "@/components/error-page";
 
-async function getData(): Promise<Customer[]> {
-    return [
-        {
-            id: "13",
-            customerCode: "WIN",
-            customerName: "PT Winsten",
-            npwp: "1234567",
-            isActive: true
-        }
-    ]
-}
+export default function CustomerMasterDataPage() {
+    const { data, isLoading, error } = useCustomers()
 
-export default async function CustomerMasterDataPage() {
-    const data = await getData()
+    if (error) return <ErrorPage />
 
     return (
         <div className="px-4 lg:px-6">
@@ -26,12 +21,12 @@ export default async function CustomerMasterDataPage() {
                     <p>View and manage your client database, view profiles, and update contact information.</p>
                 </div>
 
-                <CustomerForm mode="create" customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
+                <CustomerForm mode="create" id={undefined} customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
             </div>
 
             {/* Table */}
             <div className='container mx-auto py-10'>
-                <DataTable columns={columns} data={data} />
+                { isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
             </div>
         </div>
     )

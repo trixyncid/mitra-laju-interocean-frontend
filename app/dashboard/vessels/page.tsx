@@ -1,35 +1,16 @@
-import { columns, Vessel } from "./columns";
+"use client"
+
+import { useVessels } from "@/hooks/use-vessels";
+import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import VesselForm from "@/components/forms/vessel-form";
+import TableSkeleton from "@/components/table-skeleton";
+import ErrorPage from "@/components/error-page";
 
-async function getData(): Promise<Vessel[]> {
-    return [
-        {
-            vesselName: "ABC123",
-            voyage: "456",
-            etd: "",
-            closingReefer: "",
-            isActive: true
-        },
-        {
-            vesselName: "DEF123",
-            voyage: "456",
-            etd: "",
-            closingReefer: "",
-            isActive: true
-        },
-        {
-            vesselName: "GHI123",
-            voyage: "456",
-            etd: "",
-            closingReefer: "",
-            isActive: true
-        },
-    ]
-}
+export default function VesselMasterDataPage() {
+    const { data, isLoading, error } = useVessels()
 
-export default async function VesselMasterDataPage() {
-    const data = await getData()
+    if (error) return <ErrorPage />
 
     return (
         <div className="px-4 lg:px-6">
@@ -40,12 +21,12 @@ export default async function VesselMasterDataPage() {
                     <p>View and manage vessels based on name, voyage, etd, and closing reefer.</p>
                 </div>
 
-                <VesselForm mode="create" vesselName={undefined} voyage={undefined} etd={undefined} closingReefer={undefined} isActive={true} />
+                <VesselForm mode="create" id={undefined} vesselName={undefined} voyageNumber={undefined} etd={undefined} closingReefer={undefined} isActive={true} />
             </div>
 
             {/* Table */}
             <div className='container mx-auto py-10'>
-                <DataTable columns={columns} data={data} />
+                { isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
             </div>
         </div>
     )

@@ -5,8 +5,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 
 export type Port = {
+    id?: string
     portName: string
-    country: string
+    portCountry: string
     isActive: boolean
 }
 
@@ -16,7 +17,7 @@ export const columns: ColumnDef<Port>[] = [
         header: "Port Name"
     },
     {
-        accessorKey: "country",
+        accessorKey: "portCountry",
         header: "Country"
     },
     {
@@ -30,7 +31,7 @@ export const columns: ColumnDef<Port>[] = [
         accessorKey: "",
         header: "Action",
         cell: ({ row }) => {
-            return <PortForm mode="edit" portName={row.original.portName} country={row.original.country} isActive={row.original.isActive} />
+            return <PortForm mode="edit" portName={row.original.portName} portCountry={row.original.portCountry} isActive={row.original.isActive} id={row.original.id} />
         }
     },
 ]

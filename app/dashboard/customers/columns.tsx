@@ -8,7 +8,7 @@ import { IconInfoCircle } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 
 export type Customer = {
-    id: string
+    id?: string
     customerCode: string
     customerName: string
     npwp: string
@@ -41,7 +41,7 @@ export const columns: ColumnDef<Customer>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex gap-x-2">
-                    <CustomerForm mode="edit" customerCode={ row.original.customerCode } customerName={ row.original.customerName } npwp={ row.original.npwp } isActive={ row.original.isActive } />
+                    <CustomerForm mode="edit" customerCode={ row.original.customerCode } customerName={ row.original.customerName } npwp={ row.original.npwp } isActive={ row.original.isActive } id={ row.original.id } />
                     <Button asChild>
                         <Link href={`/dashboard/customers/${row.original.id}`}><IconInfoCircle /></Link>
                     </Button>

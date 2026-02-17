@@ -8,32 +8,63 @@ import { ISOFormat } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { IconPlus, IconEdit } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useCreateVessel, useUpdateVessel } from "@/hooks/use-vessels";
 
 export default function VesselForm({
     mode,
+    id,
     vesselName,
-    voyage,
+    voyageNumber,
     etd,
     closingReefer,
     isActive
 }: {
     mode: "edit" | "create",
+    id: string | undefined,
     vesselName: string | undefined,
-    voyage: string | undefined,
+    voyageNumber: string | undefined,
     etd: string | undefined,
     closingReefer: string | undefined,
     isActive: boolean | undefined
 }) {
+    const createVessel = useCreateVessel()
+    const updateVessel = useUpdateVessel()
+
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
             vesselName: vesselName ?? "",
-            voyage: voyage ?? "",
+            voyageNumber: voyageNumber ?? "",
             etd: etd ?? "",
             closingReefer: closingReefer ?? "",
             isActive: isActive ?? true,
         },
         onSubmit: ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                console.log(value)
+
+                createVessel.mutate({
+                    vesselName: value.vesselName,
+                    voyageNumber: value.voyageNumber,
+                    etd: value.etd === "" ? null : value.etd,
+                    closingReefer: value.closingReefer === "" ? null : value.closingReefer,
+                    isActive: value.isActive,
+                })
+            } else {
+                const vesselId = value.id
+
+                updateVessel.mutate({
+                    id: vesselId,
+                    vessel: {
+                        id: value.id,
+                        vesselName: value.vesselName,
+                        voyageNumber: value.voyageNumber,
+                        etd: value.etd === "" ? null : value.etd,
+                        closingReefer: value.closingReefer === "" ? null : value.closingReefer,
+                        isActive: value.isActive,
+                    }
+                })
+            }
         }
     })
 
@@ -81,10 +112,10 @@ export default function VesselForm({
                                 )}
                             </form.Field>
                             <form.Field
-                                name="voyage"
+                                name="voyageNumber"
                                 validators={{
                                     onChange: ({ value }) =>
-                                        !value ? "Voyage is required" : undefined,
+                                        !value ? "Voyage Number is required" : undefined,
                                 }}
                             >
                                 {( field ) => (

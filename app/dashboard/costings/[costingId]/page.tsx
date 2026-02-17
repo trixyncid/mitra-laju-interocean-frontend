@@ -7,6 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectL
 import { IconBuildingWarehouse, IconCash, IconContainer, IconCurrencyDollar, IconDownload, IconFile, IconPaperclip, IconPencil, IconPlus, IconReceipt, IconTrash } from "@tabler/icons-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import clsx from "clsx";
+import CostingForm from "@/components/forms/costing-form";
 
 export default function CostingDetailPage() {
     return (
@@ -39,75 +40,7 @@ export default function CostingDetailPage() {
                         </DialogContent>
                     </Dialog>
 
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <IconPencil />
-                                    Edit Costing
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Costing</DialogTitle>
-                                </DialogHeader>
-                                <div className="">
-                                    <Label htmlFor="" className="mb-2">Description</Label>
-                                    <Input type="text" placeholder="Enter a description" />
-                                </div>
-                                <div className="">
-                                    <Label htmlFor="" className="mb-2">Price</Label>
-                                    <Input type="text" placeholder="Enter a description" />
-                                </div>
-                                <div className="">
-                                    <Label htmlFor="" className="mb-2">Currency</Label>
-                                    <Input type="text" placeholder="Enter a description" />
-                                </div>
-                                <div className="">
-                                    <Label htmlFor="" className="mb-2">Container Number</Label>
-                                    <Input type="text" placeholder="Enter a description" />
-                                </div>
-                                <div className=" flex items-start gap-3">
-                                    <Checkbox />
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="" className="terms-2">VAT (PPN)</Label>
-                                        <p className="text-sm text-gray-500">By clicking this checkbox, the VAT will be included in the calculation.</p>
-                                    </div>
-                                </div>
-                                <div className=" flex items-start gap-3">
-                                    <Checkbox />
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="" className="terms-2">PPh 23</Label>
-                                        <p className="text-sm text-gray-500">By clicking this checkbox, the PPh 23 will be included in the calculation.</p>
-                                    </div>
-                                </div>
-                                <div className="">
-                                    <Label htmlFor="" className="mb-2">Vendor Invoice</Label>
-                                    <Input type="text" placeholder="" />
-                                </div>
-                                <div className="">
-                                    <Label htmlFor="" className="mb-2">Vendor Name</Label>
-                                    <Select>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select customer shipper" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Vendor Name (Code)</SelectLabel>
-                                                <SelectItem value="value">Apple</SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="outline">Cancel</Button>
-                                    </DialogClose>
-                                    <Button type="submit">Submit</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
+                    <CostingForm mode="edit" description="Trucking Fee" price={123000} currency={15000} containerNumber="CNTR001" vat={10} pph23={1} vendorInvoiceNumber="INV-001-2025" vendorName="1" />    
                 </div>
             </div>
 

@@ -1,5 +1,6 @@
 "use client"
 
+import LinkCostingForm from "@/components/forms/link-costing-form"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -54,38 +55,7 @@ export const columns: ColumnDef<Costing>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex items-center">
-                    <Dialog>
-                        <form>
-                            <DialogTrigger asChild>
-                                <Button><IconLink /></Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Link to Shipment</DialogTitle>
-                                </DialogHeader>
-                                <div>
-                                    <div className="my-3">
-                                        <Label htmlFor="portName" className="my-2">Shipment Order Number</Label>
-                                        <Select>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select customer shipper" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Shipment Order Number</SelectLabel>
-                                                    <SelectItem value="value">Apple</SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white">Delete</Button>
-                                    <Button type="submit">Save Changes</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </form>
-                    </Dialog>
+                    <LinkCostingForm shipmentOrderNumber={row.original.orderNumber ? row.original.orderNumber : undefined} />
 
                     <Button asChild className="ml-2">
                         <Link href={`/dashboard/costings/${ row.original.id }`}><IconInfoCircle /></Link>
