@@ -1,42 +1,17 @@
+"use client"
+
 import { DataTable } from "./data-table";
-import { columns, Vendor } from "./columns";
+import { columns } from "./columns";
 import VendorForm from "@/components/forms/vendor-form";
+import { useVendors } from "@/hooks/use-vendors";
+import TableSkeleton from "@/components/table-skeleton";
 
-async function getData(): Promise<Vendor[]> {
-    return [
-        {
-            id: "1",
-            vendorCode: "V001",
-            vendorName: "ABC Supplies",
-            npwp: "123456789",
-            isActive: true
-        },
-        {
-            id: "2",
-            vendorCode: "V002",
-            vendorName: "Global Traders",
-            npwp: "987654321",
-            isActive: false
-        },
-        {
-            id: "3",
-            vendorCode: "V003",
-            vendorName: "Logistics Co.",
-            npwp: null,
-            isActive: true
-        },
-        {
-            id: "4",
-            vendorCode: "V004",
-            vendorName: "Freight Masters",
-            npwp: "456789123",
-            isActive: true
-        },
-    ]
-}
+export default function VendorMasterDataPage() {
+    const { data, isLoading, error } = useVendors();
 
-export default async function VendorMasterDataPage() {
-    const data = await getData();
+    if (isLoading) return <TableSkeleton />
+
+    if (error) return <div>Error: {error.message}</div>
 
     return (
         <div className="px-4 lg:px-6">

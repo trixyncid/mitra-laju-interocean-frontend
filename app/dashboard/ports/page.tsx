@@ -10,7 +10,7 @@ import ErrorPage from "@/components/error-page";
 export default function PortMasterDataPage() {
     const { data, isLoading, error } = usePorts()
 
-    if (error) return <ErrorPage />
+    if (error) return <div>Error: {error.message}</div>
 
     return (
         <div className="px-4 lg:px-6">

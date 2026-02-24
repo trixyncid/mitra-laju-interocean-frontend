@@ -10,19 +10,25 @@ import { useForm } from "@tanstack/react-form"
 
 export default function CustomerContactForm({
     mode,
+    id,
     contactName,
     phoneNumber,
     email,
-    isActive
+    isActive,
+    locationId
 }: {
+    id?: string
     mode: "edit" | "create",
     contactName: string | undefined,
     phoneNumber: string | undefined,
     email: string | undefined
     isActive: boolean | undefined
+    locationId: string
 }) {
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
+            locationId: locationId,
             contactName: contactName ?? "",
             phoneNumber: phoneNumber ?? "",
             email: email ?? "",

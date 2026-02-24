@@ -127,7 +127,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                     <div className="flex items-center justify-between py-4">
                                         <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
 
-                                        <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                        <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
                                     </div>
 
                                     <table className="w-full px-4 lg:px-6 table-auto text-xs">
@@ -149,7 +149,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                         <td className="p-2">{contact.email}</td>
                                                         <td className="p-2 pr-8"><p className={clsx("px-3 py-1 w-fit rounded-full border font-semibold", contact.isActive ? "bg-green-100 text-green-500" : "bg-red-100 text-red-500")}>{contact.isActive ? "Active" : "Inactive"}</p></td>
                                                         <td className="p-2 pr-8">
-                                                            <CustomerContactForm mode="edit" contactName={"Loc A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} />
+                                                            <CustomerContactForm mode="edit" contactName={"Loc A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} locationId={location.id} />
                                                         </td>
                                                     </tr>
                                                 ))

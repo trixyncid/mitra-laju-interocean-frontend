@@ -61,3 +61,18 @@ export const useCreateCustomerLocation = (customerId: string) => {
         },
     })
 }
+
+export const useCreateCustomerContact = (customerId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ customerId, locationId, contact }: { customerId: string, locationId: string, contact: unknown }) => customersService.createContact(customerId, locationId, contact),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+            toast.success("Customer contact created successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}

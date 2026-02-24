@@ -22,4 +22,8 @@ export const customersService = {
         const response = await apiClient.post(`/customers/${customerId}/locations`, location);
         return response;
     },
+    createContact: async (customerId: string, locationId: string, contact: unknown) => {
+        const response = await apiClient.post(`/customers/${customerId}/locations/${locationId}/contacts`, contact);
+        return response;
+    },
 }
