@@ -39,3 +39,15 @@ export const useUpdateVessel = () => {
         },
     });
 }
+
+export const useDeleteVessel = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: vesselsService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["vessels"] });
+            toast.success("Vessel deleted successfully");
+        },
+    });
+}

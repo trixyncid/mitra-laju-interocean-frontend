@@ -10,6 +10,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+        console.log("Error: ", result);
         throw new Error(result.error.message);
     }
 

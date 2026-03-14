@@ -15,7 +15,7 @@ export default function CustomerMasterDataPage() {
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between container mx-auto">
                 <div>
                     <h1 className="text-xl font-bold">Customer Management</h1>
                     <p>View and manage your client database, view profiles, and update contact information.</p>

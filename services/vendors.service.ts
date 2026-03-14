@@ -12,5 +12,13 @@ export const vendorsService = {
     create: async (vendor: unknown) => {
         const response = await apiClient.post("/vendors", vendor)
         return response
+    },
+    update: async (id: string, vendor: unknown) => {
+        const response = await apiClient.put(`/vendors/${id}`, vendor)
+        return response
+    },
+    delete: async (id: string) => {
+        const response = await apiClient.delete(`/vendors/${id}`)
+        return response
     }
 }

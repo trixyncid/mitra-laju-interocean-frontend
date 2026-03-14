@@ -39,3 +39,18 @@ export const useUpdatePort = () => {
         },
     });
 }
+
+export const useDeletePort = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: portsService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["ports"] });
+            toast.success("Port deleted successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    });
+}

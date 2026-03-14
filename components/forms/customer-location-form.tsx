@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useCreateCustomerLocation } from "@/hooks/use-customers"
+import { useCreateCustomerLocation, useUpdateCustomerLocation } from "@/hooks/use-customers"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 
@@ -32,6 +32,7 @@ export default function CustomerLocationForm({
     customerId: string
  }) {
     const createCustomerLocation = useCreateCustomerLocation(customerId)
+    const updateCustomerLocation = useUpdateCustomerLocation(customerId)
 
     const form = useForm({
         defaultValues: {
@@ -59,7 +60,19 @@ export default function CustomerLocationForm({
                     }
                 })
             } else {
-                console.log(value, id)
+                updateCustomerLocation.mutate({
+                    customerId: customerId,
+                    locationId: id ?? "",
+                    location: {
+                        addressLine1: value.addressLine1,
+                        addressLine2: value.addressLine2,
+                        addressLine3: value.addressLine3,
+                        city: value.city,
+                        province: value.province,
+                        country: value.country,
+                        postalCode: value.postalCode
+                    }
+                })
             }
         }
     })

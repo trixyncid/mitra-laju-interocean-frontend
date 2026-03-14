@@ -15,7 +15,7 @@ export default function PortMasterDataPage() {
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="container mx-auto flex items-center justify-between">
                 <div>
                     <h1 className="text-xl font-bold">Port Management</h1>
                     <p>View and manage global port destinations based on country, and port name.</p>

@@ -14,4 +14,8 @@ export const portsService = {
         const response = await apiClient.put(`/ports/${id}`, port);
         return response;
     },
+    delete: async (id: string) => {
+        const response = await apiClient.delete(`/ports/${id}`);
+        return response;
+    },
 }

@@ -8,7 +8,7 @@ export default function TableSkeleton() {
             </div>
 
             <div className="mt-4">
-                <Skeleton className="h-150 w-full" />
+                <Skeleton className="h-100 w-full" />
             </div>
         </div>
     )

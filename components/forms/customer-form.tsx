@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 
 export default function CustomerForm({
     mode,
@@ -24,6 +26,8 @@ export default function CustomerForm({
     npwp: string | undefined,
     isActive: boolean | undefined
 }) {
+    const [open, setOpen] = useState(false)
+
     const createCustomer = useCreateCustomer()
     const updateCustomer = useUpdateCustomer()
 
@@ -42,6 +46,11 @@ export default function CustomerForm({
                     customerCode: value.customerCode,
                     npwp: value.npwp,
                     isActive: value.isActive,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
                 })
             } else {
                 updateCustomer.mutate({
@@ -52,6 +61,11 @@ export default function CustomerForm({
                         npwp: value.npwp,
                         isActive: value.isActive,
                     }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
                 })
             }
         }
@@ -59,11 +73,9 @@ export default function CustomerForm({
 
     return (
         <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit />: <><IconPlus /> Add Customer</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Customer</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -146,7 +158,7 @@ export default function CustomerForm({
                             </form.Field> : null}
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={ mode === "create" ? createCustomer.isPending : false || mode === "edit" ? updateCustomer.isPending : false}>{ mode === "edit" ? (updateCustomer.isPending ? "Updating..." : "Save Changes") : (createCustomer.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

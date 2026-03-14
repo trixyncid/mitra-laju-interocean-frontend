@@ -8,7 +8,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "../providers";
 import { authClient } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
-import { toast } from "sonner";
 
 export default function DashboardLayout({
   children,
@@ -25,33 +24,33 @@ export default function DashboardLayout({
 
   return (
     <>
-        <Providers>
-            <SidebarProvider
-                style={
-                {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                } as React.CSSProperties
-                }
-            >
-                <AppSidebar variant="inset" />
-                <SidebarInset>
-                <SiteHeader />
-                    <div className="flex flex-1 flex-col">
-                    <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                        {children}
-                        <Toaster 
-                            richColors
-                            position="top-center"
-                            theme="light"
-                        />
-                        </div>
-                    </div>
-                    </div>
-                </SidebarInset>
-            </SidebarProvider>
-        </Providers>
+      <Providers>
+        <SidebarProvider
+          style={
+            {
+                "--sidebar-width": "calc(var(--spacing) * 72)",
+                "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+          }
+        >
+            <AppSidebar variant="inset" />
+            <SidebarInset>
+            <SiteHeader />
+              <div className="flex flex-1 flex-col">
+                <div className="@container/main flex flex-1 flex-col gap-2">
+                  <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                    {children}
+                    <Toaster 
+                        richColors
+                        position="top-center"
+                        theme="light"
+                    />
+                  </div>
+                </div>
+              </div>
+            </SidebarInset>
+        </SidebarProvider>
+      </Providers>
     </>
   );
 }

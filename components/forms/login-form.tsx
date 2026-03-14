@@ -20,6 +20,7 @@ export function LoginForm({
 }: React.ComponentProps<"form">) {
     const router = useRouter()
     const [passwordType, setPasswordType] = useState("password")
+    const [isSubmitting, setIsSubmitting] = useState(false)
     
     const form = useForm({
         defaultValues: {
@@ -27,6 +28,8 @@ export function LoginForm({
             password: "",
         },
         onSubmit: async ({ value }) => {
+            setIsSubmitting(true)
+
             await authClient.signIn.email({
                 email: value.email,
                 password: value.password,
@@ -40,7 +43,9 @@ export function LoginForm({
                     }
                 }
             })
-        }
+
+            setIsSubmitting(false)
+        },
     })
 
     const togglePasswordVisibility = () => {
@@ -102,7 +107,7 @@ export function LoginForm({
                 )
             }
             </form.Field>
-            <Button type="submit" disabled={form.state.isSubmitting}>{form.state.isSubmitting ? "Logging in..." : "Login"}</Button>
+            <Button type="submit" className="hover:cursor-pointer" disabled={isSubmitting}>{isSubmitting ? "Logging in..." : "Login"}</Button>
         </FieldGroup>
         </form>
     )

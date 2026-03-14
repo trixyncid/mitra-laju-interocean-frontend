@@ -15,6 +15,7 @@ import {
 import { NavMasterData } from "@/components/nav-master-data"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { NavTransactionalData } from "@/components/nav-transactional-data"
 import {
   Sidebar,
   SidebarContent,
@@ -36,16 +37,6 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: IconLayoutDashboard,
-    },
-    {
-      title: "Shipment",
-      url: "/dashboard/shipments",
-      icon: IconTruck,
-    },
-    {
-      title: "Costing",
-      url: "/dashboard/costings",
-      icon: IconFileDollar,
     },
   ],
   masterData: [
@@ -70,6 +61,18 @@ const data = {
       icon: IconShip,
     },
   ],
+  transactionalData: [
+    {
+      name: "Shipment",
+      url: "/dashboard/shipments",
+      icon: IconTruck,
+    },
+    {
+      name: "Costing",
+      url: "/dashboard/costings",
+      icon: IconFileDollar,
+    },
+  ]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -84,7 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="#">
                 <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="text-base font-semibold">Mitra Laju Interocean</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -93,6 +96,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavMasterData items={data.masterData} />
+        <NavTransactionalData items={data.transactionalData} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

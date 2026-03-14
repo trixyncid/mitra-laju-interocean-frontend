@@ -32,8 +32,8 @@ export default function CostingForm({
     const form = useForm({
         defaultValues: {
             description: description ?? "",
-            price: price ?? 0,
-            currency: currency ?? 0,
+            price: price ?? "",
+            currency: currency ?? "",
             containerNumber: containerNumber ?? "",
             vat: vat ?? 0,
             pph23: pph23 ?? 0,

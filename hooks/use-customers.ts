@@ -27,6 +27,7 @@ export const useCreateCustomer = () => {
             toast.success("Customer created successfully");
         },
         onError: (error: Error) => {
+            console.log("Error: ", error);
             toast.error(error.message);
         },
     })
@@ -47,6 +48,20 @@ export const useUpdateCustomer = () => {
     })
 }
 
+export const useDeleteCustomer = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: customersService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            toast.success("Customer deleted successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}
+
 export const useCreateCustomerLocation = (customerId: string) => {
     const queryClient = useQueryClient();
 
@@ -55,6 +70,20 @@ export const useCreateCustomerLocation = (customerId: string) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
             toast.success("Customer location created successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}
+
+export const useUpdateCustomerLocation = (customerId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ customerId, locationId, location }: { customerId: string, locationId: string, location: unknown }) => customersService.updateLocation(customerId, locationId, location),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+            toast.success("Customer location updated successfully");
         },
         onError: (error: Error) => {
             toast.error(error.message);

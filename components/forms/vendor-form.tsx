@@ -5,10 +5,14 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { useCreateVendor, useUpdateVendor } from "@/hooks/use-vendors"
+import { IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 
 export default function VendorForm({
+    id,
     mode,
     vendorName,
     vendorCode,
@@ -16,30 +20,58 @@ export default function VendorForm({
     isActive
 }: {
     mode: "edit" | "create",
+    id: string | undefined,
     vendorName: string | undefined,
     vendorCode: string | undefined,
     npwp: string | undefined,
     isActive: boolean | undefined
 }) {
+    const [open, setOpen] = useState(false)
+
+    const createVendor = useCreateVendor()
+    const updateVendor = useUpdateVendor()
+
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
             vendorName: vendorName ?? "",
             vendorCode: vendorCode ?? "",
             npwp: npwp ?? "",
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createVendor.mutate({
+                    vendorName: value.vendorName,
+                    vendorCode: value.vendorCode,
+                    npwp: value.npwp,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            } else {
+                updateVendor.mutate({ id: id ?? "", vendor: {
+                    vendorName: value.vendorName,
+                    vendorCode: value.vendorCode,
+                    npwp: value.npwp,
+                    isActive: value.isActive,
+                } }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            }
         }
     })
 
     return (
         <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit />: <><IconPlus /> Add Vendor</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Vendor</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -122,7 +154,7 @@ export default function VendorForm({
                             </form.Field> : null}
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={ mode === "create" ? createVendor.isPending : false || mode === "edit" ? updateVendor.isPending : false}>{ mode === "edit" ? (updateVendor.isPending ? "Updating..." : "Save Changes") : (createVendor.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

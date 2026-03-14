@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ISOFormat } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
-import { IconPlus, IconEdit } from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useCreateVessel, useUpdateVessel } from "@/hooks/use-vessels";
+import { useState } from "react";
+import { Pencil } from "lucide-react";
 
 export default function VesselForm({
     mode,
@@ -27,6 +29,8 @@ export default function VesselForm({
     closingReefer: string | undefined,
     isActive: boolean | undefined
 }) {
+    const [open, setOpen] = useState(false)
+
     const createVessel = useCreateVessel()
     const updateVessel = useUpdateVessel()
 
@@ -41,14 +45,17 @@ export default function VesselForm({
         },
         onSubmit: ({ value }) => {
             if (mode === "create") {
-                console.log(value)
-
                 createVessel.mutate({
                     vesselName: value.vesselName,
                     voyageNumber: value.voyageNumber,
                     etd: value.etd === "" ? null : value.etd,
                     closingReefer: value.closingReefer === "" ? null : value.closingReefer,
                     isActive: value.isActive,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
                 })
             } else {
                 const vesselId = value.id
@@ -63,6 +70,11 @@ export default function VesselForm({
                         closingReefer: value.closingReefer === "" ? null : value.closingReefer,
                         isActive: value.isActive,
                     }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
                 })
             }
         }
@@ -70,11 +82,9 @@ export default function VesselForm({
 
     return (
         <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit /> : <><IconPlus /> Add Vessel</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Vessel</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -184,7 +194,7 @@ export default function VesselForm({
                             </form.Field> : null}
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={ mode === "create" ? createVessel.isPending : false || mode === "edit" ? updateVessel.isPending : false}>{ mode === "edit" ? (updateVessel.isPending ? "Updating..." : "Save Changes") : (createVessel.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

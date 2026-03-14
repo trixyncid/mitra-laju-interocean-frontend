@@ -116,10 +116,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 data.customerLocations.map((location: CustomerLocation) => (
                     <Accordion key={location.id} type="single" collapsible className="my-4">
                         <AccordionItem value="location-1">
-                            <AccordionTrigger className="border border-slate-200 px-4 lg:px-6 flex items-center">
-                                <div>
-                                    <h3 className="font-semibold text-lg">{location.addressLine1}</h3>
-                                    <p className="text-slate-400 text-sm">{location.city}, {location.province}, {location.country}</p>
+                            <AccordionTrigger className="border border-slate-200 px-4 lg:px-6 flex items-center justify-between">
+                                <div className="flex items-center justify-between w-full">
+                                    <div>
+                                        <h3 className="font-semibold text-lg">{location.addressLine1}</h3>
+                                        <p className="text-slate-400 text-sm">{location.city}, {location.province}, {location.country}</p>
+                                    </div>
+                                    <CustomerLocationForm mode="edit" id={location.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} customerId={customerId} />
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="border border-slate-100">
