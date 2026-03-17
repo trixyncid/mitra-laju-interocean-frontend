@@ -39,7 +39,7 @@ export default function VendorContactForm({
                 if (!open) form.reset()
             }}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit />: <><IconPlus /> Add Vendor Contact</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="sm"><IconEdit /></Button> : <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

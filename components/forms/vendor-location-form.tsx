@@ -49,7 +49,7 @@ export default function VendorLocationForm({
             if (!open) form.reset()
         }}>
             <DialogTrigger asChild>
-                <Button>{ mode === "edit" ? <IconEdit />: <><IconPlus /> Add Vendor Location</>}</Button>
+                { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button> : <Button variant="outline" size="sm"><IconPlus /> Add Office</Button>}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

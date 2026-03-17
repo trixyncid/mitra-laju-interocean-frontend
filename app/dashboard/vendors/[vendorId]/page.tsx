@@ -1,16 +1,21 @@
 "use client"
 
-import VendorContactForm from "@/components/forms/vendor-contact-form"
-import VendorLocationForm from "@/components/forms/vendor-location-form"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { useVendorById } from "@/hooks/use-vendors"
 import { use } from "react"
-import { IconBuildingCommunity } from "@tabler/icons-react"
+import { IconArrowLeft, IconBrandWhatsapp, IconFerry } from "@tabler/icons-react"
 import DetailPageSkeleton from "@/components/detail-page-skeleton"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { formatDate } from "@/lib/utils"
+import { Dot } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import VendorLocationForm from "@/components/forms/vendor-location-form"
+import VendorContactForm from "@/components/forms/vendor-contact-form"
+import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 
 type VendorContact = {
     id: string
@@ -42,121 +47,109 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
 
     if (error) return <div>Error: {error.message}</div>
 
-    const getTotalContacts = () => {
-        let totalContacts = 0
-
-        for (let i = 0; i < data.vendorLocations.length; i++) {
-            totalContacts += data.vendorLocations[i].vendorContacts.length
-        }
-        return totalContacts
-    }
-
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
             <div className="mb-5">
-                <h1 className="text-xl font-bold">Vendor Detail - {data?.vendorName}</h1>
-                <p className="text-slate-400 text-xs">Last updated on {formatDate(data?.updatedAt)} by {data?.updatedBy}</p>
+                <Button asChild variant="ghost" className="text-slate-500">
+                    <Link href={`/dashboard/vendors`}>
+                        <IconArrowLeft className="text-2xl"/> Back to vendors
+                    </Link>
+                </Button>
             </div>
 
-            {/* Metrics */}
-            <div className="grid grid-cols-3 gap-x-5">
-                <Card>
-                    <CardContent className="flex items-center justify-between">
+            <Card>
+                <CardContent>
+                    <div className="flex items-center gap-x-4">
+                        <div className="border border-2 rounded-lg p-3">
+                            <IconFerry className="text-blue-500 w-10 h-10" />
+                        </div>
                         <div>
-                            <h4 className="mb-1 text-sm">Total Locations</h4>
-                            <h2 className="text-xl font-semibold">{data?.vendorLocations?.length}</h2>
+                            <h1 className="text-xl font-bold">{data.vendorName}</h1>
+                            <p className="text-sm text-slate-500 flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: {data.vendorCode}</p>
+                            <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", data?.isActive ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {data?.isActive ? "Active" : "Inactive"}</p>
+                        </div>
+                    </div>
+
+                    <Separator className="mt-4"/>
+
+                    <div className="grid grid-cols-4 text-center">
+                        <div className="w-full border-r">
+                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mb-2 text-sm text-slate-500">Active <br /> Shipments</p>
                         </div>
 
-                        <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <IconBuildingCommunity className="text-2xl text-blue-500"/>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="flex items-center justify-between">
-                        <div>
-                            <h4 className="mb-1 text-sm">Total Contacts</h4>
-                            <h2 className="text-xl font-semibold">{getTotalContacts()}</h2>
+                        <div className="w-full border-r">
+                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mb-2 text-sm text-slate-500">Total <br /> Assignments</p>
                         </div>
 
-                        <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <IconBuildingCommunity className="text-2xl text-blue-500"/>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="flex items-center justify-between">
-                        <div>
-                            <h4 className="mb-1 text-sm text-slate-400">Total Locations</h4>
-                            <h2 className="text-xl font-semibold">10</h2>
+                        <div className="w-full border-r">
+                            <p className="mt-2 font-bold text-xl">Rp. 4,000,000</p>
+                            <p className="mb-2 text-sm text-slate-500">YTD <br /> Spend</p>
                         </div>
 
-                        <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <IconBuildingCommunity className="text-2xl text-blue-500"/>
+                        <div className="w-full">
+                            <p className="mt-2 font-bold text-xl">Rp. 1,000,000</p>
+                            <p className="mb-2 text-sm text-slate-500">Outstanding <br /> Bills</p>
                         </div>
-                    </CardContent>
-                </Card>
-            </div>
 
-            {/* Location Actions */}
-            <div className="mt-10">
-                <div className="flex items-center justify-between">
-                    <Input type="text" placeholder="Search by location..." className="my-4 max-w-sm"/>
-                    <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
-                </div>
-            </div>
+                    </div>
+                </CardContent>
+            </Card>
 
-            {/* Location List */}
-            {
-                data?.vendorLocations.map((location: VendorLocation) => (
-                    <Accordion key={location.id} type="single" collapsible className="my-4">
-                        <AccordionItem value="location-1">
-                            <AccordionTrigger className="border border-slate-200 px-4 lg:px-6 flex items-center">
+            {/* Tabs */}
+            <Tabs defaultValue="offices-and-contacts" className="mt-6">
+                <TabsList>
+                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">10</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History</TabsTrigger>
+                    <TabsTrigger value="costings">Costings</TabsTrigger>
+                </TabsList>
+                <TabsContent value="offices-and-contacts">
+                    <p className="text-sm text-slate-500 my-2 flex flex-row">count offices <Dot /> count contacts</p>
+                    <Card>
+                        <CardContent>
+                            <div className="flex flex-row items-start justify-between">
                                 <div>
-                                    <h3>{ location.addressLine1 }</h3>
-                                    <p className="text-slate-400 text-xs">{location.city} {location.province}, {location.country}</p>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="border border-slate-100">
-                                <div className="px-4 lg:px-6 py-4">
-                                    <div className="flex items-center justify-between py-4">
-                                        <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
-
-                                        <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={true} />
+                                    <div className="flex flex-row items-start gap-x-2">
+                                        <h2 className="text-lg font-bold">Address Line 1</h2>
+                                        <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
                                     </div>
-
-                                    <table className="w-full px-4 lg:px-6 table-auto text-xs">
-                                        <thead className="border-b border-t">
-                                            <tr>
-                                                <th className="text-left font-medium p-2 pl-8">Contact Name</th>
-                                                <th className="text-left font-medium p-2">Phone Number</th>
-                                                <th className="text-left font-medium p-2">Email</th>
-                                                <th className="text-left font-medium p-2 pr-8">Status</th>
-                                                <th className="text-left font-medium p-2 pr-8">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {
-                                                location.vendorContacts.map((contact: VendorContact) => (
-                                                    <tr className="border-b" key={contact.id}>
-                                                        <td className="p-2 pl-8">{contact.contactName}</td>
-                                                        <td className="p-2">{contact.phoneNumber}</td>
-                                                        <td className="p-2">{contact.email}</td>
-                                                        <td className="p-2 pr-8"><p className={clsx("px-3 py-1 w-fit rounded-full border font-semibold", contact.isActive ? "bg-green-100 text-green-500" : "bg-red-100 text-red-500")}>{contact.isActive ? "Active" : "Inactive"}</p></td>
-                                                    </tr>
-                                                ))
-                                            }
-                                        </tbody>
-                                    </table>
+                                    <div className="text-xs text-slate-500">
+                                        <p>Address Line 2, Address Line 3, City, Province, Country Postal Code</p>
+                                        <p>Last updated on date by name</p>
+                                    </div>
                                 </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                ))
-            }
+                                <div className="flex flex-row items-start gap-x-2">
+                                    <VendorLocationForm mode="edit" id={data.id} addressLine1={data.addressLine1} addressLine2={data.addressLine2} addressLine3={data.addressLine3} city={data.city} province={data.province} country={data.country} postalCode={data.postalCode} />
+                                    <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                </div>
+                            </div>
+
+                            <Separator className="mt-4"/>
+
+                            <div className="flex flex-row items-center justify-between my-2">
+                                <div className="flex flex-row items-center gap-x-2">
+                                    <Avatar>
+                                        <AvatarFallback>FL</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <h2 className="font-semibold text-sm">Contacts</h2>
+                                        <p className="text-xs text-slate-500">Email</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-row items-center gap-x-2">
+                                    <p className="text-sm text-slate-500">Phone Number</p>
+                                    <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="shipment-history">
+                    <ShipmentHistoryPage />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
