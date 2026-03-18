@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import VendorLocationForm from "@/components/forms/vendor-location-form"
 import VendorContactForm from "@/components/forms/vendor-contact-form"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
+import CostingHistoryPage from "./(costings)/costing-history-page"
 
 type VendorContact = {
     id: string
@@ -102,8 +103,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
             <Tabs defaultValue="offices-and-contacts" className="mt-6">
                 <TabsList>
                     <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">10</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History</TabsTrigger>
-                    <TabsTrigger value="costings">Costings</TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">100</span></TabsTrigger>
+                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">20</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="offices-and-contacts">
                     <p className="text-sm text-slate-500 my-2 flex flex-row">count offices <Dot /> count contacts</p>
@@ -128,26 +129,33 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
 
                             <Separator className="mt-4"/>
 
-                            <div className="flex flex-row items-center justify-between my-2">
-                                <div className="flex flex-row items-center gap-x-2">
-                                    <Avatar>
-                                        <AvatarFallback>FL</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h2 className="font-semibold text-sm">Contacts</h2>
-                                        <p className="text-xs text-slate-500">Email</p>
+                            <div>
+                                <div className="flex flex-row items-center justify-between my-2">
+                                    <div className="flex flex-row items-center gap-x-2">
+                                        <Avatar>
+                                            <AvatarFallback>FL</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h2 className="font-semibold text-sm">Contacts</h2>
+                                            <p className="text-xs text-slate-500">Email</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-row items-center gap-x-2">
+                                        <p className="text-sm text-slate-500">Phone Number</p>
+                                        <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
                                     </div>
                                 </div>
-                                <div className="flex flex-row items-center gap-x-2">
-                                    <p className="text-sm text-slate-500">Phone Number</p>
-                                    <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
-                                </div>
+
+                                <Separator />
                             </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
                 <TabsContent value="shipment-history">
                     <ShipmentHistoryPage />
+                </TabsContent>
+                <TabsContent value="costings">
+                    <CostingHistoryPage vendorName={data.vendorName} />
                 </TabsContent>
             </Tabs>
         </div>
