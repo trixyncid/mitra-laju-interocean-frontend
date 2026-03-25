@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { useCreateCustomerLocation, useUpdateCustomerLocation } from "@/hooks/use-customers"
 import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { useState } from "react"
 
 export default function CustomerLocationForm({ 
     mode,
@@ -18,10 +19,13 @@ export default function CustomerLocationForm({
     province,
     country,
     postalCode,
-    customerId
+    customerId,
+    shipperId
  }: {
     mode: "edit" | "create",
     id: string | undefined,
+    customerId: string,
+    shipperId: string,
     addressLine1: string | undefined,
     addressLine2: string | undefined,
     addressLine3: string | undefined,
@@ -29,14 +33,17 @@ export default function CustomerLocationForm({
     province: string | undefined,
     country: string | undefined,
     postalCode: string | undefined
-    customerId: string
  }) {
+    const [open, setOpen] = useState(false)
+
     const createCustomerLocation = useCreateCustomerLocation(customerId)
     const updateCustomerLocation = useUpdateCustomerLocation(customerId)
 
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
             customerId: customerId,
+            shipperId: shipperId,
             addressLine1: addressLine1 ?? "",
             addressLine2: addressLine2 ?? "",
             addressLine3: addressLine3 ?? "",
@@ -49,6 +56,7 @@ export default function CustomerLocationForm({
             if (mode === "create") {
                 createCustomerLocation.mutate({
                     customerId: customerId,
+                    shipperId: shipperId,
                     location: {
                         addressLine1: value.addressLine1,
                         addressLine2: value.addressLine2,
@@ -58,10 +66,16 @@ export default function CustomerLocationForm({
                         country: value.country,
                         postalCode: value.postalCode
                     }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
                 })
             } else {
                 updateCustomerLocation.mutate({
                     customerId: customerId,
+                    shipperId: shipperId,
                     locationId: id ?? "",
                     location: {
                         addressLine1: value.addressLine1,
@@ -72,6 +86,11 @@ export default function CustomerLocationForm({
                         country: value.country,
                         postalCode: value.postalCode
                     }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
                 })
             }
         }
@@ -79,11 +98,9 @@ export default function CustomerLocationForm({
 
   return (
     <div>
-        <Dialog onOpenChange={(open) => {
-            if (!open) form.reset()
-        }}>
+            <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>{ mode === "edit" ? <IconEdit />: <><IconPlus /> Add Location</>}</Button>
+                { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button>: <Button variant="outline" size="sm"><IconPlus /> Location</Button>}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
@@ -230,7 +247,7 @@ export default function CustomerLocationForm({
                         </form.Field>
                     </div>
                     <DialogFooter>
-                        <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                        <Button type="submit" disabled={ mode === "create" ? createCustomerLocation.isPending : false || mode === "edit" ? updateCustomerLocation.isPending : false}>{ mode === "edit" ? (updateCustomerLocation.isPending ? "Updating..." : "Save Changes") : (createCustomerLocation.isPending ? "Creating..." : "Create")}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

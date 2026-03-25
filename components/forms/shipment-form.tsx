@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { IconEdit, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { Pencil } from "lucide-react";
 
 export default function ShipmentForm({
     mode,
@@ -35,7 +36,7 @@ export default function ShipmentForm({
                 if (!open) form.reset()
             }}>    
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit /> : <><IconPlus /> Add Shipment</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Shipment</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

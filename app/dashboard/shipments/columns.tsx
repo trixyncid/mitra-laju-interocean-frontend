@@ -1,14 +1,8 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-
-import Link from "next/link"
-
-import { IconEdit, IconInfoCircle } from "@tabler/icons-react"
-
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
-import ShipmentForm from "@/components/forms/shipment-form"
+import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
 
 
 export type Shipment = {
@@ -45,17 +39,7 @@ export const columns: ColumnDef<Shipment>[] = [
         accessorKey: "",
         header: "Action",
         cell: ({ row }) => {
-            return (
-                <div className="flex items-center">
-                    <ShipmentForm mode="edit" orderNumber={row.original.orderNumber} customerCode={row.original.customerCode} customerShipper={row.original.customerShipper} />
-  
-                    <Button asChild className="ml-3">
-                        <Link href={`/dashboard/shipments/${row.original.id}`}>
-                            <IconInfoCircle />
-                        </Link>
-                    </Button>                    
-                </div>
-            )
+            return <ShipmentActionCell row={row} />
         },
     },
 ]

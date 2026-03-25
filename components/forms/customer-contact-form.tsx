@@ -45,7 +45,7 @@ export default function CustomerContactForm({
                 if (!open) form.reset()
             }}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit />: <><IconPlus /> Add Contact</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="sm"><IconEdit /></Button>: <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

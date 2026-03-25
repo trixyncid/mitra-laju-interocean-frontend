@@ -10,6 +10,8 @@ import ErrorPage from "@/components/error-page";
 export default function CustomerMasterDataPage() {
     const { data, isLoading, error } = useCustomers()
 
+    console.log(data)
+
     if (error) return <ErrorPage />
 
     return (

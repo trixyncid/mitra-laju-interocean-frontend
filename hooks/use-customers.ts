@@ -62,11 +62,53 @@ export const useDeleteCustomer = () => {
     })
 }
 
+
+// Customer Shippers
+export const useCreateCustomerShipper = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ customerId, shipper }: { customerId: string, shipper: unknown }) => customersService.createShipper(customerId, shipper),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            toast.success("Customer shipper created successfully");
+        },
+    })
+}
+
+export const useUpdateCustomerShipper = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ customerId, shipperId, shipper }: { customerId: string, shipperId: string, shipper: unknown }) => customersService.updateShipper(customerId, shipperId, shipper),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            toast.success("Customer shipper updated successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}
+
+export const useDeleteCustomerShipper = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ customerId, shipperId }: { customerId: string, shipperId: string }) => customersService.deleteShipper(customerId, shipperId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            toast.success("Customer shipper deleted successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}
+
+// Customer Locations
 export const useCreateCustomerLocation = (customerId: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ customerId, location }: { customerId: string, location: unknown }) => customersService.createLocation(customerId, location),
+        mutationFn: ({ customerId, shipperId, location }: { customerId: string, shipperId: string, location: unknown }) => customersService.createLocation(customerId, shipperId, location),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
             toast.success("Customer location created successfully");
@@ -80,7 +122,7 @@ export const useCreateCustomerLocation = (customerId: string) => {
 export const useUpdateCustomerLocation = (customerId: string) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ customerId, locationId, location }: { customerId: string, locationId: string, location: unknown }) => customersService.updateLocation(customerId, locationId, location),
+        mutationFn: ({ customerId, shipperId, locationId, location }: { customerId: string, shipperId: string, locationId: string, location: unknown }) => customersService.updateLocation(customerId, shipperId, locationId, location),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
             toast.success("Customer location updated successfully");
@@ -91,13 +133,14 @@ export const useUpdateCustomerLocation = (customerId: string) => {
     })
 }
 
-export const useCreateCustomerContact = (customerId: string) => {
+// Customer Contacts
+export const useCreateCustomerContact = (customerId: string, shipperId: string, locationId: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ customerId, locationId, contact }: { customerId: string, locationId: string, contact: unknown }) => customersService.createContact(customerId, locationId, contact),
+        mutationFn: ({ contact }: { contact: unknown }) => customersService.createContact(customerId, shipperId, locationId, contact),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId, shipperId] });
             toast.success("Customer contact created successfully");
         },
         onError: (error: Error) => {

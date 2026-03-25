@@ -1,29 +1,24 @@
+"use client"
+
 import { DataTable } from "./data-table";
-import { columns, Shipment } from "./columns";
+import { columns } from "./columns";
 import ShipmentForm from "@/components/forms/shipment-form";
+import { useShipments } from "@/hooks/use-shipments";
 
-async function getData(): Promise<Shipment[]> {
-    return [
-        {
-            id: "1",
-            orderNumber: "123",
-            customerCode: "XHE",
-            customerShipper: "Winsten",
-            isActive: true
-        }
-    ]
-}
+export default function ShipmentPage() {
+    const { data, isLoading, error } = useShipments()
 
-export default async function ShipmentPage() {
-    const data = await getData()
+    console.log(data)
+
+    if (error) return <div>Error: {error.message}</div>
 
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-xl font-bold">Shipment Management</h1>
-                    <p>Manage shipments, track status, and record costs.</p>
+                    <h1 className="text-xl font-bold">Shipments</h1>
+                    <p>Count active shipments</p>
                 </div>
 
                 <ShipmentForm mode="create" orderNumber={undefined} customerCode={undefined} customerShipper={undefined} />
@@ -31,7 +26,7 @@ export default async function ShipmentPage() {
 
             {/* Table */}
             <div className='container mx-auto py-10'>
-                <DataTable columns={columns} data={data} />
+                { isLoading ? <div>Loading...</div> : <DataTable columns={columns} data={data} />}
             </div>
         </div>
     )

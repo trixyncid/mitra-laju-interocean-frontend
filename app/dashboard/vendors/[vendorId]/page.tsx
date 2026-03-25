@@ -107,7 +107,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                     <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">20</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="offices-and-contacts">
-                    <p className="text-sm text-slate-500 my-2 flex flex-row">count offices <Dot /> count contacts</p>
+                    <div className="flex flex-row items-center justify-between mb-4">
+                        <p className="text-sm text-slate-500 my-2 flex flex-row">count offices <Dot /> count contacts</p>
+                        <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                    </div>
                     <Card>
                         <CardContent>
                             <div className="flex flex-row items-start justify-between">
@@ -143,6 +146,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                     <div className="flex flex-row items-center gap-x-2">
                                         <p className="text-sm text-slate-500">Phone Number</p>
                                         <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                        <VendorContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
                                     </div>
                                 </div>
 

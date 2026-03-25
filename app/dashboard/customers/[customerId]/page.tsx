@@ -1,18 +1,23 @@
 "use client"
 
-import CustomerContactForm from "@/components/forms/customer-contact-form"
-import CustomerLocationForm from "@/components/forms/customer-location-form"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { use } from "react"
-import { IconBuildingCommunity } from "@tabler/icons-react"
+import { IconArrowLeft, IconBrandWhatsapp, IconBuildingFactory2 } from "@tabler/icons-react"
 import { useCustomerById } from "@/hooks/use-customers"
 import ErrorPage from "@/components/error-page"
 import DetailPageSkeleton from "@/components/detail-page-skeleton"
-import { formatDate } from "@/lib/utils"
-import { BookUser } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Dot } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
+import { formatDate } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import CustomerLocationForm from "@/components/forms/customer-location-form"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import CustomerShipperForm from "@/components/forms/customer-shipper-form"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import CustomerContactForm from "@/components/forms/customer-contact-form"
 
 type CustomerContact = {
     id: string
@@ -34,6 +39,17 @@ type CustomerLocation = {
     customerContacts: CustomerContact[]
 }
 
+type CustomerShipper = {
+    id: string,
+    name: string,
+    phoneNumber: string,
+    country: string,
+    isActive: boolean,
+    customerLocations: CustomerLocation[],
+    updatedAt: string,
+    updatedBy: string
+}
+
 export default function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
     const { customerId } = use(params)
     const { data, isLoading, error } = useCustomerById(customerId)
@@ -43,128 +59,194 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
 
     if (isLoading) return <DetailPageSkeleton />
-
-    const getTotalContacts = () => {
-        let totalContacts = 0
-
-        for (let i = 0; i < data.customerLocations.length; i++) {
-            totalContacts += data.customerLocations[i].customerContacts.length
-        }
-        return totalContacts
-    }
     
     return (
         <div className="px-4 lg:px-6">
-            {/* Header */}
             <div className="mb-5">
-                <h1 className="text-xl font-bold">Customer Detail - {`${data.customerName}`} </h1>
-                <em className="text-sm text-slate-400">Last updated on {`${formatDate(data.updatedAt.split('T')[0])}`} by {`${data.updatedBy}`} </em>
+                <Button asChild variant="ghost" className="text-slate-500">
+                    <Link href={`/dashboard/customers`}>
+                        <IconArrowLeft className="text-2xl"/> Back to customers
+                    </Link>
+                </Button>
             </div>
-
-            {/* Metrics */}
-            <div className="grid grid-cols-3 gap-x-5">
-                <Card>
-                    <CardContent className="flex items-center justify-between">
+            <Card>
+                <CardContent>
+                <div className="flex items-center gap-x-4">
+                        <div className="border border-2 rounded-lg p-3">
+                            <IconBuildingFactory2 className="text-blue-500 w-10 h-10" />
+                        </div>
                         <div>
-                            <h4 className="mb-1 text-sm">Total Locations</h4>
-                            <h2 className="text-xl font-semibold">{data.customerLocations.length}</h2>
+                            <h1 className="text-xl font-bold">{ data.customerName}</h1>
+                            <p className="text-sm text-slate-500 flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: { data.customerCode }</p>
+                            <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", data?.isActive ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {data?.isActive ? "Active" : "Inactive"}</p>
+                        </div>
+                    </div>
+
+                    <Separator className="mt-4"/>
+
+                    <div className="grid grid-cols-4 text-center">
+                        <div className="w-full border-r">
+                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mb-2 text-sm text-slate-500">Active <br /> Shipments</p>
                         </div>
 
-                        <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <IconBuildingCommunity className="text-2xl text-blue-500"/>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="flex items-center justify-between">
-                        <div>
-                            <h4 className="mb-1 text-sm">Total Contacts</h4>
-                            <h2 className="text-xl font-semibold">{getTotalContacts()}</h2>
+                        <div className="w-full border-r">
+                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mb-2 text-sm text-slate-500">Total <br /> Assignments</p>
                         </div>
 
-                        <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <BookUser className="text-2xl text-blue-500"/>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="flex items-center justify-between">
-                        <div>
-                            <h4 className="mb-1 text-sm text-slate-400">Total Locations</h4>
-                            <h2 className="text-xl font-semibold">10</h2>
+                        <div className="w-full border-r">
+                            <p className="mt-2 font-bold text-xl">Rp. 4,000,000</p>
+                            <p className="mb-2 text-sm text-slate-500">YTD <br /> Spend</p>
                         </div>
 
-                        <div className="bg-blue-50 px-3 py-3 rounded-full">
-                            <IconBuildingCommunity className="text-2xl text-blue-500"/>
+                        <div className="w-full">
+                            <p className="mt-2 font-bold text-xl">Rp. 1,000,000</p>
+                            <p className="mb-2 text-sm text-slate-500">Outstanding <br /> Bills</p>
                         </div>
-                    </CardContent>
-                </Card>
-            </div>  
+                    </div>
+                </CardContent>
+            </Card>
 
-            {/* Location Actions */}
-            <div className="mt-10">
-                <div className="flex items-center justify-between">
-                    <Input type="text" placeholder="Search by location..." className="my-4 max-w-sm"/>
-                    <CustomerLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} customerId={customerId} />
-                </div>
-            </div>
+            {/* Tabs */}
+            <Tabs defaultValue="locations-and-contacts" className="mt-6">
+                <TabsList>
+                    <TabsTrigger value="locations-and-contacts">Locations & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">10</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">100</span></TabsTrigger>
+                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">20</span></TabsTrigger>
+                </TabsList>
+                <TabsContent value="locations-and-contacts">
+                    <div className="flex flex-row items-center justify-between mb-4">
+                        <p className="text-sm text-slate-500 my-2 flex flex-row">{ data.customerShippers.length } shippers <Dot /> { data.customerShippers.customerLocations === undefined ? "0" : data.customerShippers.customerLocations.length } locations <Dot /> { data.customerShippers.customerLocations === undefined ? "0" : data.customerShippers.customerLocations.customerContacts.length } contacts</p>
+                        <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
+                    </div>
+                    <Accordion type="multiple">
+                        {
+                            data.customerShippers.length === 0 ? <p>No shippers found for this customer ...</p>
+                            :
+                            data.customerShippers.map((shipper: CustomerShipper) => (
+                                <AccordionItem value={shipper.id} key={shipper.id}>
+                                    <AccordionTrigger className="flex flex-row items-center">
+                                        <div className="flex flex-row items-center justify-between w-full">
+                                            <div>
+                                                <h1 className="text-xl font-semibold">{shipper.name}</h1>
+                                                <div className="flex flex-row items-center">
+                                                    {shipper.customerLocations === undefined ? <p>0 locations</p> : <p>{shipper.customerLocations.length} locations</p>} <Dot /> {shipper.customerLocations.length === 0 ? <p>0 contacts</p> : <p>{ shipper.customerLocations.map(loc => loc.customerContacts.length).reduce((a, b) => a + b, 0) } contacts</p>} <Dot /> { shipper.country }
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-row items-center gap-x-2">
+                                                <CustomerShipperForm mode="edit" id={shipper.id} name={shipper.name} phoneNumber={shipper.phoneNumber} country={shipper.country} isActive={shipper.isActive} customerId={data.id} />
+                                                <CustomerLocationForm mode="create" id={undefined} customerId={data.id} shipperId={shipper.id} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        {
+                                            shipper.customerLocations.length === 0 ? <p>No locations found for this shipper ...</p>
+                                            :
+                                            shipper.customerLocations.map((location: CustomerLocation) => (
+                                                <Card key={location.id}>
+                                                    <CardContent>
+                                                        <div className="flex flex-row items-start justify-between">
+                                                            <div>
+                                                                <div className="flex flex-row items-start gap-x-2">
+                                                                    <h2 className="text-lg font-bold">{location.addressLine1}</h2>
+                                                                    <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
+                                                                </div>
+                                                                <div className="text-xs text-slate-500">
+                                                                    <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
+                                                                    <p>Last updated on date by name</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-row items-start gap-x-2">
+                                                                <CustomerLocationForm mode="edit" id={location.id} customerId={data.id} shipperId={shipper.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} />
+                                                                <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
+                                                            </div>
+                                                        </div>
 
-            {/* Location List */}
-            {
-                data.customerLocations.map((location: CustomerLocation) => (
-                    <Accordion key={location.id} type="single" collapsible className="my-4">
-                        <AccordionItem value="location-1">
-                            <AccordionTrigger className="border border-slate-200 px-4 lg:px-6 flex items-center justify-between">
-                                <div className="flex items-center justify-between w-full">
-                                    <div>
-                                        <h3 className="font-semibold text-lg">{location.addressLine1}</h3>
-                                        <p className="text-slate-400 text-sm">{location.city}, {location.province}, {location.country}</p>
-                                    </div>
-                                    <CustomerLocationForm mode="edit" id={location.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} customerId={customerId} />
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="border border-slate-100">
-                                <div className="px-4 lg:px-6 py-4">
-                                    <div className="flex items-center justify-between py-4">
-                                        <h3 className="my-4 font-semibold">ASSOCIATED CONTACTS</h3>
+                                                        <Separator className="mt-4"/>
 
-                                        <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
-                                    </div>
-
-                                    <table className="w-full px-4 lg:px-6 table-auto text-xs">
-                                        <thead className="border-b border-t">
-                                            <tr>
-                                                <th className="text-left font-medium p-2 pl-8">Contact Name</th>
-                                                <th className="text-left font-medium p-2">Phone Number</th>
-                                                <th className="text-left font-medium p-2">Email</th>
-                                                <th className="text-left font-medium p-2 pr-8">Status</th>
-                                                <th className="text-left font-medium p-2 pr-8">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {
-                                                location.customerContacts.map((contact: CustomerContact) => (
-                                                    <tr className="border-b" key={contact.id}>
-                                                        <td className="p-2 pl-8">{contact.contactName}</td>
-                                                        <td className="p-2">{contact.phoneNumber}</td>
-                                                        <td className="p-2">{contact.email}</td>
-                                                        <td className="p-2 pr-8"><p className={clsx("px-3 py-1 w-fit rounded-full border font-semibold", contact.isActive ? "bg-green-100 text-green-500" : "bg-red-100 text-red-500")}>{contact.isActive ? "Active" : "Inactive"}</p></td>
-                                                        <td className="p-2 pr-8">
-                                                            <CustomerContactForm mode="edit" contactName={"Loc A"} phoneNumber={"08123456789"} email={"locationa@example.com"} isActive={true} locationId={location.id} />
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
+                                                        <div>
+                                                            {
+                                                                location.customerContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p>
+                                                                :
+                                                                location.customerContacts.map((contact: CustomerContact) => (        
+                                                                    <div key={contact.id} className="flex flex-row items-center justify-between my-2">
+                                                                        <div className="flex flex-row items-center gap-x-2">
+                                                                            <Avatar>
+                                                                                <AvatarFallback>FL</AvatarFallback>
+                                                                            </Avatar>
+                                                                            <div>
+                                                                                <h2 className="font-semibold text-sm">Contacts</h2>
+                                                                                <p className="text-xs text-slate-500">Email</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-row items-center gap-x-2">
+                                                                            <p className="text-sm text-slate-500">Phone Number</p>
+                                                                            <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                                                            <CustomerContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))
+                                        }
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))
+                        }
                     </Accordion>
-                ))
-            }
+                    {/* <Card>
+                        <CardContent>
+                            <div className="flex flex-row items-start justify-between">
+                                <div>
+                                    <div className="flex flex-row items-start gap-x-2">
+                                        <h2 className="text-lg font-bold">Address Line 1</h2>
+                                        <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                        <p>Address Line 2, Address Line 3, City, Province, Country Postal Code</p>
+                                        <p>Last updated on date by name</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-row items-start gap-x-2">
+                                    <CustomerLocationForm mode="edit" id={data.id} addressLine1={data.addressLine1} addressLine2={data.addressLine2} addressLine3={data.addressLine3} city={data.city} province={data.province} country={data.country} postalCode={data.postalCode} customerId={data.id} />
+                                    <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                </div>
+                            </div>
+                            <Separator className="mt-4"/>
+
+                            <div>
+                                <div className="flex flex-row items-center justify-between my-2">
+                                    <div className="flex flex-row items-center gap-x-2">
+                                        <Avatar>
+                                            <AvatarFallback>FL</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h2 className="font-semibold text-sm">Contacts</h2>
+                                            <p className="text-xs text-slate-500">Email</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-row items-center gap-x-2">
+                                        <p className="text-sm text-slate-500">Phone Number</p>
+                                        <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                        <VendorContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+                        </CardContent>
+                    </Card> */}
+
+                </TabsContent>
+                <TabsContent value="shipment-history">
+                    
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

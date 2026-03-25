@@ -22,16 +22,28 @@ export const customersService = {
         const response = await apiClient.delete(`/customers/${id}`);
         return response;
     },
-    createLocation: async (customerId: string, location: unknown) => {
-        const response = await apiClient.post(`/customers/${customerId}/locations`, location);
+    createShipper: async (customerId: string, shipper: unknown) => {
+        const response = await apiClient.post(`/customers/${customerId}/shippers`, shipper);
         return response;
     },
-    updateLocation: async (customerId: string, locationId: string, location: unknown) => {
-        const response = await apiClient.put(`/customers/${customerId}/locations/${locationId}`, location);
+    updateShipper: async (customerId: string, shipperId: string, shipper: unknown) => {
+        const response = await apiClient.put(`/customers/${customerId}/shippers/${shipperId}`, shipper);
         return response;
     },
-    createContact: async (customerId: string, locationId: string, contact: unknown) => {
-        const response = await apiClient.post(`/customers/${customerId}/locations/${locationId}/contacts`, contact);
+    deleteShipper: async (customerId: string, shipperId: string) => {
+        const response = await apiClient.delete(`/customers/${customerId}/shippers/${shipperId}`);
+        return response;
+    },
+    createLocation: async (customerId: string, shipperId: string, location: unknown) => {
+        const response = await apiClient.post(`/customers/${customerId}/shippers/${shipperId}/locations`, location);
+        return response;
+    },
+    updateLocation: async (customerId: string, shipperId: string, locationId: string, location: unknown) => {
+        const response = await apiClient.put(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}`, location);
+        return response;
+    },
+    createContact: async (customerId: string, shipperId: string, locationId: string, contact: unknown) => {
+        const response = await apiClient.post(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}/contacts`, contact);
         return response;
     },
 }

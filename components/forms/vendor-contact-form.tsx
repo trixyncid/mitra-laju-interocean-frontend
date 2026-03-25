@@ -9,12 +9,14 @@ import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 
 export default function VendorContactForm({
+    id,
     mode,
     contactName,
     phoneNumber,
     email,
     isActive
 }: {
+    id?: string
     mode: "edit" | "create",
     contactName: string | undefined,
     phoneNumber: string | undefined,
