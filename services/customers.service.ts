@@ -42,8 +42,20 @@ export const customersService = {
         const response = await apiClient.put(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}`, location);
         return response;
     },
+    deleteLocation: async (customerId: string, shipperId: string, locationId: string) => {
+        const response = await apiClient.delete(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}`);
+        return response;
+    },
     createContact: async (customerId: string, shipperId: string, locationId: string, contact: unknown) => {
         const response = await apiClient.post(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}/contacts`, contact);
+        return response;
+    },
+    updateContact: async (customerId: string, shipperId: string, locationId: string, contactId: string, contact: unknown) => {
+        const response = await apiClient.put(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}/contacts/${contactId}`, contact);
+        return response;
+    },
+    deleteContact: async (customerId: string, shipperId: string, locationId: string, contactId: string) => {
+        const response = await apiClient.delete(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}/contacts/${contactId}`);
         return response;
     },
 }

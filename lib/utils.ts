@@ -24,3 +24,7 @@ export function formatDate(dateStr: string) {
 
   return `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}`;
 }
+
+export const getInitialContactName = (contactNames: string) => {
+  return contactNames.split(" ").map((contactName: string) => contactName.charAt(0)).join("")
+}

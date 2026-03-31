@@ -1,17 +1,21 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { useCreateCustomerContact, useUpdateCustomerContact, useDeleteCustomerContact } from "@/hooks/use-customers"
+import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { useState } from "react"
 
 export default function CustomerContactForm({
     mode,
     id,
     contactName,
+    customerId,
+    shipperId,
     phoneNumber,
     email,
     isActive,
@@ -20,11 +24,20 @@ export default function CustomerContactForm({
     id?: string
     mode: "edit" | "create",
     contactName: string | undefined,
+    customerId: string,
+    shipperId: string,
     phoneNumber: string | undefined,
     email: string | undefined
     isActive: boolean | undefined
     locationId: string
 }) {
+    const [open, setOpen] = useState(false)
+    const [ deleteOpen, setDeleteOpen ] = useState(false)
+
+    const createCustomerContact = useCreateCustomerContact(customerId, shipperId, locationId)
+    const updateCustomerContact = useUpdateCustomerContact(customerId, shipperId, locationId)
+    const deleteCustomerContact = useDeleteCustomerContact(customerId, shipperId, locationId)
+
     const form = useForm({
         defaultValues: {
             id: id ?? "",
@@ -35,15 +48,27 @@ export default function CustomerContactForm({
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createCustomerContact.mutate({ contact: value }, {
+                    onSuccess: () => {
+                        form.reset()
+                        setOpen(false)
+                    }
+                })
+            } else {
+                updateCustomerContact.mutate({ contactId: id ?? "", contact: value }, {
+                    onSuccess: () => {
+                        form.reset()
+                        setOpen(false)
+                    }
+                })
+            }
         }
     })
 
     return (
-        <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+        <div className="flex flex-row items-center gap-x-2">
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline" size="sm"><IconEdit /></Button>: <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
                 </DialogTrigger>
@@ -136,6 +161,36 @@ export default function CustomerContactForm({
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {
+                mode === "create" ? <></> : 
+                <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete Contact</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription>
+                            Are you sure you want to delete this contact? This action cannot be undone.
+                        </DialogDescription>
+                        <DialogFooter>
+                            <Button variant="destructive" onClick={() => {
+                                deleteCustomerContact.mutate({ contactId: id ?? "" }, {
+                                    onSuccess: () => {
+                                        setDeleteOpen(false)
+                                        form.reset()
+                                    }
+                                })
+                            }}>Delete</Button>
+                            <DialogClose asChild>
+                                <Button variant="secondary">Cancel</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            }
         </div>
     )
 }

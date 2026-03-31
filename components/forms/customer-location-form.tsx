@@ -1,11 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useCreateCustomerLocation, useUpdateCustomerLocation } from "@/hooks/use-customers"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { useCreateCustomerLocation, useUpdateCustomerLocation, useDeleteCustomerLocation } from "@/hooks/use-customers"
+import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 import { useState } from "react"
 
@@ -35,7 +35,9 @@ export default function CustomerLocationForm({
     postalCode: string | undefined
  }) {
     const [open, setOpen] = useState(false)
+    const [ deleteOpen, setDeleteOpen ] = useState(false)
 
+    const deleteCustomerLocation = useDeleteCustomerLocation(customerId)
     const createCustomerLocation = useCreateCustomerLocation(customerId)
     const updateCustomerLocation = useUpdateCustomerLocation(customerId)
 
@@ -97,8 +99,8 @@ export default function CustomerLocationForm({
     })
 
   return (
-    <div>
-            <Dialog open={open} onOpenChange={setOpen}>
+    <div className="flex flex-row items-center gap-x-2">
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button>: <Button variant="outline" size="sm"><IconPlus /> Location</Button>}
             </DialogTrigger>
@@ -252,6 +254,36 @@ export default function CustomerLocationForm({
                 </form>
             </DialogContent>
         </Dialog>
+
+        {
+            mode === "create" ? <></> :
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Location</DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription>
+                        Are you sure you want to delete this location? This action cannot be undone and all contacts will be deleted as well.
+                    </DialogDescription>
+                    <DialogFooter>
+                        <Button variant="destructive" onClick={() => {
+                            deleteCustomerLocation.mutate({ customerId: customerId, shipperId: shipperId, locationId: id ?? "" }, {
+                                onSuccess: () => {
+                                    setDeleteOpen(false)
+                                    form.reset()
+                                }
+                            })
+                        }}>Delete</Button>
+                        <DialogClose asChild>
+                            <Button variant="secondary">Cancel</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog> 
+        }
     </div>
   )
 }

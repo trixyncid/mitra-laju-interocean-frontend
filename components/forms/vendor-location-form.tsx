@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { useCreateVendorLocation, useDeleteVendorLocation, useUpdateVendorLocation } from "@/hooks/use-vendors"
+import { IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { useState } from "react"
+import { toast } from "sonner"
 
 export default function VendorLocationForm({ 
     mode,
@@ -16,7 +19,8 @@ export default function VendorLocationForm({
     city,
     province,
     country,
-    postalCode
+    postalCode,
+    vendorId
  }: {
     mode: "edit" | "create",
     id: string | undefined,
@@ -27,7 +31,14 @@ export default function VendorLocationForm({
     province: string | undefined,
     country: string | undefined,
     postalCode: string | undefined
+    vendorId: string
  }) {
+    const [ open, setOpen ] = useState(false)
+
+    const createVendorLocation = useCreateVendorLocation(vendorId)
+    const updateVendorLocation = useUpdateVendorLocation(vendorId)
+    const deleteVendorLocation = useDeleteVendorLocation(vendorId)
+
     const form = useForm({
         defaultValues: {
             addressLine1: addressLine1 ?? "",
@@ -39,15 +50,53 @@ export default function VendorLocationForm({
             postalCode: postalCode ?? ""
         },
         onSubmit: async ({ value }) => {
-            console.log(value, id)
+            if (mode === "create") {
+                createVendorLocation.mutate({
+                    vendorId: vendorId,
+                    location: {
+                        addressLine1: value.addressLine1,
+                        addressLine2: value.addressLine2,
+                        addressLine3: value.addressLine3,
+                        city: value.city,
+                        province: value.province,
+                        country: value.country,
+                        postalCode: value.postalCode
+                    }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    },
+                    onError: (error) => {
+                        toast.error(error.message)
+                    }
+                })
+            } else {
+                updateVendorLocation.mutate({
+                    vendorId: vendorId,
+                    locationId: id ?? "",
+                    location: {
+                        addressLine1: value.addressLine1,
+                        addressLine2: value.addressLine2,
+                        addressLine3: value.addressLine3,
+                        city: value.city,
+                        province: value.province,
+                        country: value.country,
+                        postalCode: value.postalCode
+                    }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            }
         }
     })
 
   return (
     <div>
-        <Dialog onOpenChange={(open) => {
-            if (!open) form.reset()
-        }}>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button> : <Button variant="outline" size="sm"><IconPlus /> Add Office</Button>}
             </DialogTrigger>
@@ -196,7 +245,7 @@ export default function VendorLocationForm({
                         </form.Field>
                     </div>
                     <DialogFooter>
-                        <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                    <Button type="submit" disabled={ mode === "create" ? createVendorLocation.isPending : false || mode === "edit" ? updateVendorLocation.isPending : false}>{ mode === "edit" ? (updateVendorLocation.isPending ? "Updating..." : "Save Changes") : (createVendorLocation.isPending ? "Creating..." : "Create")}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

@@ -7,7 +7,7 @@ import { IconArrowLeft, IconBrandWhatsapp, IconFerry } from "@tabler/icons-react
 import DetailPageSkeleton from "@/components/detail-page-skeleton"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { formatDate } from "@/lib/utils"
+import { formatDate, getInitialContactName } from "@/lib/utils"
 import { Dot } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
@@ -36,6 +36,8 @@ type VendorLocation = {
     country: string
     postalCode: string
     vendorContacts: VendorContact[]
+    updatedAt: string,
+    updatedBy: { name: string }
 }
 
 export default function CustomerDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
@@ -108,52 +110,63 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                 </TabsList>
                 <TabsContent value="offices-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
-                        <p className="text-sm text-slate-500 my-2 flex flex-row">count offices <Dot /> count contacts</p>
-                        <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                        <p className="text-sm text-slate-500 my-2 flex flex-row">{ data.vendorLocations.length } offices <Dot /> { data.vendorLocations.map((loc: VendorLocation) => loc.vendorContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
+                        <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} vendorId={vendorId} />
                     </div>
-                    <Card>
-                        <CardContent>
-                            <div className="flex flex-row items-start justify-between">
-                                <div>
-                                    <div className="flex flex-row items-start gap-x-2">
-                                        <h2 className="text-lg font-bold">Address Line 1</h2>
-                                        <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
-                                    </div>
-                                    <div className="text-xs text-slate-500">
-                                        <p>Address Line 2, Address Line 3, City, Province, Country Postal Code</p>
-                                        <p>Last updated on date by name</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-row items-start gap-x-2">
-                                    <VendorLocationForm mode="edit" id={data.id} addressLine1={data.addressLine1} addressLine2={data.addressLine2} addressLine3={data.addressLine3} city={data.city} province={data.province} country={data.country} postalCode={data.postalCode} />
-                                    <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
-                                </div>
-                            </div>
 
-                            <Separator className="mt-4"/>
-
-                            <div>
-                                <div className="flex flex-row items-center justify-between my-2">
-                                    <div className="flex flex-row items-center gap-x-2">
-                                        <Avatar>
-                                            <AvatarFallback>FL</AvatarFallback>
-                                        </Avatar>
+                    {
+                        data.vendorLocations.length === 0 ? <p>No locations found for this vendor ...</p> :
+                        data.vendorLocations.map((location: VendorLocation) => (
+                            <Card key={location.id}>
+                                <CardContent>
+                                    <div className="flex flex-row items-start justify-between">
                                         <div>
-                                            <h2 className="font-semibold text-sm">Contacts</h2>
-                                            <p className="text-xs text-slate-500">Email</p>
+                                            <div className="flex flex-row items-start gap-x-2">
+                                                <h2 className="text-lg font-bold">{ location.addressLine1 }</h2>
+                                                <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
+                                            </div>
+                                            <div className="text-xs text-slate-500">
+                                                <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
+                                                <p>Last updated on { formatDate(location.updatedAt) } by { location.updatedBy?.name ?? "Unknown" }</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-row items-start gap-x-2">
+                                            <VendorLocationForm mode="edit" id={data.id} addressLine1={data.addressLine1} addressLine2={data.addressLine2} addressLine3={data.addressLine3} city={data.city} province={data.province} country={data.country} postalCode={data.postalCode} vendorId={vendorId} />
+                                            <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
                                         </div>
                                     </div>
-                                    <div className="flex flex-row items-center gap-x-2">
-                                        <p className="text-sm text-slate-500">Phone Number</p>
-                                        <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
-                                        <VendorContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
-                                    </div>
-                                </div>
 
-                                <Separator />
-                            </div>
-                        </CardContent>
-                    </Card>
+                                    <Separator className="mt-4"/>
+
+                                    {
+                                        location.vendorContacts.length === 0 ? <p>No contacts found for this location ...</p> :
+                                        location.vendorContacts.map((contact: VendorContact) => (        
+                                            <div key={contact.id}>
+                                                <div className="flex flex-row items-center justify-between my-2">
+                                                    <div className="flex flex-row items-center gap-x-2">
+                                                        <Avatar>
+                                                            <AvatarFallback>{ getInitialContactName(contact.contactName) }</AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <h2 className="font-semibold text-sm">{ contact.contactName }</h2>
+                                                            <p className="text-xs text-slate-500">{ contact.email === "" ? "No email provided" : contact.email }</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-row items-center gap-x-2">
+                                                        <p className="text-sm text-slate-500">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
+                                                        <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                                        <VendorContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                                    </div>
+                                                </div>
+
+                                                <Separator className="my-3" />
+                                            </div>
+                                        ))
+                                    }
+                                </CardContent>
+                            </Card>
+                        ))
+                    }
                 </TabsContent>
                 <TabsContent value="shipment-history">
                     <ShipmentHistoryPage />

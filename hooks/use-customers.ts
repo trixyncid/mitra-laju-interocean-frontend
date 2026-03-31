@@ -133,6 +133,17 @@ export const useUpdateCustomerLocation = (customerId: string) => {
     })
 }
 
+export const useDeleteCustomerLocation = (customerId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ customerId, shipperId, locationId }: { customerId: string, shipperId: string, locationId: string }) => customersService.deleteLocation(customerId, shipperId, locationId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+            toast.success("Customer location deleted successfully");
+        },
+    })
+}
+
 // Customer Contacts
 export const useCreateCustomerContact = (customerId: string, shipperId: string, locationId: string) => {
     const queryClient = useQueryClient();
@@ -140,11 +151,33 @@ export const useCreateCustomerContact = (customerId: string, shipperId: string, 
     return useMutation({
         mutationFn: ({ contact }: { contact: unknown }) => customersService.createContact(customerId, shipperId, locationId, contact),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["customers", customerId, shipperId] });
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
             toast.success("Customer contact created successfully");
         },
         onError: (error: Error) => {
             toast.error(error.message);
+        },
+    })
+}
+
+export const useUpdateCustomerContact = (customerId: string, shipperId: string, locationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ contactId, contact }: { contactId: string, contact: unknown }) => customersService.updateContact(customerId, shipperId, locationId, contactId, contact),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+            toast.success("Customer contact updated successfully");
+        },
+    })
+}
+
+export const useDeleteCustomerContact = (customerId: string, shipperId: string, locationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ contactId }: { contactId: string }) => customersService.deleteContact(customerId, shipperId, locationId, contactId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+            toast.success("Customer contact deleted successfully");
         },
     })
 }

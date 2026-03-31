@@ -11,7 +11,7 @@ import Link from "next/link"
 import { Dot } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
-import { formatDate } from "@/lib/utils"
+import { formatDate, getInitialContactName } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import CustomerLocationForm from "@/components/forms/customer-location-form"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -37,6 +37,8 @@ type CustomerLocation = {
     country: string
     postalCode: string
     customerContacts: CustomerContact[]
+    updatedAt: string,
+    updatedBy: { name: string }
 }
 
 type CustomerShipper = {
@@ -59,7 +61,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
 
     if (isLoading) return <DetailPageSkeleton />
-    
+
     return (
         <div className="px-4 lg:px-6">
             <div className="mb-5">
@@ -127,20 +129,22 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             data.customerShippers.map((shipper: CustomerShipper) => (
                                 <AccordionItem value={shipper.id} key={shipper.id}>
                                     <AccordionTrigger className="flex flex-row items-center">
-                                        <div className="flex flex-row items-center justify-between w-full">
-                                            <div>
-                                                <h1 className="text-xl font-semibold">{shipper.name}</h1>
-                                                <div className="flex flex-row items-center">
-                                                    {shipper.customerLocations === undefined ? <p>0 locations</p> : <p>{shipper.customerLocations.length} locations</p>} <Dot /> {shipper.customerLocations.length === 0 ? <p>0 contacts</p> : <p>{ shipper.customerLocations.map(loc => loc.customerContacts.length).reduce((a, b) => a + b, 0) } contacts</p>} <Dot /> { shipper.country }
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-row items-center gap-x-2">
-                                                <CustomerShipperForm mode="edit" id={shipper.id} name={shipper.name} phoneNumber={shipper.phoneNumber} country={shipper.country} isActive={shipper.isActive} customerId={data.id} />
-                                                <CustomerLocationForm mode="create" id={undefined} customerId={data.id} shipperId={shipper.id} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                                        <div>
+                                            <h1 className="text-xl font-semibold">{shipper.name}</h1>
+                                            <div className="flex flex-row items-center">
+                                                { shipper.country }
                                             </div>
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <p className="text-sm text-slate-500 flex flex-row">{ shipper.customerLocations.length } locations <Dot /> { shipper.customerLocations.map((location: CustomerLocation) => location.customerContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
+                                            
+                                            <div className="flex items-center gap-x-2">
+                                                <CustomerShipperForm mode="edit" id={shipper.id} name={shipper.name} phoneNumber={shipper.phoneNumber} country={shipper.country} isActive={shipper.isActive} customerId={data.id} />
+                                                <CustomerLocationForm mode="create" id={undefined} customerId={data.id} shipperId={shipper.id} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                                            </div>
+                                        </div>
                                         {
                                             shipper.customerLocations.length === 0 ? <p>No locations found for this shipper ...</p>
                                             :
@@ -155,12 +159,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                                 </div>
                                                                 <div className="text-xs text-slate-500">
                                                                     <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
-                                                                    <p>Last updated on date by name</p>
+                                                                    <p>Last updated on { formatDate(location.updatedAt) } by { location.updatedBy.name }</p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex flex-row items-start gap-x-2">
+                                                            <div className="flex flex-row items-center gap-x-2">
                                                                 <CustomerLocationForm mode="edit" id={location.id} customerId={data.id} shipperId={shipper.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} />
-                                                                <CustomerContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
+                                                                <CustomerContactForm mode="create" contactName={undefined} customerId={data.id} shipperId={shipper.id} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
                                                             </div>
                                                         </div>
 
@@ -170,23 +174,27 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                             {
                                                                 location.customerContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p>
                                                                 :
-                                                                location.customerContacts.map((contact: CustomerContact) => (        
-                                                                    <div key={contact.id} className="flex flex-row items-center justify-between my-2">
-                                                                        <div className="flex flex-row items-center gap-x-2">
-                                                                            <Avatar>
-                                                                                <AvatarFallback>FL</AvatarFallback>
-                                                                            </Avatar>
-                                                                            <div>
-                                                                                <h2 className="font-semibold text-sm">Contacts</h2>
-                                                                                <p className="text-xs text-slate-500">Email</p>
+                                                                location.customerContacts.map((contact: CustomerContact) => (    
+                                                                    <div key={contact.id}>
+                                                                        <div className="flex flex-row items-center justify-between my-2">
+                                                                            <div className="flex flex-row items-center gap-x-2">
+                                                                                <Avatar>
+                                                                                    <AvatarFallback>{ getInitialContactName(contact.contactName) }</AvatarFallback>
+                                                                                </Avatar>
+                                                                                <div>
+                                                                                    <h2 className="font-semibold text-sm">{ contact.contactName }</h2>
+                                                                                    <p className="text-xs text-slate-500">{ contact.email === "" ? "No email provided" : contact.email }</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex flex-row items-center gap-x-2">
+                                                                                <p className="text-sm text-slate-500">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
+                                                                                <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                                                                <CustomerContactForm mode="edit" id={contact.id} contactName={contact.contactName} customerId={data.id} shipperId={shipper.id} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} locationId={location.id} />
                                                                             </div>
                                                                         </div>
-                                                                        <div className="flex flex-row items-center gap-x-2">
-                                                                            <p className="text-sm text-slate-500">Phone Number</p>
-                                                                            <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
-                                                                            <CustomerContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
-                                                                        </div>
-                                                                    </div>
+                                                                        
+                                                                        <Separator className="my-3" />
+                                                                    </div>    
                                                                 ))
                                                             }
                                                         </div>
