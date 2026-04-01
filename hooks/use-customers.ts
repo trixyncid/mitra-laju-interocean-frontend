@@ -181,3 +181,11 @@ export const useDeleteCustomerContact = (customerId: string, shipperId: string, 
         },
     })
 }
+
+export const useGetShippersByCustomerCodeId = (customerId: string) => {
+    return useQuery({
+        queryKey: ["customers", customerId, "shippers"],
+        queryFn: () => customersService.getShippersByCustomerCodeId(customerId),
+        enabled: !!customerId,
+    })
+}

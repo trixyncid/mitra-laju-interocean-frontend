@@ -188,7 +188,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                                             </div>
                                                                             <div className="flex flex-row items-center gap-x-2">
                                                                                 <p className="text-sm text-slate-500">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
-                                                                                <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp /></Link></Button>
+                                                                                <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
                                                                                 <CustomerContactForm mode="edit" id={contact.id} contactName={contact.contactName} customerId={data.id} shipperId={shipper.id} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} locationId={location.id} />
                                                                             </div>
                                                                         </div>
@@ -207,49 +207,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             ))
                         }
                     </Accordion>
-                    {/* <Card>
-                        <CardContent>
-                            <div className="flex flex-row items-start justify-between">
-                                <div>
-                                    <div className="flex flex-row items-start gap-x-2">
-                                        <h2 className="text-lg font-bold">Address Line 1</h2>
-                                        <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
-                                    </div>
-                                    <div className="text-xs text-slate-500">
-                                        <p>Address Line 2, Address Line 3, City, Province, Country Postal Code</p>
-                                        <p>Last updated on date by name</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-row items-start gap-x-2">
-                                    <CustomerLocationForm mode="edit" id={data.id} addressLine1={data.addressLine1} addressLine2={data.addressLine2} addressLine3={data.addressLine3} city={data.city} province={data.province} country={data.country} postalCode={data.postalCode} customerId={data.id} />
-                                    <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
-                                </div>
-                            </div>
-                            <Separator className="mt-4"/>
-
-                            <div>
-                                <div className="flex flex-row items-center justify-between my-2">
-                                    <div className="flex flex-row items-center gap-x-2">
-                                        <Avatar>
-                                            <AvatarFallback>FL</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <h2 className="font-semibold text-sm">Contacts</h2>
-                                            <p className="text-xs text-slate-500">Email</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-row items-center gap-x-2">
-                                        <p className="text-sm text-slate-500">Phone Number</p>
-                                        <Button variant="outline" size="icon" asChild><Link href={'#'} target="_blank"><IconBrandWhatsapp /></Link></Button>
-                                        <VendorContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-                        </CardContent>
-                    </Card> */}
-
                 </TabsContent>
                 <TabsContent value="shipment-history">
                     

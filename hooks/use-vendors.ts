@@ -97,11 +97,11 @@ export const useDeleteVendorLocation = (vendorId: string) => {
     })
 }
 
-export const useCreateVendorLocationContact = (vendorId: string, locationId: string) => {
+export const useCreateVendorContact = (vendorId: string) => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (contact: unknown) => vendorsService.createContact(vendorId, locationId, contact),
+        mutationFn: ({ vendorId, locationId, contact }: { vendorId: string, locationId: string, contact: unknown }) => vendorsService.createContact(vendorId, locationId, contact),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["vendors", vendorId] })
             toast.success("Vendor location contact created successfully")
@@ -109,11 +109,11 @@ export const useCreateVendorLocationContact = (vendorId: string, locationId: str
     })
 }
 
-export const useUpdateVendorLocationContact = (vendorId: string, locationId: string) => {
+export const useUpdateVendorContact = (vendorId: string) => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (contactId: string, contact: unknown) => vendorsService.updateContact(vendorId, locationId, contactId, contact),
+        mutationFn: ({ vendorId, locationId, contactId, contact }: { vendorId: string, locationId: string, contactId: string, contact: unknown }) => vendorsService.updateContact(vendorId, locationId, contactId, contact),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["vendors", vendorId] })
             toast.success("Vendor location contact updated successfully")
@@ -121,11 +121,11 @@ export const useUpdateVendorLocationContact = (vendorId: string, locationId: str
     })
 }
 
-export const useDeleteVendorLocationContact = (vendorId: string, locationId: string) => {
+export const useDeleteVendorContact = (vendorId: string) => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (contactId: string) => vendorsService.deleteContact(vendorId, locationId, contactId),
+        mutationFn: ({ vendorId, locationId, contactId }: { vendorId: string, locationId: string, contactId: string }) => vendorsService.deleteContact(vendorId, locationId, contactId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["vendors", vendorId] })
             toast.success("Vendor location contact deleted successfully")

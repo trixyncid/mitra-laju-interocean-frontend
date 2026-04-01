@@ -46,3 +46,15 @@ export const useUpdateShipment = () => {
         },
     });
 }
+
+export const useDeleteShipment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: shipmentsService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
+            toast.success("Shipment deleted successfully");
+        },
+    });
+}

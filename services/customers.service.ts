@@ -58,4 +58,8 @@ export const customersService = {
         const response = await apiClient.delete(`/customers/${customerId}/shippers/${shipperId}/locations/${locationId}/contacts/${contactId}`);
         return response;
     },
+    getShippersByCustomerCodeId: async (customerId: string) => {
+        const response = await apiClient.get(`/customers/${customerId}/shippers`);
+        return response;
+    }
 }

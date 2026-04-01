@@ -1,12 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { useCreateVendorContact, useDeleteVendorContact, useUpdateVendorContact } from "@/hooks/use-vendors"
+import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
+import { useState } from "react"
+import { toast } from "sonner"
 
 export default function VendorContactForm({
     id,
@@ -14,15 +17,26 @@ export default function VendorContactForm({
     contactName,
     phoneNumber,
     email,
-    isActive
+    isActive,
+    vendorId,
+    locationId
 }: {
     id?: string
     mode: "edit" | "create",
     contactName: string | undefined,
     phoneNumber: string | undefined,
-    email: string | undefined
+    email: string | undefined,
     isActive: boolean | undefined
+    vendorId: string,
+    locationId: string
 }) {
+    const [ open, setOpen ] = useState(false)
+    const [ deleteOpen, setDeleteOpen ] = useState(false)
+
+    const createVendorContact = useCreateVendorContact(vendorId)
+    const updateVendorContact = useUpdateVendorContact(vendorId)
+    const deleteVendorContact = useDeleteVendorContact(vendorId)
+
     const form = useForm({
         defaultValues: {
             contactName: contactName ?? "",
@@ -31,17 +45,53 @@ export default function VendorContactForm({
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createVendorContact.mutate({
+                    vendorId: vendorId,
+                    locationId: locationId,
+                    contact: {
+                        contactName: value.contactName,
+                        phoneNumber: value.phoneNumber,
+                        email: value.email,
+                    }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    },
+                    onError: (error) => {
+                        toast.error(error.message)
+                    }
+                })
+            } else {
+                updateVendorContact.mutate({
+                    vendorId: vendorId,
+                    locationId: locationId,
+                    contactId: id ?? "",
+                    contact: {
+                        contactName: value.contactName,
+                        phoneNumber: value.phoneNumber,
+                        email: value.email,
+                        isActive: value.isActive,
+                    }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    },
+                    onError: (error) => {
+                        toast.error(error.message)
+                    }
+                })
+            }
         }
     })
 
     return (
-        <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+        <div className="flex flex-row items-center gap-x-2">
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="sm"><IconEdit /></Button> : <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
+                    { mode === "edit" ? <Button variant="outline" size="icon"><IconEdit /></Button> : <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -127,11 +177,44 @@ export default function VendorContactForm({
                             </form.Field> : null}
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={ mode === "create" ? createVendorContact.isPending : false || mode === "edit" ? updateVendorContact.isPending : false}>{ mode === "edit" ? (updateVendorContact.isPending ? "Updating..." : "Save Changes") : (createVendorContact.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {
+                mode === "create" ? <></>
+                :
+                <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete Vendor Contact</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete this vendor contact? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="destructive" onClick={() => {
+                                deleteVendorContact.mutate({ vendorId: vendorId, locationId: locationId, contactId: id ?? "" }, {
+                                    onSuccess: () => {
+                                        setDeleteOpen(false)
+                                    },
+                                    onError: (error) => {
+                                        toast.error(error.message)
+                                    }
+                                })
+                            }}>Delete</Button>
+                            <DialogClose asChild>
+                                <Button variant="secondary">Cancel</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            }
         </div>
     )
 }

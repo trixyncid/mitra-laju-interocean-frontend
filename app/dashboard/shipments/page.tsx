@@ -1,17 +1,32 @@
 "use client"
 
 import { DataTable } from "./data-table";
-import { columns } from "./columns";
+import { columns, Shipment } from "./columns";
 import ShipmentForm from "@/components/forms/shipment-form";
 import { useShipments } from "@/hooks/use-shipments";
 
 export default function ShipmentPage() {
     const { data, isLoading, error } = useShipments()
 
-    console.log(data)
-
     if (error) return <div>Error: {error.message}</div>
 
+    console.log(data)
+
+    /**
+     * Function to assign order numbers to shipments: Order number is in the format of <count>/<month in romans>/<year>.
+     * The count is the number of shipments for the month and year.
+     * The month is in romans.
+     * The year is the current year.
+     */
+    const orderNumberAssignment = (data: Shipment[]) => {
+        const monthInRomans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+
+        const month = new Date().getMonth() + 1
+        const year = new Date().getFullYear()
+        const count = data?.filter((shipment: Shipment) => shipment.orderNumber.split("/")[2] === year.toString() && shipment.orderNumber.split("/")[1] === monthInRomans[month - 1].toString()).length + 1
+        return `${count}/${monthInRomans[month - 1]}/${year}`
+    }
+    
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
@@ -21,7 +36,7 @@ export default function ShipmentPage() {
                     <p>Count active shipments</p>
                 </div>
 
-                <ShipmentForm mode="create" orderNumber={undefined} customerCode={undefined} customerShipper={undefined} />
+                <ShipmentForm mode="create" id={undefined} orderNumber={orderNumberAssignment(data)} customerCodeId={undefined} customerShipperId={undefined} />
             </div>
 
             {/* Table */}

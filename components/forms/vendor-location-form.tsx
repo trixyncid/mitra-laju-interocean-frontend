@@ -1,11 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCreateVendorLocation, useDeleteVendorLocation, useUpdateVendorLocation } from "@/hooks/use-vendors"
-import { IconPlus } from "@tabler/icons-react"
+import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -34,6 +34,7 @@ export default function VendorLocationForm({
     vendorId: string
  }) {
     const [ open, setOpen ] = useState(false)
+    const [ deleteOpen, setDeleteOpen ] = useState(false)
 
     const createVendorLocation = useCreateVendorLocation(vendorId)
     const updateVendorLocation = useUpdateVendorLocation(vendorId)
@@ -88,6 +89,9 @@ export default function VendorLocationForm({
                     onSuccess: () => {
                         setOpen(false)
                         form.reset()
+                    },
+                    onError: (error) => {
+                        toast.error(error.message)
                     }
                 })
             }
@@ -95,7 +99,7 @@ export default function VendorLocationForm({
     })
 
   return (
-    <div>
+    <div className="flex flex-row items-center gap-x-2">
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button> : <Button variant="outline" size="sm"><IconPlus /> Add Office</Button>}
@@ -250,6 +254,39 @@ export default function VendorLocationForm({
                 </form>
             </DialogContent>
         </Dialog>
+
+        {
+            mode === "create" ? <></>
+            :
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Vendor Location</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this vendor location? This action cannot be undone and all associated contacts will also be deleted.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="destructive" onClick={() => {
+                            deleteVendorLocation.mutate({ vendorId: vendorId, locationId: id ?? "" }, {
+                                onSuccess: () => {
+                                    setDeleteOpen(false)
+                                },
+                                onError: (error) => {
+                                    toast.error(error.message)
+                                }
+                            })
+                        }}>Delete</Button>
+                        <DialogClose asChild>
+                            <Button variant="secondary">Cancel</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        }
     </div>
   )
 }

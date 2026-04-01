@@ -1,40 +1,96 @@
 "use client"
 
+import { Customer } from "@/app/dashboard/customers/columns";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { IconEdit, IconPlus } from "@tabler/icons-react";
+import { useCustomers, useGetShippersByCustomerCodeId } from "@/hooks/use-customers";
+import { useCreateShipment, useUpdateShipment } from "@/hooks/use-shipments";
+import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { Pencil } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+export type Shipper = {
+    id: string,
+    name: string,
+}
 
 export default function ShipmentForm({
+    id,
     mode,
     orderNumber,
-    customerCode,
-    customerShipper
+    customerCodeId,
+    customerShipperId
 }: {
+    id: string | undefined,
     mode: "edit" | "create",
     orderNumber: string | undefined,
-    customerCode: string | undefined,
-    customerShipper: string | undefined
+    customerCodeId: string | undefined,
+    customerShipperId: string | undefined
 }) {
+    const createShipment = useCreateShipment()
+    const updateShipment = useUpdateShipment()
+
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
             orderNumber: orderNumber ?? "",
-            customerCode: customerCode ?? "",
-            customerShipper: customerShipper ?? "",
+            customerCodeId: customerCodeId ?? "",
+            customerShipperId: customerShipperId ?? "-",
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                console.log(value)
+
+                createShipment.mutate({
+                    orderNumber: value.orderNumber,
+                    customerCodeId: value.customerCodeId,
+                    customerShipperId: value.customerShipperId,
+                    isActive: true,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    },
+                    onError: (error: Error) => {
+                        toast.error(error.message)
+                    }
+                })
+            } else {
+                updateShipment.mutate({
+                    id: value.id,
+                    shipment: {
+                        orderNumber: value.orderNumber,
+                        customerCodeId: value.customerCodeId,
+                        customerShipperId: value.customerShipperId,
+                        isActive: true,
+                    }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    },
+                    onError: (error: Error) => {
+                        toast.error(error.message)
+                    }
+                })
+            }
         }
     })
+
+    const [ open, setOpen ] = useState(false)
+    const [ selectedCustomerCode, setSelectedCustomerCode ] = useState<string | undefined>(customerCodeId ?? "")
+
+    const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers()
+    const { data: shippers, isLoading: shippersLoading, error: shippersError } = useGetShippersByCustomerCodeId(selectedCustomerCode ?? "")
+    
     return (
         <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>    
+            <Dialog open={open} onOpenChange={setOpen}>    
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Shipment</Button>}
                 </DialogTrigger>
@@ -60,12 +116,12 @@ export default function ShipmentForm({
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Order Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} disabled={true} />
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
-                                name="customerCode"
+                                name="customerCodeId"
                                 validators={{
                                     onChange: ({ value }) =>
                                         !value ? "Customer Code is required" : undefined,
@@ -76,13 +132,29 @@ export default function ShipmentForm({
                                         <Label htmlFor={field.name} className="my-2">Customer Code</Label>
                                         <Select
                                             value={field.state.value}
-                                            onValueChange={field.handleChange}
+                                            onValueChange={(value) => {
+                                                field.handleChange(value)
+                                                setSelectedCustomerCode(value)
+                                            }}
                                         >
                                             <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select customer code" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="value">Apple</SelectItem>
+                                                {
+                                                    customersLoading ?
+                                                        <SelectItem value="value" disabled>Loading...</SelectItem>
+                                                    :
+                                                    customersError ?
+                                                        toast.error(customersError.message)
+                                                    :
+                                                    customers?.length === 0 ?
+                                                        <SelectItem value="value" disabled>No customers found</SelectItem>
+                                                    :
+                                                    customers?.map((customer: Customer) => (
+                                                        <SelectItem key={customer.id} value={customer?.id ?? ""}>{customer?.customerCode} ({ customer?.customerName })</SelectItem>
+                                                    ))
+                                                }
                                             </SelectContent>
                                         </Select>
                                         {field.state.meta.errors ? (
@@ -92,10 +164,10 @@ export default function ShipmentForm({
                                 )}
                             </form.Field>
                             <form.Field
-                                name="customerShipper"
+                                name="customerShipperId"
                                 validators={{
                                     onChange: ({ value }) =>
-                                        !value ? "Customer Shipper is required" : undefined,
+                                        value === "-" ? "Customer Shipper is required" : undefined,
                                 }}
                             >
                                 {( field ) => (
@@ -106,10 +178,23 @@ export default function ShipmentForm({
                                             onValueChange={field.handleChange}
                                         >
                                             <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select customer shipper" />
+                                                <SelectValue placeholder="Select customer code to enable shipper selection" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="value">Apple</SelectItem>
+                                                {
+                                                    shippersLoading ?
+                                                        <SelectItem value="value" disabled>Loading...</SelectItem>
+                                                    :
+                                                    shippersError ?
+                                                        toast.error(shippersError.message)
+                                                    :
+                                                    shippers?.length === 0 ?
+                                                        <SelectItem value="-">No shippers found for this customer code</SelectItem>
+                                                    :
+                                                    shippers?.map((shipper: Shipper) => (
+                                                        <SelectItem key={shipper.id} value={shipper?.id ?? ""}>{shipper?.name}</SelectItem>
+                                                    ))
+                                                }
                                             </SelectContent>
                                         </Select>
                                         {field.state.meta.errors ? (
@@ -120,12 +205,11 @@ export default function ShipmentForm({
                             </form.Field>
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={createShipment.isPending || updateShipment.isPending}>{ mode === "edit" ? (updateShipment.isPending ? "Updating..." : "Save Changes") : (createShipment.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
-                </DialogContent>
-                    
-                </Dialog>
+                </DialogContent>        
+            </Dialog>
         </div>
     )
 }

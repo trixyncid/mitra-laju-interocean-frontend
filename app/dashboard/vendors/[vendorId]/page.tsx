@@ -131,8 +131,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                             </div>
                                         </div>
                                         <div className="flex flex-row items-start gap-x-2">
-                                            <VendorLocationForm mode="edit" id={data.id} addressLine1={data.addressLine1} addressLine2={data.addressLine2} addressLine3={data.addressLine3} city={data.city} province={data.province} country={data.country} postalCode={data.postalCode} vendorId={vendorId} />
-                                            <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                            <VendorLocationForm mode="edit" id={location.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} vendorId={vendorId} />
+                                            <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} vendorId={vendorId} locationId={location.id} />
                                         </div>
                                     </div>
 
@@ -154,8 +154,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                                     </div>
                                                     <div className="flex flex-row items-center gap-x-2">
                                                         <p className="text-sm text-slate-500">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
-                                                        <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp /></Link></Button>
-                                                        <VendorContactForm mode="edit" id={data.id} contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} />
+                                                        <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
+                                                        <VendorContactForm mode="edit" id={contact.id} contactName={contact.contactName} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} vendorId={vendorId} locationId={location.id} />
                                                     </div>
                                                 </div>
 
