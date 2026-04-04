@@ -18,6 +18,10 @@ export const customersService = {
         const response = await apiClient.get(`/customers/${id}`);
         return response;
     },
+    getLocationsByCustomerId: async (customerId: string) => {
+        const response = await apiClient.get(`/customers/${customerId}/locations`);
+        return response;
+    },
     delete: async (id: string) => {
         const response = await apiClient.delete(`/customers/${id}`);
         return response;

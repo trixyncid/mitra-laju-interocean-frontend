@@ -149,7 +149,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                             shipper.customerLocations.length === 0 ? <p>No locations found for this shipper ...</p>
                                             :
                                             shipper.customerLocations.map((location: CustomerLocation) => (
-                                                <Card key={location.id}>
+                                                <Card key={location.id} className="my-4">
                                                     <CardContent>
                                                         <div className="flex flex-row items-start justify-between">
                                                             <div>

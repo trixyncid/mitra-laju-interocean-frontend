@@ -144,6 +144,13 @@ export const useDeleteCustomerLocation = (customerId: string) => {
     })
 }
 
+export const useGetLocationsByCustomerId = (customerId: string) => {
+    return useQuery({
+        queryKey: ["customers", customerId, "locations"],
+        queryFn: () => customersService.getLocationsByCustomerId(customerId),
+    })
+}
+
 // Customer Contacts
 export const useCreateCustomerContact = (customerId: string, shipperId: string, locationId: string) => {
     const queryClient = useQueryClient();
