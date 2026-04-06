@@ -1,41 +1,83 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { IconEdit, IconPlus } from "@tabler/icons-react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Switch } from "../ui/switch";
+import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "../ui/select";
+import { useState } from "react";
+import { useCreateShipmentOperationalContainer, useDeleteShipmentOperationalContainer, useUpdateShipmentOperationalContainer } from "@/hooks/use-shipments";
 
 export default function ShipmentContainerForm({
     mode,
     containerNumber,
     sealNumber,
-    isActive
+    size,
+    shipmentOperationalId,
+    shipmentId,
+    id
 }: {
     mode: "edit" | "create",
     containerNumber: string | undefined,
     sealNumber: string | undefined,
-    isActive: boolean | undefined
+    size: string | undefined,
+    shipmentOperationalId?: string | undefined,
+    shipmentId?: string | undefined,
+    id?: string | undefined,
 }) {
+    const [ open, setOpen ] = useState(false)
+    const [ openDelete, setOpenDelete ] = useState(false)
+
+    const createShipmentOperationalContainer = useCreateShipmentOperationalContainer(shipmentId ?? "")
+    const updateShipmentOperationalContainer = useUpdateShipmentOperationalContainer(shipmentId ?? "")
+    const deleteShipmentOperationalContainer = useDeleteShipmentOperationalContainer(shipmentId ?? "")
 
     const form = useForm({
         defaultValues: {
+            id: id ?? "",
+            shipmentOperationalId: shipmentOperationalId ?? "",
+            shipmentId: shipmentId ?? "",
             containerNumber: containerNumber ?? "",
             sealNumber: sealNumber ?? "",
-            isActive: isActive ?? true,
+            size: size ?? "",
         },
         onSubmit: ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createShipmentOperationalContainer.mutate({
+                    shipmentId: shipmentId ?? "",
+                    shipmentOperationalId: shipmentOperationalId ?? "",
+                    shipmentOperationalContainer: value,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            } else {
+                updateShipmentOperationalContainer.mutate({
+                    shipmentId: shipmentId ?? "",
+                    shipmentOperationalId: shipmentOperationalId ?? "",
+                    id: id ?? "",
+                    shipmentOperationalContainer: {
+                        containerNumber: value.containerNumber,
+                        sealNumber: value.sealNumber,
+                        size: value.size,
+                    },
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            }
         }
     })
 
     return (
-        <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+        <div className="flex items-center gap-x-2">
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <IconEdit /> : <><IconPlus /> Add Container</>}</Button>
+                    { mode === "edit" ? <Button variant="outline" size="icon"><IconPencil /></Button> : <Button variant="outline"><IconPlus /> Container</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -85,21 +127,64 @@ export default function ShipmentContainerForm({
                                     </div>
                                 )}
                             </form.Field>
-                            { mode === "edit" ? <form.Field name="isActive">
+                            <form.Field name="size" validators={{ onChange: ({ value }) => !value ? "Container Size is required" : undefined }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                        <Label htmlFor={field.name} className="my-2">Container Size</Label>
+                                        <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select a container size" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="RF_20">20 RF</SelectItem>  
+                                                <SelectItem value="RF_40">40 RF</SelectItem>
+                                                <SelectItem value="DRY_20">20 DRY</SelectItem>
+                                                <SelectItem value="DRY_40">40 DRY</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {
+                                            field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            ) : null
+                                        }
                                     </div>
                                 )}
-                            </form.Field> : null}
+                            </form.Field>
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                        <Button type="submit" disabled={ mode === "create" ? createShipmentOperationalContainer.isPending : false || mode === "edit" ? updateShipmentOperationalContainer.isPending : false}>{ mode === "edit" ? (updateShipmentOperationalContainer.isPending ? "Updating..." : "Save Changes") : (createShipmentOperationalContainer.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
+            { mode === "edit" ? (
+                <Dialog open={openDelete} onOpenChange={setOpenDelete}>
+                    <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete Shipment Container</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription>
+                            Are you sure you want to delete this shipment container? This action cannot be undone.
+                        </DialogDescription>
+                        <DialogFooter>
+                            <Button variant="destructive" onClick={() => {
+                                deleteShipmentOperationalContainer.mutate({
+                                    shipmentId: shipmentId ?? "",
+                                    shipmentOperationalId: shipmentOperationalId ?? "",
+                                    id: id ?? "",
+                                })
+                            }}>Delete</Button>
+                            <DialogClose asChild>
+                                <Button variant="secondary">Cancel</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            ) : null}
         </div>
     )
 }

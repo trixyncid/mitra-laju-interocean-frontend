@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
-import { IconArrowRight } from "@tabler/icons-react"
+import { IconArrowDown, IconArrowRight } from "@tabler/icons-react"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { Dot, Info } from "lucide-react"
@@ -16,7 +16,7 @@ export type Shipment = {
     orderNumber: string
     customerCode?: { customerName: string, customerCode: string }
     customerShipper?: { name: string }
-    shipmentOperational?: { portDeparture: { portName: string }, portDestination: { portName: string }}
+    shipmentOperational?: { portDeparture: { portCountry: string }, portDestination: { portCountry: string }}
     isActive: boolean
     updatedBy?: string
     updatedAt?: string
@@ -55,7 +55,7 @@ export const columns: ColumnDef<Shipment>[] = [
                 <div>
                     {
                         row.original.shipmentOperational === null ? <div className="bg-orange-50 text-orange-500 px-3 rounded-full w-fit">Unavailable</div> :
-                        <div className="text-sm text-slate-500">{ row.original.shipmentOperational?.portDeparture?.portName } <IconArrowRight className="w-4 h-4" /> { row.original.shipmentOperational?.portDestination?.portName }</div>
+                        <div className="text-sm text-slate-500">{ row.original.shipmentOperational?.portDeparture?.portCountry as string } <IconArrowDown className="w-4 h-4" /> { row.original.shipmentOperational?.portDestination?.portCountry as string }</div>
                     }
                 </div>
             )

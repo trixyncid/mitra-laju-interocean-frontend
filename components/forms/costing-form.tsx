@@ -7,38 +7,49 @@ import { IconEdit, IconPlus } from "@tabler/icons-react"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { useState } from "react"
+import { useGetShipmentOperationalContainers } from "@/hooks/use-shipments"
+import { useVendors } from "@/hooks/use-vendors"
+import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
+import { Vendor } from "@/app/dashboard/vendors/columns"
+
 
 export default function CostingForm({
     mode,
     description,
     price,
     currency,
-    containerNumber,
+    containerId,
     vat,
     pph23,
     vendorInvoiceNumber,
-    vendorName,
+    vendorId,
 }: {
     mode: "edit" | "create"
     description: string | undefined,
     price: number | undefined,
     currency: number | undefined,
-    containerNumber: string | undefined,
+    containerId: string | undefined,
     vat: number | undefined,
     pph23: number | undefined,
     vendorInvoiceNumber: string | undefined,
-    vendorName: string | undefined,
+    vendorId: string | undefined,
 }) {
+    const [ open, setOpen ] = useState(false)
+
+    const { data: shipmentOperationalContainers, isLoading: isLoadingShipmentOperationalContainers, error: errorShipmentOperationalContainers } = useGetShipmentOperationalContainers()
+    const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors()
+
     const form = useForm({
         defaultValues: {
             description: description ?? "",
             price: price ?? "",
             currency: currency ?? "",
-            containerNumber: containerNumber ?? "",
-            vat: vat ?? 0,
-            pph23: pph23 ?? 0,
+            containerId: containerId ?? "",
+            vat: vat ?? "",
+            pph23: pph23 ?? "",
             vendorInvoiceNumber: vendorInvoiceNumber ?? "",
-            vendorName: vendorName ?? "",
+            vendorId: vendorId ?? "",
         },
         onSubmit: async ({ value }) => {
             console.log(value)
@@ -47,9 +58,7 @@ export default function CostingForm({
 
     return (
         <div>
-            <Dialog onOpenChange={(open) => {
-                if (!open) form.reset()
-            }}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     <Button>{ mode === "edit" ? <><IconEdit /> Edit Costing</> : <><IconPlus /> Add Costing</>}</Button>
                 </DialogTrigger>
@@ -102,21 +111,29 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="containerNumber" validators={{ onChange: ({ value }) => !value ? "Container Number is required" : undefined }}>
+                            <form.Field name="containerId" validators={{ onChange: ({ value }) => !value ? "Container is required" : undefined }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Container Number</Label>
                                         <Select
-                                            value={field.state.value}
+                                            value={field.state.value as string}
                                             onValueChange={(value) => field.handleChange(value)}
                                         >
                                             <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select a container number" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="1">Container 1</SelectItem>
-                                                <SelectItem value="2">Container 2</SelectItem>
-                                                <SelectItem value="3">Container 3</SelectItem>
+                                                {
+                                                    shipmentOperationalContainers.isLoading ? (
+                                                        <SelectItem value="1">Loading...</SelectItem>
+                                                    ) : shipmentOperationalContainers.error ? (
+                                                        <SelectItem value="1">Error loading containers</SelectItem>
+                                                    ) : shipmentOperationalContainers.length === 0 ? (
+                                                        <SelectItem value="1">No containers found</SelectItem>
+                                                    ) : shipmentOperationalContainers.map((container: ShipmentOperationalContainer) => (
+                                                        <SelectItem key={container.id} value={container.id}>{container.containerNumber}</SelectItem>
+                                                    ))
+                                                }
                                             </SelectContent>
                                         </Select>
                                         {
@@ -127,7 +144,10 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="vat">
+                            <form.Field 
+                                name="vat"
+                                validators={{ onChange: ({ value }) => !value ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be less than or equal to 100" : undefined }}
+                            >
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">VAT (%)</Label>
@@ -140,7 +160,10 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="pph23">
+                            <form.Field 
+                                name="pph23"
+                                validators={{ onChange: ({ value }) => !value ? "PPH 23 is required. Input zero if not applicable" : Number(value) > 100 ? "PPH 23 must be less than or equal to 100" : undefined }}
+                            >
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">PPH 23 (%)</Label>
@@ -166,21 +189,29 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="vendorName" validators={{ onChange: ({ value }) => !value ? "Vendor Name is required" : undefined }}>
+                            <form.Field name="vendorId" validators={{ onChange: ({ value }) => !value ? "Vendor is required" : undefined }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Vendor Name</Label>
                                         <Select
-                                            value={field.state.value}
+                                            value={field.state.value as string}
                                             onValueChange={(value) => field.handleChange(value)}
                                         >
                                             <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select a vendor" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="1">PT. ABC</SelectItem>
-                                                <SelectItem value="2">PT. XYZ</SelectItem>
-                                                <SelectItem value="3">PT. LMN</SelectItem>
+                                                {
+                                                    vendors.isLoading ? (
+                                                        <SelectItem value="1">Loading...</SelectItem>
+                                                    ) : vendors.error ? (
+                                                        <SelectItem value="1">Error loading vendors</SelectItem>
+                                                    ) : vendors.length === 0 ? (
+                                                        <SelectItem value="-">No vendors found</SelectItem>
+                                                    ) : vendors.map((vendor: Vendor) => (
+                                                        <SelectItem key={vendor.id} value={vendor.id ?? "-"}>{vendor.vendorName}</SelectItem>
+                                                    ))
+                                                }
                                             </SelectContent>
                                         </Select>
                                         {

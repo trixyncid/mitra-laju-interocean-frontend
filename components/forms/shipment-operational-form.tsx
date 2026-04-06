@@ -2,16 +2,19 @@
 
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { Pencil } from "lucide-react"
-import { IconPlus } from "@tabler/icons-react"
+import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { usePorts } from "@/hooks/use-ports"
 import { Port } from "@/app/dashboard/ports/columns"
 import { Input } from "../ui/input"
 import { useGetLocationsByCustomerId } from "@/hooks/use-customers"
+import { useCreateShipmentOperational, useUpdateShipmentOperational, useDeleteShipmentOperational } from "@/hooks/use-shipments"
+import { Vessel } from "@/app/dashboard/vessels/columns"
+import { useVessels } from "@/hooks/use-vessels"
 
 export type Location = {
     id: string
@@ -29,6 +32,7 @@ export default function ShipmentOperationalForm({
     portDestinationId,
     loadingLocationId,
     unloadingLocationId,
+    vesselId,
     blNumber,
     bookingNumber,
     customerCodeId
@@ -41,16 +45,21 @@ export default function ShipmentOperationalForm({
     portDestinationId: string | undefined,
     loadingLocationId: string | undefined,
     unloadingLocationId: string | undefined,
+    vesselId: string | undefined,
     blNumber: string | undefined,
     bookingNumber: string | undefined,
-    customerCodeId?: string | undefined,
+    customerCodeId: string,
 }) {
     const [open, setOpen] = useState(false)
-
+    const [openDelete, setOpenDelete] = useState(false)
+    
     const { data: ports, isLoading: portsLoading, error: portsError } = usePorts()
     const { data: locations, isLoading: locationsLoading, error: locationsError } = useGetLocationsByCustomerId(customerCodeId ?? "")
+    const { data: vessels, isLoading: vesselsLoading, error: vesselsError } = useVessels()
 
-    console.log(locations)
+    const createShipmentOperational = useCreateShipmentOperational(shipmentId ?? "")
+    const updateShipmentOperational = useUpdateShipmentOperational(shipmentId ?? "")
+    const deleteShipmentOperational = useDeleteShipmentOperational(shipmentId ?? "")
 
     const form = useForm({
         defaultValues: {
@@ -61,19 +70,41 @@ export default function ShipmentOperationalForm({
             portDestinationId: portDestinationId ?? "",
             loadingLocationId: loadingLocationId ?? "",
             unloadingLocationId: unloadingLocationId ?? "",
+            vesselId: vesselId ?? "",
             blNumber: blNumber ?? "",
             bookingNumber: bookingNumber ?? "",
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createShipmentOperational.mutate({
+                    shipmentId: shipmentId ?? "",
+                    shipmentOperational: value,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            } else {
+                updateShipmentOperational.mutate({
+                    shipmentId: shipmentId ?? "",
+                    id: id ?? "",
+                    shipmentOperational: value,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            }
         }
     })
 
     return (
-        <div>
+        <div className="flex items-center gap-x-2">
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Shipment Operational</Button>}
+                    { mode === "edit" ? <Button variant="outline">Edit Shipment Operational</Button> : <Button><IconPlus /> Add Shipment Operational</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -98,6 +129,32 @@ export default function ShipmentOperationalForm({
                                                     <SelectItem value="IMPORT">Import</SelectItem>
                                                     <SelectItem value="EXPORT">Export</SelectItem>
                                                     <SelectItem value="DOMESTIC">Domestic</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            { field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            ) : null }
+                                        </div>
+                                    )
+                                }
+                            </form.Field>
+                        </div>
+                        <div>
+                            <form.Field name="vesselId" validators={{ onChange: ({ value }) => !value ? "Vessel is required" : undefined }}>
+                                {
+                                    ( field ) => (
+                                        <div className="my-3">
+                                            <Label htmlFor={field.name} className="my-2">Vessel</Label>
+                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select a vessel" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    { vessels?.map((vessel: Vessel) => (
+                                                        <SelectItem key={vessel.id} value={vessel.id ?? ""}>{ vessel.vesselName } / { vessel.voyageNumber }</SelectItem>
+                                                    )) ?? (
+                                                        <SelectItem value="-">No vessels found</SelectItem>
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                             { field.state.meta.errors ? (
@@ -235,7 +292,6 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="blNumber"
-                                validators={{ onChange: ({ value }) => !value ? "BL Number is required" : undefined }}
                             >
                                 {
                                     ( field ) => (
@@ -250,7 +306,6 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="bookingNumber"
-                                validators={{ onChange: ({ value }) => !value ? "Booking Number is required" : undefined }}
                             >
                                 {
                                     ( field ) => (
@@ -263,11 +318,38 @@ export default function ShipmentOperationalForm({
                             </form.Field>
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={ mode === "create" ? createShipmentOperational.isPending : false || mode === "edit" ? updateShipmentOperational.isPending : false}>{ mode === "edit" ? (updateShipmentOperational.isPending ? "Updating..." : "Save Changes") : (createShipmentOperational.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={openDelete} onOpenChange={setOpenDelete}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Shipment Operational</DialogTitle>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button type="submit" variant="destructive" disabled={ deleteShipmentOperational.isPending } onClick={() => {
+                            deleteShipmentOperational.mutate({
+                                shipmentId: shipmentId ?? "",
+                                id: id ?? "",
+                            }, {
+                                onSuccess: () => {
+                                    setOpenDelete(false)
+                                }
+                            })
+                        }}>{ deleteShipmentOperational.isPending ? "Deleting..." : "Delete"}</Button>
+                        <DialogClose asChild>
+                            <Button variant="secondary">Cancel</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
+        
     )
 }

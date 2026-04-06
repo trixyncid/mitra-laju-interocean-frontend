@@ -1,0 +1,24 @@
+import { apiClient } from "@/lib/api-client"
+
+export const costingService = {
+    getAll: async () => {
+        const response = await apiClient.get("/costings")
+        return response
+    },
+    getById: async (id: string) => {
+        const response = await apiClient.get(`/costings/${id}`)
+        return response
+    },
+    create: async (costing: unknown) => {
+        const response = await apiClient.post("/costings", costing)
+        return response
+    },
+    update: async (id: string, costing: unknown) => {
+        const response = await apiClient.put(`/costings/${id}`, costing)
+        return response
+    },
+    delete: async (id: string) => {
+        const response = await apiClient.delete(`/costings/${id}`)
+        return response
+    },
+}
