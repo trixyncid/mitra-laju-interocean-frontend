@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Button } from "../ui/button"
-import { IconEdit, IconPlus } from "@tabler/icons-react"
+import { IconPencil, IconPlus } from "@tabler/icons-react"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
@@ -12,30 +12,35 @@ import { useGetShipmentOperationalContainers } from "@/hooks/use-shipments"
 import { useVendors } from "@/hooks/use-vendors"
 import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
 import { Vendor } from "@/app/dashboard/vendors/columns"
-
+import { useCreateCosting, useUpdateCosting } from "@/hooks/use-costings"
 
 export default function CostingForm({
     mode,
+    id,
     description,
     price,
     currency,
     containerId,
-    vat,
-    pph23,
+    vatPercentage,
+    pph23Percentage,
     vendorInvoiceNumber,
     vendorId,
 }: {
     mode: "edit" | "create"
+    id: string | undefined,
     description: string | undefined,
     price: number | undefined,
     currency: number | undefined,
     containerId: string | undefined,
-    vat: number | undefined,
-    pph23: number | undefined,
+    vatPercentage: number | undefined,
+    pph23Percentage: number | undefined,
     vendorInvoiceNumber: string | undefined,
     vendorId: string | undefined,
 }) {
     const [ open, setOpen ] = useState(false)
+
+    const createCosting = useCreateCosting()
+    const updateCosting = useUpdateCosting()
 
     const { data: shipmentOperationalContainers, isLoading: isLoadingShipmentOperationalContainers, error: errorShipmentOperationalContainers } = useGetShipmentOperationalContainers()
     const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors()
@@ -45,14 +50,49 @@ export default function CostingForm({
             description: description ?? "",
             price: price ?? "",
             currency: currency ?? "",
-            containerId: containerId ?? "",
-            vat: vat ?? "",
-            pph23: pph23 ?? "",
+            containerId: containerId ?? "-",
+            vatPercentage: vatPercentage ?? "",
+            pph23Percentage: pph23Percentage ?? "",
             vendorInvoiceNumber: vendorInvoiceNumber ?? "",
-            vendorId: vendorId ?? "",
+            vendorId: vendorId ?? "-",
         },
         onSubmit: async ({ value }) => {
-            console.log(value)
+            if (mode === "create") {
+                createCosting.mutate({
+                    description: value.description,
+                    price: Number(value.price),
+                    currency: Number(value.currency),
+                    containerId: value.containerId,
+                    vatPercentage: Number(value.vatPercentage),
+                    pph23Percentage: Number(value.pph23Percentage),
+                    vendorInvoiceNumber: value.vendorInvoiceNumber,
+                    vendorId: value.vendorId,
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            } else {
+                updateCosting.mutate({
+                    id: id as string,
+                    costing: {
+                        description: value.description,
+                        price: Number(value.price),
+                        currency: Number(value.currency),
+                        containerId: value.containerId,
+                        vatPercentage: Number(value.vatPercentage),
+                        pph23Percentage: Number(value.pph23Percentage),
+                        vendorInvoiceNumber: value.vendorInvoiceNumber,
+                        vendorId: value.vendorId,
+                    }
+                }, {
+                    onSuccess: () => {
+                        setOpen(false)
+                        form.reset()
+                    }
+                })
+            }
         }
     })
 
@@ -60,7 +100,7 @@ export default function CostingForm({
         <div>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>{ mode === "edit" ? <><IconEdit /> Edit Costing</> : <><IconPlus /> Add Costing</>}</Button>
+                    { mode === "edit" ? <Button size="icon"><IconPencil /></Button> : <Button><IconPlus /> Add Costing</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -111,7 +151,7 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="containerId" validators={{ onChange: ({ value }) => !value ? "Container is required" : undefined }}>
+                            <form.Field name="containerId" validators={{ onChange: ({ value }) => value === "-" ? "Container is required" : undefined }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Container Number</Label>
@@ -124,14 +164,14 @@ export default function CostingForm({
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {
-                                                    shipmentOperationalContainers.isLoading ? (
-                                                        <SelectItem value="1">Loading...</SelectItem>
-                                                    ) : shipmentOperationalContainers.error ? (
-                                                        <SelectItem value="1">Error loading containers</SelectItem>
-                                                    ) : shipmentOperationalContainers.length === 0 ? (
-                                                        <SelectItem value="1">No containers found</SelectItem>
+                                                    isLoadingShipmentOperationalContainers ? (
+                                                        <SelectItem value="-">Loading...</SelectItem>
+                                                    ) : errorShipmentOperationalContainers ? (
+                                                        <SelectItem value="-">Error loading containers</SelectItem>
+                                                    ) : shipmentOperationalContainers?.length === 0 ? (
+                                                        <SelectItem value="-">No containers found</SelectItem>
                                                     ) : shipmentOperationalContainers.map((container: ShipmentOperationalContainer) => (
-                                                        <SelectItem key={container.id} value={container.id}>{container.containerNumber}</SelectItem>
+                                                        <SelectItem key={container.id} value={container.id as string}>{container.containerNumber} ({container.sealNumber})</SelectItem>
                                                     ))
                                                 }
                                             </SelectContent>
@@ -145,8 +185,8 @@ export default function CostingForm({
                                 )}
                             </form.Field>
                             <form.Field 
-                                name="vat"
-                                validators={{ onChange: ({ value }) => !value ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be less than or equal to 100" : undefined }}
+                                name="vatPercentage"
+                                validators={{ onChange: ({ value }) => value === "" ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be less than or equal to 100" : undefined }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
@@ -161,8 +201,8 @@ export default function CostingForm({
                                 )}
                             </form.Field>
                             <form.Field 
-                                name="pph23"
-                                validators={{ onChange: ({ value }) => !value ? "PPH 23 is required. Input zero if not applicable" : Number(value) > 100 ? "PPH 23 must be less than or equal to 100" : undefined }}
+                                name="pph23Percentage"
+                                validators={{ onChange: ({ value }) => value === "" ? "PPH 23 is required. Input zero if not applicable" : Number(value) > 100 ? "PPH 23 must be less than or equal to 100" : undefined }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
@@ -189,10 +229,10 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="vendorId" validators={{ onChange: ({ value }) => !value ? "Vendor is required" : undefined }}>
+                            <form.Field name="vendorId" validators={{ onChange: ({ value }) => value === "-" ? "Vendor is required" : undefined }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Vendor Name</Label>
+                                        <Label htmlFor={field.name} className="my-2">Vendor</Label>
                                         <Select
                                             value={field.state.value as string}
                                             onValueChange={(value) => field.handleChange(value)}
@@ -202,13 +242,13 @@ export default function CostingForm({
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {
-                                                    vendors.isLoading ? (
-                                                        <SelectItem value="1">Loading...</SelectItem>
-                                                    ) : vendors.error ? (
-                                                        <SelectItem value="1">Error loading vendors</SelectItem>
-                                                    ) : vendors.length === 0 ? (
+                                                    isLoadingVendors ? (
+                                                        <SelectItem value="-">Loading...</SelectItem>
+                                                    ) : errorVendors ? (
+                                                        <SelectItem value="-">Error loading vendors</SelectItem>
+                                                    ) : vendors?.length === 0 ? (
                                                         <SelectItem value="-">No vendors found</SelectItem>
-                                                    ) : vendors.map((vendor: Vendor) => (
+                                                    ) : vendors?.map((vendor: Vendor) => (
                                                         <SelectItem key={vendor.id} value={vendor.id ?? "-"}>{vendor.vendorName}</SelectItem>
                                                     ))
                                                 }
@@ -224,7 +264,7 @@ export default function CostingForm({
                             </form.Field>
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button type="submit" disabled={createCosting.isPending || updateCosting.isPending}>{ mode === "edit" ? (updateCosting.isPending ? "Updating..." : "Save Changes") : (createCosting.isPending ? "Creating..." : "Create")}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

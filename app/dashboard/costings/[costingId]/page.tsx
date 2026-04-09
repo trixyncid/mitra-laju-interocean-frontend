@@ -40,7 +40,7 @@ export default function CostingDetailPage() {
                         </DialogContent>
                     </Dialog>
 
-                    <CostingForm mode="edit" description="Trucking Fee" price={123000} currency={15000} containerNumber="CNTR001" vat={10} pph23={1} vendorInvoiceNumber="INV-001-2025" vendorName="1" />    
+                    {/* <CostingForm mode="edit" description="Trucking Fee" price={123000} currency={15000} containerNumber="CNTR001" vat={10} pph23={1} vendorInvoiceNumber="INV-001-2025" vendorName="1" />     */}
                 </div>
             </div>
 
