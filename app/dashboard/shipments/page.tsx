@@ -6,7 +6,7 @@ import ShipmentForm from "@/components/forms/shipment-form";
 import { useShipments } from "@/hooks/use-shipments";
 
 export default function ShipmentPage() {
-    const { data, isLoading, error, refetch } = useShipments()
+    const { data, isLoading, error } = useShipments()
 
     if (error) return <div>Error: {error.message}</div>
 
