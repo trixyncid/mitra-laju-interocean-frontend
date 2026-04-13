@@ -1,7 +1,7 @@
 "use client"
 
 import VesselActionCell from "@/components/action-cell/vessel-action-cell"
-import { formatDate } from "@/lib/utils"
+import { localDate, formatDate } from "@/lib/utils"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
@@ -55,7 +55,7 @@ export const columns: ColumnDef<Vessel>[] = [
         accessorKey: "updatedAt",
         header: "Modified At",
         cell: ({ row }) => {
-            return <div>{ formatDate(row.original.updatedAt as string) }</div>
+            return <div>{ localDate(row.original.updatedAt as string) }</div>
         }
     },
     {

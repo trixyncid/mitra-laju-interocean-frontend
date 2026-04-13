@@ -11,13 +11,17 @@ import Link from "next/link"
 import { Dot } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
-import { formatDate, getInitialContactName } from "@/lib/utils"
+import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import CustomerLocationForm from "@/components/forms/customer-location-form"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import CustomerShipperForm from "@/components/forms/customer-shipper-form"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import CustomerContactForm from "@/components/forms/customer-contact-form"
+import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
+import CostingHistoryPage from "./(costings)/costing-history-page"
+import { Costing as CustomerCosting } from "./(costings)/costing-column"
+import { Costing } from "@/app/dashboard/costings/columns"
 
 type CustomerContact = {
     id: string
@@ -52,12 +56,81 @@ type CustomerShipper = {
     updatedBy: string
 }
 
+type Shipment = {
+    id: string,
+    orderNumber: string,
+    customerCode: { customerName: string, customerCode: string },
+    customerShipper: { name: string },
+    shipmentOperational: { portDeparture: { portCountry: string }, portDestination: { portCountry: string }, eta: string },
+    costings: Costing[],
+    isActive: boolean,
+}
+
 export default function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
     const { customerId } = use(params)
     const { data, isLoading, error } = useCustomerById(customerId)
 
     console.log('data', data)
+    /**
+     * Function to count the total number of customer locations for a customer
+     * @returns {number} The total number of customer locations
+     */
+    const totalCustomerLocations = data?.customerShippers.map((shipper: CustomerShipper) => shipper.customerLocations.length).reduce((a: number, b: number) => a + b, 0)
+
+    /**
+     * Function to count the total number of customer contacts for a customer
+     * @returns {number} The total number of customer contacts
+     */
+    const totalCustomerContacts = data?.customerShippers.map((shipper: CustomerShipper) => shipper.customerLocations.map((location: CustomerLocation) => location.customerContacts.length).reduce((a: number, b: number) => a + b, 0)).reduce((a: number, b: number) => a + b, 0)
     
+    /**
+     * Function to map the customer shipments to a new object
+     * @returns {Shipment[]} The mapped customer shipments
+     */
+    const customerShipments = data?.shipments.map((shipment: Shipment) => ({
+        id: shipment.id,
+        orderNumber: shipment?.orderNumber,
+        customerCode: shipment.customerCode.customerName + " (" + shipment.customerCode.customerCode + ")",
+        customerShipper: shipment.customerShipper.name,
+        departureCountry: shipment.shipmentOperational?.portDeparture?.portCountry,
+        arrivalCountry: shipment.shipmentOperational?.portDestination?.portCountry,
+        eta: shipment.shipmentOperational?.eta?.split('T')[0] ?? "",
+    }))
+
+    /**
+     * Function to map the customer costings to a new object
+     * @returns {CustomerCosting[]} The mapped customer costings
+     */
+    const customerCostings = () => {
+        const costings: CustomerCosting[] = []
+
+        for (const shipment of data?.shipments) {
+            costings.push(...shipment.costings.map((costing: Costing) => ({
+                id: costing.id,
+                invoiceNumber: costing.vendorInvoiceNumber,
+                amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
+                shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
+            } as CustomerCosting)))
+        }
+
+        return costings
+    }
+    
+    /**
+     * Function to count the total number of costings for a customer
+     * @returns {number} The total number of costings
+     */
+    const costingsCount = () => {
+        let count = 0
+
+        for (const shipment of data?.shipments) {
+            count += shipment.costings.length
+        }
+
+        return count
+    }
+    
+
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
 
     if (isLoading) return <DetailPageSkeleton />
@@ -88,12 +161,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
                     <div className="grid grid-cols-4 text-center">
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mt-2 font-bold text-xl">{ data.shipments.filter((shipment: Shipment) => shipment.isActive).length }</p>
                             <p className="mb-2 text-sm text-slate-500">Active <br /> Shipments</p>
                         </div>
 
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mt-2 font-bold text-xl">{ data.shipments.length }</p>
                             <p className="mb-2 text-sm text-slate-500">Total <br /> Assignments</p>
                         </div>
 
@@ -113,13 +186,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
             {/* Tabs */}
             <Tabs defaultValue="locations-and-contacts" className="mt-6">
                 <TabsList>
-                    <TabsTrigger value="locations-and-contacts">Locations & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">10</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">100</span></TabsTrigger>
-                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">20</span></TabsTrigger>
+                    <TabsTrigger value="locations-and-contacts">Locations & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.customerShippers.length }</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.shipments.length }</span></TabsTrigger>
+                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ costingsCount() }</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="locations-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
-                        <p className="text-sm text-slate-500 my-2 flex flex-row">{ data.customerShippers.length } shippers <Dot /> { data.customerShippers.customerLocations === undefined ? "0" : data.customerShippers.customerLocations.length } locations <Dot /> { data.customerShippers.customerLocations === undefined ? "0" : data.customerShippers.customerLocations.customerContacts.length } contacts</p>
+                        <p className="text-sm text-slate-500 my-2 flex flex-row">{ data.customerShippers.length } shippers <Dot /> { totalCustomerLocations } locations <Dot /> { totalCustomerContacts } contacts</p>
                         <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
                     </div>
                     <Accordion type="multiple">
@@ -209,7 +282,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                     </Accordion>
                 </TabsContent>
                 <TabsContent value="shipment-history">
-                    
+                    <ShipmentHistoryPage customerShipments={customerShipments} />
+                </TabsContent>
+                <TabsContent value="costings">
+                    <CostingHistoryPage customerName={data.customerName ?? ""} customerCostings={customerCostings()} />
                 </TabsContent>
             </Tabs>
         </div>

@@ -9,6 +9,13 @@ export const useCostings = () => {
     })
 }
 
+export const useCostingById = (id: string) => {
+    return useQuery({
+        queryKey: ["costings", id],
+        queryFn: () => costingService.getById(id),
+    })
+}
+
 export const useCreateCosting = () => {
     const queryClient = useQueryClient();
 

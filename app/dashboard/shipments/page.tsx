@@ -6,7 +6,7 @@ import ShipmentForm from "@/components/forms/shipment-form";
 import { useShipments } from "@/hooks/use-shipments";
 
 export default function ShipmentPage() {
-    const { data, isLoading, error } = useShipments()
+    const { data, isLoading, error, refetch } = useShipments()
 
     if (error) return <div>Error: {error.message}</div>
 
@@ -20,11 +20,19 @@ export default function ShipmentPage() {
      */
     const orderNumberAssignment = (data: Shipment[]) => {
         const monthInRomans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
-
+    
         const month = new Date().getMonth() + 1
         const year = new Date().getFullYear()
-        const count = data?.filter((shipment: Shipment) => shipment.orderNumber.split("/")[2] === year.toString() && shipment.orderNumber.split("/")[1] === monthInRomans[month - 1].toString()).length + 1
-        return `${count}/${monthInRomans[month - 1]}/${year}`
+        const romanMonth = monthInRomans[month - 1]
+    
+        const count = data?.filter((shipment: Shipment) => {
+            const parts = shipment.orderNumber?.split("/")
+            // Guard against malformed orderNumbers
+            if (!parts || parts.length !== 3) return false
+            return parts[1] === romanMonth && parts[2] === year.toString()
+        }).length + 1
+    
+        return `${count}/${romanMonth}/${year}`
     }
     
     return (

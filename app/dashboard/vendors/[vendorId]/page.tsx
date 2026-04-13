@@ -7,7 +7,7 @@ import { IconArrowLeft, IconBrandWhatsapp, IconFerry } from "@tabler/icons-react
 import DetailPageSkeleton from "@/components/detail-page-skeleton"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { formatDate, getInitialContactName } from "@/lib/utils"
+import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
 import { Dot } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
@@ -17,6 +17,8 @@ import VendorLocationForm from "@/components/forms/vendor-location-form"
 import VendorContactForm from "@/components/forms/vendor-contact-form"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import CostingHistoryPage from "./(costings)/costing-history-page"
+import { Costing } from "../../costings/columns"
+import { LinkedShipment } from "./(shipments)/shipment-columns"
 
 type VendorContact = {
     id: string
@@ -49,6 +51,23 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
     if (isLoading) return <DetailPageSkeleton />
 
     if (error) return <div>Error: {error.message}</div>
+
+    const vendorCostings = data.costings.map((costing: Costing) => ({
+        id: costing.id,
+        invoiceNumber: costing.vendorInvoiceNumber,
+        amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
+        shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
+    }))
+
+    const vendorShipments: LinkedShipment[] = data.costings.map((costing: Costing) => ({
+        id: costing.shipment?.id ?? "",
+        eta: costing.shipment?.shipmentOperational?.eta ?? "",
+        orderNumber: costing.shipment?.orderNumber ?? "",
+        customerCode: costing.shipment?.customerCode?.customerCode ?? "",
+        customerShipper: costing.shipment?.customerShipper?.name ?? "",
+        departureCountry: costing.shipment?.shipmentOperational?.portDeparture?.portCountry ?? "",
+        arrivalCountry: costing.shipment?.shipmentOperational?.portDestination?.portCountry ?? "",
+    }))
 
     return (
         <div className="px-4 lg:px-6">
@@ -104,9 +123,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
             {/* Tabs */}
             <Tabs defaultValue="offices-and-contacts" className="mt-6">
                 <TabsList>
-                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">10</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">100</span></TabsTrigger>
-                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">20</span></TabsTrigger>
+                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.vendorLocations.length }</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
+                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="offices-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
@@ -169,10 +188,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                     }
                 </TabsContent>
                 <TabsContent value="shipment-history">
-                    <ShipmentHistoryPage />
+                    <ShipmentHistoryPage vendorShipments={vendorShipments} />
                 </TabsContent>
                 <TabsContent value="costings">
-                    <CostingHistoryPage vendorName={data.vendorName} />
+                    <CostingHistoryPage vendorName={data.vendorName} vendorCostings={vendorCostings} />
                 </TabsContent>
             </Tabs>
         </div>

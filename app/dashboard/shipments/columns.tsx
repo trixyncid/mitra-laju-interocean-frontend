@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
-import { IconArrowDown, IconArrowRight } from "@tabler/icons-react"
+import { IconArrowRight } from "@tabler/icons-react"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { Dot, Info } from "lucide-react"
@@ -55,7 +55,7 @@ export const columns: ColumnDef<Shipment>[] = [
                 <div>
                     {
                         row.original.shipmentOperational === null ? <div className="bg-orange-50 text-orange-500 px-3 rounded-full w-fit">Unavailable</div> :
-                        <div className="text-sm text-slate-500">{ row.original.shipmentOperational?.portDeparture?.portCountry as string } <IconArrowDown className="w-4 h-4" /> { row.original.shipmentOperational?.portDestination?.portCountry as string }</div>
+                        <div className="text-sm text-slate-500 flex flex-row items-center gap-x-1">{ row.original.shipmentOperational?.portDeparture?.portCountry as string } <IconArrowRight className="w-4 h-4" /> { row.original.shipmentOperational?.portDestination?.portCountry as string }</div>
                     }
                 </div>
             )
@@ -70,7 +70,7 @@ export const columns: ColumnDef<Shipment>[] = [
     },
     {
         accessorKey: "updatedAt",
-        header: "Last Modified Date",
+        header: "Modified At",
         cell: ({ row }) => {
             return <div className="text-sm text-slate-500">{ formatDate(row.original.updatedAt as string) }</div>
         }

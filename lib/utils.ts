@@ -47,6 +47,19 @@ export const getInitialContactName = (contactNames: string) => {
  * @param pph23Percentage - The PPH 23 percentage of the costing
  * @returns The net amount of the costing
  */
-export const netCalculation = (price: number, currency: number, vatPercentage: number, pph23Percentage: number) => {
+export const amountCalculation = (price: number, currency: number, vatPercentage: number, pph23Percentage: number) => {
   return (price * currency) - (price * currency * vatPercentage / 100) - (price * currency * pph23Percentage / 100)
+}
+
+/**
+ * Function to format a date string to a local date format
+ * @param dateStr - The date string to format (ISO 8601 format)
+ * @returns The formatted date string (DD MMM YYYY)
+ */
+export const localDate = (dateStr: string) => {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  }).format(new Date(dateStr))
 }

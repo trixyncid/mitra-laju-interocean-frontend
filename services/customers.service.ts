@@ -65,5 +65,5 @@ export const customersService = {
     getShippersByCustomerCodeId: async (customerId: string) => {
         const response = await apiClient.get(`/customers/${customerId}/shippers`);
         return response;
-    }
+    },
 }

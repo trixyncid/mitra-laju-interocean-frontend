@@ -15,6 +15,7 @@ import { useGetLocationsByCustomerId } from "@/hooks/use-customers"
 import { useCreateShipmentOperational, useUpdateShipmentOperational, useDeleteShipmentOperational } from "@/hooks/use-shipments"
 import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
+import { ISOFormat } from "@/lib/utils"
 
 export type Location = {
     id: string
@@ -33,11 +34,13 @@ export default function ShipmentOperationalForm({
     loadingLocationId,
     unloadingLocationId,
     vesselId,
+    eta,
     blNumber,
     bookingNumber,
     customerCodeId
 }: {
     id: string | undefined,
+    eta: string | undefined
     shipmentId: string | undefined,
     mode: "edit" | "create",
     shipmentType: string | undefined,
@@ -66,6 +69,7 @@ export default function ShipmentOperationalForm({
             id: id ?? "",
             shipmentId: shipmentId ?? "",
             shipmentType: shipmentType ?? "",
+            eta: eta ?? "",
             portDepartureId: portDepartureId ?? "",
             portDestinationId: portDestinationId ?? "",
             loadingLocationId: loadingLocationId ?? "",
@@ -284,6 +288,21 @@ export default function ShipmentOperationalForm({
                                             { field.state.meta.errors ? (
                                                 <em className="text-xs text-red-500">{field.state.meta.errors}</em>
                                             ) : null }
+                                        </div>
+                                    )
+                                }
+                            </form.Field>
+                        </div>
+                        <div>
+                            <form.Field
+                                name="eta"
+                                validators={{ onChange: ({ value }) => !value ? "ETA is required" : undefined }}
+                            >
+                                {
+                                    ( field ) => (
+                                        <div className="my-3">
+                                            <Label htmlFor={field.name} className="my-2">ETA</Label>
+                                            <Input value={field.state.value ? field.state.value.split('T')[0] : ''} onChange={(e) => field.handleChange(ISOFormat(e.target.value))} type="date" />
                                         </div>
                                     )
                                 }

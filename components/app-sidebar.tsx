@@ -25,13 +25,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { authClient } from "@/lib/auth-client"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -76,6 +72,11 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: session, isPending, error } = authClient.useSession()
+
+  if (isPending) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -99,7 +100,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavTransactionalData items={data.transactionalData} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={{
+          name: session?.user?.name ?? "",
+          email: session?.user?.email ?? "",
+          avatar: session?.user?.image ?? "",
+        }} />
       </SidebarFooter>
     </Sidebar>
   )

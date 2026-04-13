@@ -28,6 +28,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { getInitialContactName } from "@/lib/utils"
+import { Button } from "./ui/button"
+import { authClient } from "@/lib/auth-client"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function NavUser({
   user,
@@ -39,7 +44,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-
+  const router = useRouter()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -51,7 +56,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{ getInitialContactName(user.name) }</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -98,9 +103,15 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <IconLogout />
-              Log out
+            <DropdownMenuItem onClick={() => authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  toast.success("Logged out successfully")
+                }
+              }
+            })}>
+                <IconLogout />
+                Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

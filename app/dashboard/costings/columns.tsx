@@ -2,7 +2,7 @@
 
 import LinkCostingForm from "@/components/forms/link-costing-form"
 import CostingForm from "@/components/forms/costing-form"
-import { formatDate } from "@/lib/utils"
+import { amountCalculation, formatDate } from "@/lib/utils"
 import { IconLinkOff } from "@tabler/icons-react"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -19,7 +19,11 @@ export type Costing = {
     vatPercentage: number
     pph23Percentage: number
     vendor: { vendorName: string }
-    shipment: { orderNumber: string | null, id: string | null }
+    shipment: { orderNumber: string | null, id: string | null, shipmentOperational?: { eta: string | null, portDeparture?: { portName: string, portCountry: string }, portDestination?: { portName: string, portCountry: string } }, customerCode?: { 
+        customerCode?: string, customerName?: string
+    }, customerShipper?: {
+        name?: string
+    } }
     status: string
     containerId: string
     vendorInvoiceNumber: string
@@ -49,6 +53,15 @@ export const columns: ColumnDef<Costing>[] = [
         cell: ({ row }) => {
             return <div className="flex items-center">
                 <p>{ row.original.vendor.vendorName }</p>
+            </div>
+        }
+    },
+    {
+        accessorKey: "",
+        header: "Amount (Rupiah)",
+        cell: ({ row }) => {
+            return <div className="flex items-center">
+                <p>{ amountCalculation(row.original.price, row.original.currency, row.original.vatPercentage, row.original.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }</p>
             </div>
         }
     },

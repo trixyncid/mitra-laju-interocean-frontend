@@ -57,9 +57,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                 <div>
                     {
                         data?.shipmentOperational === null ? (
-                            <ShipmentOperationalForm mode="create" id={undefined} shipmentId={data.id} shipmentType={undefined} portDepartureId={undefined} portDestinationId={undefined} loadingLocationId={undefined} unloadingLocationId={undefined} blNumber={undefined} bookingNumber={undefined} customerCodeId={data?.customerCodeId} vesselId={undefined} />
+                            <ShipmentOperationalForm mode="create" id={undefined} shipmentId={data.id} shipmentType={undefined} portDepartureId={undefined} portDestinationId={undefined} loadingLocationId={undefined} unloadingLocationId={undefined} blNumber={undefined} bookingNumber={undefined} customerCodeId={data?.customerCodeId} vesselId={undefined} eta={undefined} />
                         ) : (
-                            <ShipmentOperationalForm mode="edit" id={data.shipmentOperational.id} shipmentId={data.id} shipmentType={data.shipmentOperational.shipmentType} portDepartureId={data.shipmentOperational.portDepartureId} portDestinationId={data.shipmentOperational.portDestinationId} loadingLocationId={data.shipmentOperational.loadingLocationId} unloadingLocationId={data.shipmentOperational.unloadingLocationId} blNumber={data.shipmentOperational.blNumber} bookingNumber={data.shipmentOperational.bookingNumber} customerCodeId={data?.customerCodeId} vesselId={data.shipmentOperational.vesselId} />
+                            <ShipmentOperationalForm mode="edit" id={data.shipmentOperational.id} shipmentId={data.id} shipmentType={data.shipmentOperational.shipmentType} portDepartureId={data.shipmentOperational.portDepartureId} portDestinationId={data.shipmentOperational.portDestinationId} loadingLocationId={data.shipmentOperational.loadingLocationId} unloadingLocationId={data.shipmentOperational.unloadingLocationId} blNumber={data.shipmentOperational.blNumber} bookingNumber={data.shipmentOperational.bookingNumber} customerCodeId={data?.customerCodeId} vesselId={data.shipmentOperational.vesselId} eta={data.shipmentOperational.eta} />
                         )
                     }
                 </div>

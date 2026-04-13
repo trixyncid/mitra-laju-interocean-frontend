@@ -1,7 +1,7 @@
 "use client"
 
 import PortActionCell from "@/components/action-cell/port-action-cell"
-import { formatDate } from "@/lib/utils"
+import { localDate} from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 import { Dot } from "lucide-react"
@@ -38,7 +38,7 @@ export const columns: ColumnDef<Port>[] = [
         accessorKey: "updatedAt",
         header: "Last Modified Date",
         cell: ({ row }) => {
-            return <div>{ formatDate(row.original.updatedAt as string) }</div>
+            return <div>{ localDate(row.original.updatedAt as string) }</div>
         },
     },
     {

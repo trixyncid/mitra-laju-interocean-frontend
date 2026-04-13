@@ -10,6 +10,7 @@ import { useCustomers, useGetShippersByCustomerCodeId } from "@/hooks/use-custom
 import { useCreateShipment, useUpdateShipment } from "@/hooks/use-shipments";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { QueryObserverResult } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ export default function ShipmentForm({
     mode,
     orderNumber,
     customerCodeId,
-    customerShipperId
+    customerShipperId,
 }: {
     id: string | undefined,
     mode: "edit" | "create",
