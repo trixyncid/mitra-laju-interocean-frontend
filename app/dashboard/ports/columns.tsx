@@ -36,7 +36,7 @@ export const columns: ColumnDef<Port>[] = [
     },
     {
         accessorKey: "updatedAt",
-        header: "Last Modified Date",
+        header: "Modified At",
         cell: ({ row }) => {
             return <div>{ localDate(row.original.updatedAt as string) }</div>
         },

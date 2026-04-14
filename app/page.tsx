@@ -1,5 +1,7 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { LoginForm } from "@/components/forms/login-form"
+import backgroundImage from "@/public/images/login-background.png"
+import Image from "next/image"
 
 export default function LoginPage() {
   return (
@@ -20,7 +22,7 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="bg-muted relative hidden lg:block">
-        {/* <Image src={welcomeImage} alt="Login Background" className="h-full object-cover" /> */}
+        <Image src={backgroundImage} alt="Login Background" className="h-screen" />
       </div>
     </div>
   )

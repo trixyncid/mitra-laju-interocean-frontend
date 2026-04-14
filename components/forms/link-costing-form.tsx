@@ -36,6 +36,11 @@ export default function LinkCostingForm({
                 costing: {
                     shipmentId: value.shipmentId,
                 }
+            }, {
+                onSuccess: () => {
+                    setOpen(false)
+                    form.reset()
+                }
             })
         }
     })
@@ -88,7 +93,7 @@ export default function LinkCostingForm({
                             </form.Field>
                         </div>
                         <DialogFooter>
-                            <Button type="submit">Link Costing</Button>
+                            <Button type="submit" disabled={updateCosting.isPending}>{ updateCosting.isPending ? "Linking..." : "Link Costing" }</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

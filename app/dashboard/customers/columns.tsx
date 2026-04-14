@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
 import Link from "next/link"
 import { Dot, Info } from "lucide-react"
-import { formatDate } from "@/lib/utils"
+import { localDate } from "@/lib/utils"
 import CustomerActionCell from "@/components/action-cell/customer-action-cell"
 
 export type Customer = {
@@ -47,9 +47,9 @@ export const columns: ColumnDef<Customer>[] = [
     },
     {
         accessorKey: "updatedAt",
-        header: "Last Modified Date",
+        header: "Modified At",
         cell: ({ row }) => {
-            return <div>{ formatDate(row.original.updatedAt as string) }</div>
+            return <div>{ localDate(row.original.updatedAt as string) }</div>
         }
     },
     {

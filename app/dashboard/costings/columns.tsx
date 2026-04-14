@@ -2,12 +2,12 @@
 
 import LinkCostingForm from "@/components/forms/link-costing-form"
 import CostingForm from "@/components/forms/costing-form"
-import { amountCalculation, formatDate } from "@/lib/utils"
+import { amountCalculation, formatDate, localDate } from "@/lib/utils"
 import { IconLinkOff } from "@tabler/icons-react"
 
 import { ColumnDef } from "@tanstack/react-table"
 import clsx from "clsx"
-import { Info } from "lucide-react"
+import { Dot, Info } from "lucide-react"
 import Link from "next/link"
 
 export type Costing = {
@@ -28,6 +28,8 @@ export type Costing = {
     containerId: string
     vendorInvoiceNumber: string
     vendorId: string
+    updatedBy?: string,
+    updatedAt?: string,
 }
 
 export const columns: ColumnDef<Costing>[] = [
@@ -69,14 +71,28 @@ export const columns: ColumnDef<Costing>[] = [
         accessorKey: "shipment",
         header: "Shipment Order #",
         cell: ({ row }) => {
-            return <div className={clsx("px-3 py-1 rounded-md w-fit", row.original.shipment === null ? "bg-red-100 text-red-500" : "")}>{ row.original.shipment === null ? <div className="flex items-center gap-x-2"><IconLinkOff className="w-4 h-4" /> Unlinked</div> : row.original.shipment.orderNumber }</div>
+            return <div className={clsx("px-3 py-1 rounded-full w-fit text-xs", row.original.shipment === null ? "bg-red-100 text-red-500" : "")}>{ row.original.shipment === null ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div> : row.original.shipment.orderNumber }</div>
         }
     },
     {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-            return <div className={clsx("px-3 py-1 w-fit rounded-full border font-semibold", row.original.status === "PAID" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}>{ row.original.status === "PAID" ? "Paid" : "Unpaid" }</div>
+            return <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", row.original.status === "PAID" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}> <Dot className="animate-pulse -mr-1" /> { row.original.status === "PAID" ? "Paid" : "Unpaid" }</div>
+        }
+    },
+    {
+        accessorKey: "updatedBy",
+        header: "Modified By",
+        cell: ({ row }) => {
+            return <div>{ (row.original.updatedBy as { name: string } | undefined)?.name }</div>
+        }
+    },
+    {
+        accessorKey: "updatedAt",
+        header: "Modified At",
+        cell: ({ row }) => {
+            return <div>{ localDate(row.original.updatedAt as string) }</div>
         }
     },
     {

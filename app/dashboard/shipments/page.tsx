@@ -41,7 +41,7 @@ export default function ShipmentPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-xl font-bold">Shipments</h1>
-                    <p>Count active shipments</p>
+                    <p>{ data?.filter((shipment: Shipment) => shipment.isActive).length } active shipments</p>
                 </div>
 
                 <ShipmentForm mode="create" id={undefined} orderNumber={orderNumberAssignment(data)} customerCodeId={undefined} customerShipperId={undefined} />

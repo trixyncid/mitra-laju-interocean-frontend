@@ -5,7 +5,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import Link from "next/link"
 import { Dot, Info } from "lucide-react"
 import VendorActionCell from "@/components/action-cell/vendor-action-cell"
-import { formatDate } from "@/lib/utils"
+import { localDate } from "@/lib/utils"
 
 export type Vendor = {
     id?: string
@@ -47,9 +47,9 @@ export const columns: ColumnDef<Vendor>[] = [
     },
     {
         accessorKey: "updatedAt",
-        header: "Last Modified Date",
+        header: "Modified At",
         cell: ({ row }) => {
-            return <div>{ formatDate(row.original.updatedAt as string) }</div>
+            return <div>{ localDate(row.original.updatedAt as string) }</div>
         }
     },
     {
