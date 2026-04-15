@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { use } from "react";
 import { useCostingById } from "@/hooks/use-costings";
 import { amountCalculation, formatDate } from "@/lib/utils";
+import DocumentUploadForm from "@/components/forms/document-upload-form";
 
 export default function CostingDetailPage({ params }: { params: Promise<{ costingId: string }> }) {
     const { costingId } = use(params)
@@ -88,7 +89,7 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                         <CardContent>
                             <div className="mb-4 flex items-center justify-between">
                                 <h1 className="font-bold">SUPPORTING DOCUMENTS</h1>
-                                <Button variant="outline"><IconPlus /> Upload</Button>
+                                <DocumentUploadForm mode="create" shipmentId={undefined} costingId={costingId} id={undefined} attachmentName={undefined} document={undefined} />
                             </div>
 
                             <div>

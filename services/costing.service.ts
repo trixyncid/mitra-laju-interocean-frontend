@@ -21,4 +21,16 @@ export const costingService = {
         const response = await apiClient.delete(`/costings/${id}`)
         return response
     },
+    createCostingAttachment: async (costingId: string, costingAttachment: unknown) => {
+        const response = await apiClient.post(`/costings/${costingId}/attachments`, costingAttachment)
+        return response
+    },
+    updateCostingAttachment: async (costingId: string, id: string, costingAttachment: unknown) => {
+        const response = await apiClient.put(`/costings/${costingId}/attachments/${id}`, costingAttachment)
+        return response
+    },
+    deleteCostingAttachment: async (costingId: string, id: string) => {
+        const response = await apiClient.delete(`/costings/${costingId}/attachments/${id}`)
+        return response
+    }
 }

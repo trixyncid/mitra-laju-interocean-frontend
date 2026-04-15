@@ -51,4 +51,16 @@ export const shipmentsService = {
         const response = await apiClient.delete(`/shipments/${shipmentId}/operational/${shipmentOperationalId}/containers/${id}`);
         return response;
     },
+    createShipmentOperationalAttachment: async (shipmentId: string, shipmentOperationalAttachment: unknown) => {
+        const response = await apiClient.post(`/shipments/${shipmentId}/attachments`, shipmentOperationalAttachment);
+        return response;
+    },
+    updateShipmentOperationalAttachment: async (shipmentId: string, id: string, shipmentOperationalAttachment: unknown) => {
+        const response = await apiClient.put(`/shipments/${shipmentId}/attachments/${id}`, shipmentOperationalAttachment);
+        return response;
+    },
+    deleteShipmentOperationalAttachment: async (shipmentId: string, id: string) => {
+        const response = await apiClient.delete(`/shipments/${shipmentId}/attachments/${id}`);
+        return response;
+    }
 }

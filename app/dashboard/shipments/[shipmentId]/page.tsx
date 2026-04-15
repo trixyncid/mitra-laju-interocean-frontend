@@ -1,6 +1,6 @@
 "use client"
 
-import { IconArrowLeft } from "@tabler/icons-react"
+import { IconArrowLeft, IconFile, IconPlus } from "@tabler/icons-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -11,9 +11,10 @@ import { useShipmentById } from "@/hooks/use-shipments"
 import DetailPageSkeleton from "@/components/detail-page-skeleton"
 import { formatDate } from "@/lib/utils"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
+import DocumentUploadForm from "@/components/forms/document-upload-form"
 
 export type ShipmentOperationalContainer = {
-    id: string
+    id?: string
     containerNumber: string
     sealNumber: string
     size: string
@@ -116,6 +117,22 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                 <p className="font-semibold">{ data.shipmentOperational.portDestination.portName as string } ({ data.shipmentOperational.portDestination.portCountry as string })</p>
 
                                             </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="my-6">
+                                <CardHeader className="flex items-center justify-between">
+                                    <CardTitle>DOCUMENT UPLOADS</CardTitle>
+                                    <DocumentUploadForm mode="create" shipmentId={data.id} costingId={undefined} id={undefined} attachmentName={undefined} document={undefined} />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="border rounded-md px-2 py-1 flex items-center gap-x-2">
+                                        <IconFile className="text-slate-500 bg-slate-100 rounded-md p-1 size-6" />
+                                        <div>
+                                            <p className="text-sm text-slate-500">BL.pdf</p>
+                                            <p className="text-xs text-slate-500">Last modified: 15/04/2026</p>
                                         </div>
                                     </div>
                                 </CardContent>

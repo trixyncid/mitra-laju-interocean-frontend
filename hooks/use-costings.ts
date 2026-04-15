@@ -60,3 +60,48 @@ export const useDeleteCosting = () => {
         },
     })
 }
+
+export const useCreateCostingAttachment = (costingId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ costingId, costingAttachment }: { costingId: string, costingAttachment: unknown }) => costingService.createCostingAttachment(costingId, costingAttachment),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["costings", costingId] });
+            toast.success("Costing attachment created successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}
+
+export const useUpdateCostingAttachment = (costingId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ costingId, id, costingAttachment }: { costingId: string, id: string, costingAttachment: unknown }) => costingService.updateCostingAttachment(costingId, id, costingAttachment),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["costings", costingId] });
+            toast.success("Costing attachment updated successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}
+
+export const useDeleteCostingAttachment = (costingId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ costingId, id }: { costingId: string, id: string }) => costingService.deleteCostingAttachment(costingId, id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["costings", costingId] });
+            toast.success("Costing attachment deleted successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
+    })
+}

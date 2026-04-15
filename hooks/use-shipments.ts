@@ -137,3 +137,39 @@ export const useDeleteShipmentOperationalContainer = (shipmentId: string) => {
         },
     });
 }
+
+export const useCreateShipmentOperationalAttachment = (shipmentId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ shipmentId, shipmentOperationalAttachment }: { shipmentId: string, shipmentOperationalAttachment: unknown }) => shipmentsService.createShipmentOperationalAttachment(shipmentId, shipmentOperationalAttachment),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            toast.success("Shipment operational attachment created successfully");
+        },
+    });
+}
+
+export const useUpdateShipmentOperationalAttachment = (shipmentId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ shipmentId, id, shipmentOperationalAttachment }: { shipmentId: string, id: string, shipmentOperationalAttachment: unknown }) => shipmentsService.updateShipmentOperationalAttachment(shipmentId, id, shipmentOperationalAttachment),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            toast.success("Shipment operational attachment updated successfully");
+        },
+    });
+}
+
+export const useDeleteShipmentOperationalAttachment = (shipmentId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ shipmentId, id }: { shipmentId: string, id: string }) => shipmentsService.deleteShipmentOperationalAttachment(shipmentId, id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            toast.success("Shipment operational attachment deleted successfully");
+        },
+    });
+}
