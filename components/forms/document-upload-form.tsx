@@ -41,13 +41,13 @@ export default function DocumentUploadForm({
             document: document ?? null as File | null,
         },
         onSubmit: ({ value }) => {
-            console.log(value)
             if (shipmentId !== undefined) {
                 if (mode === "create") {
                     createShipmentOperationalAttachment.mutate({
                         shipmentId: shipmentId,
                         shipmentOperationalAttachment: {
                             attachmentName: value.attachmentName,
+                            contentType: value.document?.type ?? "",
                             filePath: "shipment/" + value.document?.name,
                             size: value.document?.size ?? 0,
                             shipmentId: shipmentId,
