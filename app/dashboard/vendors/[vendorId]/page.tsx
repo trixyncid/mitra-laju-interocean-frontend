@@ -69,6 +69,28 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
         arrivalCountry: costing.shipment?.shipmentOperational?.portDestination?.portCountry ?? "",
     }))
 
+    /**
+     * Function to calculate the total YTD spend for a vendor
+     * @returns {number} The total YTD spend
+     */
+    const calculateYTDSpend = () => {
+        let total = 0
+
+        for (const costing of data.costings) {
+            total += amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage)
+        }
+
+        return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
+    }
+
+    /**
+     * Function to calculate the total active shipments for a vendor
+     * @returns {number} The total active shipments
+     */
+    const totalActiveShipments = () => {
+        return data.costings.filter((costing: Costing) => costing.shipment?.isActive).length
+    }
+
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
@@ -97,17 +119,17 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
 
                     <div className="grid grid-cols-4 text-center">
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mt-2 font-bold text-xl">{ totalActiveShipments() }</p>
                             <p className="mb-2 text-sm text-slate-500">Active <br /> Shipments</p>
                         </div>
 
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">18</p>
+                            <p className="mt-2 font-bold text-xl">{ data.costings.length }</p>
                             <p className="mb-2 text-sm text-slate-500">Total <br /> Assignments</p>
                         </div>
 
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">Rp. 4,000,000</p>
+                            <p className="mt-2 font-bold text-xl">{ calculateYTDSpend() }</p>
                             <p className="mb-2 text-sm text-slate-500">YTD <br /> Spend</p>
                         </div>
 

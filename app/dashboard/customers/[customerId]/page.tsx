@@ -129,6 +129,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
         return count
     }
+
+    /**
+     * Function to calculate the total YTD spend for a customer
+     * @returns {number} The total YTD spend
+     */
+    const calculateYTDSpend = () => {
+        let total = 0
+
+        for (const shipment of data?.shipments) {
+            total += shipment.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)
+        }
+
+        return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
+    }
     
 
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
@@ -171,7 +185,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         </div>
 
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">Rp. 4,000,000</p>
+                            <p className="mt-2 font-bold text-xl">{ calculateYTDSpend() }</p>
                             <p className="mb-2 text-sm text-slate-500">YTD <br /> Spend</p>
                         </div>
 

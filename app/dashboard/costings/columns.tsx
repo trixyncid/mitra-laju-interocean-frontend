@@ -19,7 +19,7 @@ export type Costing = {
     vatPercentage: number
     pph23Percentage: number
     vendor: { vendorName: string }
-    shipment: { orderNumber: string | null, id: string | null, shipmentOperational?: { eta: string | null, portDeparture?: { portName: string, portCountry: string }, portDestination?: { portName: string, portCountry: string } }, customerCode?: { 
+    shipment: { orderNumber: string | null, id: string | null, isActive: boolean, shipmentOperational?: { eta: string | null, portDeparture?: { portName: string, portCountry: string }, portDestination?: { portName: string, portCountry: string } }, customerCode?: { 
         customerCode?: string, customerName?: string
     }, customerShipper?: {
         name?: string

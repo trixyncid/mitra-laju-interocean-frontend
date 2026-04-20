@@ -1,17 +1,23 @@
 "use client"
 
-import { IconArrowLeft, IconFile, IconPlus } from "@tabler/icons-react"
+import { IconArrowLeft, IconFile } from "@tabler/icons-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { use } from "react"
 import ShipmentOperationalForm from "@/components/forms/shipment-operational-form"
-import { useShipmentById } from "@/hooks/use-shipments"
+import { useShipmentById, useUpdateShipmentOperational } from "@/hooks/use-shipments"
 import DetailPageSkeleton from "@/components/detail-page-skeleton"
-import { formatDate } from "@/lib/utils"
+import { amountCalculation, formatDate } from "@/lib/utils"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
 import DocumentUploadForm from "@/components/forms/document-upload-form"
+import { Costing } from "../../costings/columns"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useForm } from "@tanstack/react-form"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { useState } from "react"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -19,6 +25,17 @@ export type ShipmentOperationalContainer = {
     sealNumber: string
     size: string
     isActive: boolean
+    updatedAt: string
+    updatedBy: { name: string}
+}
+
+export type ShipmentOperationalAttachment = {
+    id?: string
+    attachmentName: string
+    filePath: string
+    fileName: string
+    contentType: string
+    size: number
     updatedAt: string
     updatedBy: { name: string}
 }
@@ -34,7 +51,34 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
         "DRY_40": "40 DRY",
     }
 
+    const [ open, setOpen ] = useState(false)
+    
     const { data, isLoading, error } = useShipmentById(shipmentId)
+
+    const updateShipmentOperational = useUpdateShipmentOperational(shipmentId)
+
+    const form = useForm({
+        defaultValues: {
+            customerChargeAmount: data?.shipmentOperational?.customerChargeAmount ?? "",
+        },
+        onSubmit: async ({ value }) => {
+            updateShipmentOperational.mutate({
+                shipmentId: shipmentId,
+                id: data?.shipmentOperational?.id ?? "",
+                shipmentOperational: {
+                    customerChargeAmount: Number(value.customerChargeAmount),
+                }
+            }, {
+                onSuccess: () => {
+                    toast.success("Financial summary updated successfully")
+                    setOpen(false)
+                },
+                onError: (error: Error) => {
+                    toast.error(error.message || "Failed to update financial summary")
+                }
+            })
+        }
+    })
 
 
     if (isLoading) return <DetailPageSkeleton />
@@ -128,13 +172,29 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     <DocumentUploadForm mode="create" shipmentId={data.id} costingId={undefined} id={undefined} attachmentName={undefined} document={undefined} />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="border rounded-md px-2 py-1 flex items-center gap-x-2">
-                                        <IconFile className="text-slate-500 bg-slate-100 rounded-md p-1 size-6" />
-                                        <div>
-                                            <p className="text-sm text-slate-500">BL.pdf</p>
-                                            <p className="text-xs text-slate-500">Last modified: 15/04/2026</p>
-                                        </div>
-                                    </div>
+                                    {
+                                        data?.shipmentOperationalAttachments.length === 0 ? (
+                                            <div>
+                                                <p>No document uploads found</p>
+                                            </div>
+                                        ) :
+                                        data?.shipmentOperationalAttachments.map((attachment: ShipmentOperationalAttachment) => (
+                                            <div key={attachment.id} className="border rounded-md px-2 py-1 flex items-center gap-x-2 justify-between">
+                                                <div className="flex items-center gap-x-2">
+                                                    <IconFile className="text-blue-500 bg-blue-100 rounded-md p-1 size-6" />
+                                                    <div>
+                                                        <p className="text-sm text-slate-500">{ attachment.attachmentName }</p>
+                                                        <p className="text-xs text-slate-500">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) }</p>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <Button>Download</Button>
+                                                    <DocumentUploadForm mode="edit" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
+                                                </div>
+                                            </div>
+                                        ))
+                                    }
                                 </CardContent>
                             </Card>
 
@@ -198,23 +258,27 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                         <table className="w-full text-left">
                                             <thead className="text-slate-500 border-b bg-slate-100 text-sm">
                                                 <tr>
-                                                    <th className="py-2 px-4">COST ID</th>
+                                                    <th className="py-2 px-4">DESCRIPTION</th>
                                                     <th className="py-2 px-4">VENDOR</th>
                                                     <th className="py-2 px-4">AMOUNT</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr className="border-b">
-                                                    <td className="py-2 px-4">COST001</td>
-                                                    <td className="py-2 px-4">VENDOR001</td>
-                                                    <td className="py-2 px-4">Rp. 100.000</td>
-                                                </tr>
+                                                {   
+                                                    data.costings.map((costing: Costing) => (
+                                                        <tr key={costing.id}>
+                                                            <td className="py-2 px-4">{ costing.description }</td>
+                                                            <td className="py-2 px-4">{ costing.vendor.vendorName }</td>
+                                                            <td className="py-2 px-4">{ amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</td>
+                                                        </tr>
+                                                    ))
+                                                }
                                             </tbody>
                                         </table>
                                     </div>
 
                                     <div className="mt-4 flex justify-end">
-                                        <p className="font-semibold">Total Cost: Rp. 100.000</p>
+                                        <p className="text-sm text-slate-500">Total Cost: <span className="font-semibold">{ data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</span></p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -229,20 +293,55 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     <div>
                                         <div className="py-2 flex items-center justify-between border-b">
                                             <Label className="text-slate-500">Total Vendor Cost</Label>
-                                            <p className="font-semibold text-red-500">- Rp. 100.000</p>
+                                            <p className="font-semibold text-red-500">- { data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between border-b">
                                             <Label className="text-slate-500">Customer Charge</Label>
-                                            <p className="font-semibold">Rp. 100.000</p>
+                                            <p className="font-semibold">{ data.shipmentOperational.customerChargeAmount === null ? "Rp. 0" : data.shipmentOperational.customerChargeAmount.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between border-b">
                                             <Label className="text-slate-500 font-bold">Gross Profit</Label>
-                                            <p className="font-semibold text-green-500">+ Rp. 100.000</p>
+                                            <p className="font-semibold text-green-500">+ { data.shipmentOperational.customerChargeAmount === null ? "-" : (data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between">
                                             <Label className="text-slate-500">Margin</Label>
-                                            <p className="font-semibold">18.6%</p>
+                                            <p className="font-semibold">{ data.shipmentOperational.customerChargeAmount === null ? "-" : ((data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)) / data.shipmentOperational.customerChargeAmount * 100).toFixed(2) }%</p>
                                         </div>
+                                    </div>
+
+                                    <div className="w-full flex justify-end mt-4">
+                                        <Dialog open={open} onOpenChange={setOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button size="sm"> Edit</Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Edit Financial Summary</DialogTitle>
+                                                </DialogHeader>
+                                                <form onSubmit={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    form.handleSubmit()
+                                                }}>
+                                                    <div>
+                                                        <form.Field name="customerChargeAmount" validators={{ onChange: ({ value }) => !value ? "Customer charge amount is required" : undefined }}>
+                                                            {( field ) => (
+                                                                <div>
+                                                                    <Label htmlFor={field.name} className="mb-2">Customer Charge</Label>
+                                                                    <Input type="number" id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                                    {field.state.meta.errors ? (
+                                                                        <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                                    ) : null}
+                                                                </div>
+                                                            )}
+                                                        </form.Field>
+                                                    </div>
+                                                    <DialogFooter className="mt-4">
+                                                        <Button type="submit" disabled={updateShipmentOperational.isPending}>{ updateShipmentOperational.isPending ? "Saving..." : "Save" }</Button>
+                                                    </DialogFooter>
+                                                </form>
+                                            </DialogContent>
+                                        </Dialog>
                                     </div>
                                 </CardContent>
                             </Card>

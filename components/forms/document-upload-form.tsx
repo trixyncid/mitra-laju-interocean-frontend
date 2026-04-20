@@ -1,13 +1,13 @@
-import { IconPencil, IconPlus } from "@tabler/icons-react"
+import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react"
 import { Button } from "../ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
-import { useCreateShipmentOperationalAttachment, useUpdateShipmentOperationalAttachment } from "@/hooks/use-shipments"
+import { useCreateShipmentOperationalAttachment, useDeleteShipmentOperationalAttachment, useUpdateShipmentOperationalAttachment } from "@/hooks/use-shipments"
 import { toast } from "sonner"
-import { useCreateCostingAttachment, useUpdateCostingAttachment } from "@/hooks/use-costings"
+import { useCreateCostingAttachment, useDeleteCostingAttachment, useUpdateCostingAttachment } from "@/hooks/use-costings"
 
 export default function DocumentUploadForm({
     shipmentId,
@@ -25,12 +25,15 @@ export default function DocumentUploadForm({
     mode: "create" | "edit"
 }) {
     const [open, setOpen] = useState(false)
+    const [deleteOpen, setDeleteOpen] = useState(false)
 
     const createShipmentOperationalAttachment = useCreateShipmentOperationalAttachment(shipmentId ?? "")
     const updateShipmentOperationalAttachment = useUpdateShipmentOperationalAttachment(shipmentId ?? "")
+    const deleteShipmentOperationalAttachment = useDeleteShipmentOperationalAttachment(shipmentId ?? "")
 
     const createCostingAttachment = useCreateCostingAttachment(costingId ?? "")
     const updateCostingAttachment = useUpdateCostingAttachment(costingId ?? "")
+    const deleteCostingAttachment = useDeleteCostingAttachment(costingId ?? "")
 
     const form = useForm({
         defaultValues: {
@@ -40,17 +43,29 @@ export default function DocumentUploadForm({
             attachmentName: attachmentName ?? "",
             document: document ?? null as File | null,
         },
-        onSubmit: ({ value }) => {
+        onSubmit: async ({ value }) => {
+            const formData = new FormData()
+
+            formData.append("attachmentName", value.attachmentName)
+            formData.append("contentType", value.document?.type ?? "")
+            formData.append("document", value.document ?? new File([], ""))
+            formData.append("filePath", value.document?.name ?? "")
+            formData.append("size", value.document?.size.toString() ?? "0")
+            formData.append("fileName", value.document?.name ?? "")
+            formData.append("shipmentId", shipmentId ?? "")
+
             if (shipmentId !== undefined) {
                 if (mode === "create") {
                     createShipmentOperationalAttachment.mutate({
                         shipmentId: shipmentId,
                         shipmentOperationalAttachment: {
-                            attachmentName: value.attachmentName,
-                            contentType: value.document?.type ?? "",
-                            filePath: "shipment/" + value.document?.name,
-                            size: value.document?.size ?? 0,
+                            attachmentName: formData.get("attachmentName") as string,
+                            contentType: formData.get("contentType") as string,
+                            filePath: formData.get("filePath") as string,
+                            size: parseInt(formData.get("size") as string),
+                            fileName: formData.get("fileName") as string,
                             shipmentId: shipmentId,
+                            document: formData.get("document") as File,
                         },
                     }, {
                         onSuccess: () => {
@@ -85,8 +100,10 @@ export default function DocumentUploadForm({
                         costingId: costingId ?? "",
                         costingAttachment: {
                             attachmentName: value.attachmentName,
-                            filePath: "costing/" + value.document?.name,
+                            filePath: value.document?.name ?? "",
+                            fileName: value.document?.name ?? "",
                             size: value.document?.size ?? 0,
+                            contentType: value.document?.type ?? "",
                             costingId: costingId,
                         },
                     }, {
@@ -125,7 +142,7 @@ export default function DocumentUploadForm({
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     {
-                        mode === "create" ? <Button variant="outline" size="sm"><IconPlus className="text-slate-500 size-4" />Upload</Button> : <Button variant="outline" size="sm"><IconPencil className="text-slate-500 size-4" /></Button>
+                        mode === "create" ? <Button variant="outline" size="sm"><IconPlus className="text-slate-500 size-4" />Upload</Button> : <Button variant="outline" size="icon"><IconPencil className="text-slate-500 size-4" /></Button>
                     }
                 </DialogTrigger>
                 <DialogContent>
@@ -153,25 +170,85 @@ export default function DocumentUploadForm({
                         </form.Field>
                     </div>
 
-                    <div className="my-3">
-                        <form.Field name="document" validators={{ onChange: ({ value }) => !value ? "Document File is required" : undefined }}>
-                            {(field) => (
-                                <div className="">
-                                    <Label htmlFor={field.name} className="mb-1">Document File</Label>
-                                    <Input type="file" id={field.name} name={field.name} onChange={(e) => field.handleChange(e.target.files?.[0] ?? null)} />
-                                    { field.state.meta.errors ? (
-                                        <em className="text-xs text-red-500">{ field.state.meta.errors }</em>
-                                    ) : null }
-                                </div>
-                            )}
-                        </form.Field>
-                    </div>
+                    {
+                        mode === "create" ? (
+                            <div className="my-3">
+                                <form.Field name="document" validators={{ onChange: ({ value }) => !value ? "Document File is required" : undefined }}>
+                                    {(field) => (
+                                        <div className="">
+                                            <Label htmlFor={field.name} className="mb-1">Document File</Label>
+                                            <Input type="file" id={field.name} name={field.name} onChange={(e) => field.handleChange(e.target.files?.[0] ?? null)} />
+                                            { field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{ field.state.meta.errors }</em>
+                                            ) : null }
+                                        </div>
+                                    )}
+                                </form.Field>
+                            </div>
+                        ) : (
+                            <></>
+                        )
+                    }
                     <DialogFooter>
-                        <Button type="submit">Upload</Button>
+                        <Button type="submit" disabled={ mode === "create" ? createShipmentOperationalAttachment.isPending || createCostingAttachment.isPending : updateShipmentOperationalAttachment.isPending || updateCostingAttachment.isPending }>{ mode === "create" ? (createShipmentOperationalAttachment.isPending || createCostingAttachment.isPending ? "Uploading..." : "Upload") : (updateShipmentOperationalAttachment.isPending || updateCostingAttachment.isPending ? "Updating..." : "Save Changes")}</Button>
                     </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {
+                mode === "edit" ? (
+                    <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="icon"><IconTrash className="text-red-500 size-4" /></Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Delete Document</DialogTitle>
+                            </DialogHeader>
+                            <DialogDescription>
+                                Are you sure you want to delete this document? This action cannot be undone.
+                            </DialogDescription>
+                            <DialogFooter>
+                                <Button variant="destructive" onClick={() => {
+                                    if (shipmentId !== undefined) {
+                                        deleteShipmentOperationalAttachment.mutate({
+                                            shipmentId: shipmentId,
+                                            id: id ?? "",
+                                        }, {
+                                            onSuccess: () => {
+                                                setDeleteOpen(false)
+                                                form.reset()
+                                            },
+                                            onError: (error: Error) => {
+                                                toast.error(error.message)
+                                            }
+                                        })
+                                    } else {
+                                        deleteCostingAttachment.mutate({
+                                            costingId: costingId ?? "",
+                                            id: id ?? "",
+                                        }, {
+                                            onSuccess: () => {
+                                                setDeleteOpen(false)
+                                                form.reset()
+                                            },
+                                            onError: (error: Error) => {
+                                                toast.error(error.message)
+                                            }
+                                        })
+                                    }
+                                }}>Delete</Button>
+                                <DialogClose asChild>
+                                    <Button variant="secondary">Cancel</Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                ) : (
+                    <></>
+                )
+            }
         </div>
     )
 }
