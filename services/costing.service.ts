@@ -21,7 +21,7 @@ export const costingService = {
         const response = await apiClient.delete(`/costings/${id}`)
         return response
     },
-    createCostingAttachment: async (costingId: string, costingAttachment: unknown) => {
+    createCostingAttachment: async (costingId: string, costingAttachment: FormData) => {
         const response = await apiClient.post(`/costings/${costingId}/attachments`, costingAttachment)
         return response
     },

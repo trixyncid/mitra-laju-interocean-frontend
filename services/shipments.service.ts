@@ -51,7 +51,7 @@ export const shipmentsService = {
         const response = await apiClient.delete(`/shipments/${shipmentId}/operational/${shipmentOperationalId}/containers/${id}`);
         return response;
     },
-    createShipmentOperationalAttachment: async (shipmentId: string, shipmentOperationalAttachment: unknown) => {
+    createShipmentOperationalAttachment: async (shipmentId: string, shipmentOperationalAttachment: FormData) => {
         const response = await apiClient.post(`/shipments/${shipmentId}/attachments`, shipmentOperationalAttachment);
         return response;
     },
@@ -62,5 +62,10 @@ export const shipmentsService = {
     deleteShipmentOperationalAttachment: async (shipmentId: string, id: string) => {
         const response = await apiClient.delete(`/shipments/${shipmentId}/attachments/${id}`);
         return response;
+    },
+    viewShipmentOperationalAttachment: async (shipmentId: string, id: string) => {
+        const response = await apiClient.get(`/shipments/${shipmentId}/attachments/${id}`);
+
+        window.open(response.url, "_blank");
     }
 }

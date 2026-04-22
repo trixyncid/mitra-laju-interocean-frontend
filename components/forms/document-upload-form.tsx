@@ -58,15 +58,7 @@ export default function DocumentUploadForm({
                 if (mode === "create") {
                     createShipmentOperationalAttachment.mutate({
                         shipmentId: shipmentId,
-                        shipmentOperationalAttachment: {
-                            attachmentName: formData.get("attachmentName") as string,
-                            contentType: formData.get("contentType") as string,
-                            filePath: formData.get("filePath") as string,
-                            size: parseInt(formData.get("size") as string),
-                            fileName: formData.get("fileName") as string,
-                            shipmentId: shipmentId,
-                            document: formData.get("document") as File,
-                        },
+                        shipmentOperationalAttachment: formData,
                     }, {
                         onSuccess: () => {
                             setOpen(false)
@@ -96,16 +88,11 @@ export default function DocumentUploadForm({
                 }
             } else {
                 if (mode === "create") {
+                    formData.append("costingId", costingId ?? "")
+
                     createCostingAttachment.mutate({
                         costingId: costingId ?? "",
-                        costingAttachment: {
-                            attachmentName: value.attachmentName,
-                            filePath: value.document?.name ?? "",
-                            fileName: value.document?.name ?? "",
-                            size: value.document?.size ?? 0,
-                            contentType: value.document?.type ?? "",
-                            costingId: costingId,
-                        },
+                        costingAttachment: formData,
                     }, {
                         onSuccess: () => {
                             setOpen(false)
@@ -138,7 +125,7 @@ export default function DocumentUploadForm({
     })
 
     return (
-        <div>
+        <div className="flex items-center gap-x-2">
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     {

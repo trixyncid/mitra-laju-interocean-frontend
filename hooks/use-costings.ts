@@ -65,7 +65,7 @@ export const useCreateCostingAttachment = (costingId: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ costingId, costingAttachment }: { costingId: string, costingAttachment: unknown }) => costingService.createCostingAttachment(costingId, costingAttachment),
+        mutationFn: ({ costingId, costingAttachment }: { costingId: string, costingAttachment: FormData }) => costingService.createCostingAttachment(costingId, costingAttachment),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["costings", costingId] });
             toast.success("Costing attachment created successfully");

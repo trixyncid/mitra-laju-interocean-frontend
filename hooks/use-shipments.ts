@@ -142,7 +142,7 @@ export const useCreateShipmentOperationalAttachment = (shipmentId: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ shipmentId, shipmentOperationalAttachment }: { shipmentId: string, shipmentOperationalAttachment: unknown }) => shipmentsService.createShipmentOperationalAttachment(shipmentId, shipmentOperationalAttachment),
+        mutationFn: ({ shipmentId, shipmentOperationalAttachment }: { shipmentId: string, shipmentOperationalAttachment: FormData }) => shipmentsService.createShipmentOperationalAttachment(shipmentId, shipmentOperationalAttachment),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
             toast.success("Shipment operational attachment created successfully");

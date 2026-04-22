@@ -1,6 +1,6 @@
 "use client"
 
-import { IconArrowLeft, IconFile } from "@tabler/icons-react"
+import { IconArrowLeft, IconEye, IconFile } from "@tabler/icons-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -18,6 +18,7 @@ import { useForm } from "@tanstack/react-form"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useState } from "react"
+import { shipmentsService } from "@/services/shipments.service"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -117,7 +118,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                     </div>
                 ) : (
                     <div className="flex flex-start gap-x-4">
-                        <div className="w-9/12">
+                        <div className="w-[70%]">
                             <Card className="my-6">
                                 <CardHeader>
                                     <CardTitle>SHIPMENT OVERVIEW</CardTitle>
@@ -179,17 +180,23 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                             </div>
                                         ) :
                                         data?.shipmentOperationalAttachments.map((attachment: ShipmentOperationalAttachment) => (
-                                            <div key={attachment.id} className="border rounded-md px-2 py-1 flex items-center gap-x-2 justify-between">
+                                            <div key={attachment.id} className="border rounded-md px-3 py-2 flex items-center gap-x-2 justify-between mb-4">
                                                 <div className="flex items-center gap-x-2">
-                                                    <IconFile className="text-blue-500 bg-blue-100 rounded-md p-1 size-6" />
+                                                    <IconFile className="text-blue-500 bg-blue-100 rounded-md p-1 size-8" />
                                                     <div>
-                                                        <p className="text-sm text-slate-500">{ attachment.attachmentName }</p>
-                                                        <p className="text-xs text-slate-500">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) }</p>
+                                                        <p className="text-sm text-slate-500">{ attachment.attachmentName } - { attachment.fileName }</p>
+                                                        <p className="text-xs text-slate-500">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) } by { attachment.updatedBy.name as string }</p>
                                                     </div>
                                                 </div>
 
-                                                <div>
-                                                    <Button>Download</Button>
+                                                <div className="flex items-center gap-x-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => shipmentsService.viewShipmentOperationalAttachment(data.id, attachment.id!)}
+                                                    >
+                                                        <IconEye className="text-slate-500 size-4" />
+                                                    </Button>
                                                     <DocumentUploadForm mode="edit" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
                                                 </div>
                                             </div>
@@ -284,7 +291,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                             </Card>
                         </div>
 
-                        <div className="w-3/12">
+                        <div className="w-[30%]">
                             <Card className="my-6">
                                 <CardHeader>
                                     <CardTitle>FINANCIAL SUMMARY</CardTitle>
@@ -301,11 +308,11 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                         </div>
                                         <div className="py-2 flex items-center justify-between border-b">
                                             <Label className="text-slate-500 font-bold">Gross Profit</Label>
-                                            <p className="font-semibold text-green-500">+ { data.shipmentOperational.customerChargeAmount === null ? "-" : (data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
+                                            <p className="font-semibold text-green-500">{ data.shipmentOperational.customerChargeAmount === null || data.shipmentOperational.customerChargeAmount === 0 ? <span className="text-orange-500 bg-orange-100 rounded-md px-2 py-1 text-xs font-medium">Unavailable</span> : (data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between">
                                             <Label className="text-slate-500">Margin</Label>
-                                            <p className="font-semibold">{ data.shipmentOperational.customerChargeAmount === null ? "-" : ((data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)) / data.shipmentOperational.customerChargeAmount * 100).toFixed(2) }%</p>
+                                            <p className="font-semibold">{ data.shipmentOperational.customerChargeAmount === null || data.shipmentOperational.customerChargeAmount === 0 ? <span className="text-orange-500 bg-orange-100 rounded-md px-2 py-1 text-xs font-medium">Unavailable</span> : ((data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)) / data.shipmentOperational.customerChargeAmount * 100).toFixed(2) + "%" }</p>
                                         </div>
                                     </div>
 
