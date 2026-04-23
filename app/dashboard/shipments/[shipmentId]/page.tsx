@@ -170,7 +170,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                             <Card className="my-6">
                                 <CardHeader className="flex items-center justify-between">
                                     <CardTitle>DOCUMENT UPLOADS</CardTitle>
-                                    <DocumentUploadForm mode="create" shipmentId={data.id} costingId={undefined} id={undefined} attachmentName={undefined} document={undefined} />
+                                    <DocumentUploadForm mode="create" module="shipment" shipmentId={data.id} costingId={undefined} id={undefined} attachmentName={undefined} document={undefined} />
                                 </CardHeader>
                                 <CardContent>
                                     {
@@ -197,7 +197,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                     >
                                                         <IconEye className="text-slate-500 size-4" />
                                                     </Button>
-                                                    <DocumentUploadForm mode="edit" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
+                                                    <DocumentUploadForm mode="edit" module="shipment" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
                                                 </div>
                                             </div>
                                         ))

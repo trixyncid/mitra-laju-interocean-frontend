@@ -2,17 +2,31 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IconEye, IconFile, IconTrash } from "@tabler/icons-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { use } from "react";
 import { useCostingById } from "@/hooks/use-costings";
 import { amountCalculation, formatDate } from "@/lib/utils";
 import DocumentUploadForm from "@/components/forms/document-upload-form";
+import { costingService } from "@/services/costing.service";
+
+export type CostingAttachment = {
+    id: string
+    attachmentName: string
+    fileName: string
+    filePath: string
+    createdAt: string
+    createdBy: string
+    updatedAt: string
+    updatedBy: { name: string }
+}
 
 export default function CostingDetailPage({ params }: { params: Promise<{ costingId: string }> }) {
     const { costingId } = use(params)
 
     const { data: costing, isLoading: isLoadingCosting, error: errorCosting } = useCostingById(costingId)
+
+    if (isLoadingCosting) return "Loading..."
 
     console.log(costing)
 
@@ -89,12 +103,38 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                         <CardContent>
                             <div className="mb-4 flex items-center justify-between">
                                 <h1 className="font-bold">SUPPORTING DOCUMENTS</h1>
-                                <DocumentUploadForm mode="create" shipmentId={undefined} costingId={costingId} id={undefined} attachmentName={undefined} document={undefined} />
+                                <DocumentUploadForm mode="create" module="costing" shipmentId={undefined} costingId={costingId} id={undefined} attachmentName={undefined} document={undefined} />
                             </div>
 
-                            <div>
-                                <p>No documents available ...</p>
-                            </div>
+                            {
+                                costing?.costingsAttachments.length === 0 ? (
+                                    <div>
+                                        <p>No documents available ...</p>
+                                    </div>
+                                ) :
+                                costing.costingsAttachments.map((attachment: CostingAttachment) => (
+                                    <div key={attachment.id} className="border rounded-md px-3 py-2 flex items-center gap-x-2 justify-between mb-4">
+                                        <div className="flex items-center gap-x-2">
+                                            <IconFile className="text-blue-500 bg-blue-100 rounded-md p-1 size-8" />
+                                            <div>
+                                                <p className="text-sm text-slate-500">{ attachment.attachmentName } - { attachment.fileName }</p>
+                                                <p className="text-xs text-slate-500">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) } by { attachment.updatedBy.name as string }</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-x-2">
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => costingService.viewCostingAttachment(costingId, attachment.id!)}
+                                            >
+                                                <IconEye className="text-slate-500 size-4" />
+                                            </Button>
+                                            <DocumentUploadForm mode="edit" module="costing" shipmentId={undefined} costingId={costingId} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
+                                        </div>
+                                    </div>
+                                ))
+                            }
                         </CardContent>
                     </Card>
                 </div>

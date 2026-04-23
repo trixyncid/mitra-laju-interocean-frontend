@@ -11,7 +11,7 @@ import { useCreateShipment, useUpdateShipment } from "@/hooks/use-shipments";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export type Shipper = {
@@ -84,6 +84,12 @@ export default function ShipmentForm({
 
     const [ open, setOpen ] = useState(false)
     const [ selectedCustomerCode, setSelectedCustomerCode ] = useState<string | undefined>(customerCodeId ?? "")
+
+    useEffect(() => {
+        if (mode === "create" && orderNumber) {
+            form.setFieldValue("orderNumber", orderNumber)
+        }
+    }, [orderNumber, form, mode])
 
     const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers()
     const { data: shippers, isLoading: shippersLoading, error: shippersError } = useGetShippersByCustomerCodeId(selectedCustomerCode ?? "")

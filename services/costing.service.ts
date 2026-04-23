@@ -32,5 +32,10 @@ export const costingService = {
     deleteCostingAttachment: async (costingId: string, id: string) => {
         const response = await apiClient.delete(`/costings/${costingId}/attachments/${id}`)
         return response
+    },
+    viewCostingAttachment: async (costingId: string, id: string) => {
+        const response = await apiClient.get(`/costings/${costingId}/attachments/${id}`)
+        
+        window.open(response.url, "_blank");
     }
 }

@@ -25,14 +25,17 @@ export default function ShipmentPage() {
         const year = new Date().getFullYear()
         const romanMonth = monthInRomans[month - 1]
     
-        const count = data?.filter((shipment: Shipment) => {
+        const maxNumber = (data ?? []).reduce((max: number, shipment: Shipment) => {
             const parts = shipment.orderNumber?.split("/")
-            // Guard against malformed orderNumbers
-            if (!parts || parts.length !== 3) return false
-            return parts[1] === romanMonth && parts[2] === year.toString()
-        }).length + 1
+            if (!parts || parts.length !== 3) return max
+            if (parts[1] === romanMonth && parts[2] === year.toString()) {
+                const num = parseInt(parts[0], 10)
+                return isNaN(num) ? max : Math.max(max, num)
+            }
+            return max
+        }, 0)
     
-        return `${count}/${romanMonth}/${year}`
+        return `${maxNumber + 1}/${romanMonth}/${year}`
     }
     
     return (

@@ -12,6 +12,7 @@ import { useCreateCostingAttachment, useDeleteCostingAttachment, useUpdateCostin
 export default function DocumentUploadForm({
     shipmentId,
     costingId,
+    module,
     id,
     attachmentName,
     document,
@@ -23,6 +24,7 @@ export default function DocumentUploadForm({
     attachmentName: string | undefined
     document: File | undefined
     mode: "create" | "edit"
+    module: "shipment" | "costing"
 }) {
     const [open, setOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
@@ -53,11 +55,12 @@ export default function DocumentUploadForm({
             formData.append("size", value.document?.size.toString() ?? "0")
             formData.append("fileName", value.document?.name ?? "")
             formData.append("shipmentId", shipmentId ?? "")
+            formData.append("costingId", costingId ?? "")
 
-            if (shipmentId !== undefined) {
+            if (module === "shipment") {
                 if (mode === "create") {
                     createShipmentOperationalAttachment.mutate({
-                        shipmentId: shipmentId,
+                        shipmentId: shipmentId ?? "",
                         shipmentOperationalAttachment: formData,
                     }, {
                         onSuccess: () => {
@@ -70,7 +73,7 @@ export default function DocumentUploadForm({
                     })
                 } else {
                     updateShipmentOperationalAttachment.mutate({
-                        shipmentId: shipmentId,
+                        shipmentId: shipmentId ?? "",
                         id: id ?? "",
                         shipmentOperationalAttachment: {
                             attachmentName: value.attachmentName,
@@ -88,8 +91,6 @@ export default function DocumentUploadForm({
                 }
             } else {
                 if (mode === "create") {
-                    formData.append("costingId", costingId ?? "")
-
                     createCostingAttachment.mutate({
                         costingId: costingId ?? "",
                         costingAttachment: formData,
