@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "../providers";
 import { authClient } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
+import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,14 @@ export default function DashboardLayout({
 }>) {
   const { data: session, isPending, error } = authClient.useSession()
 
-  if (isPending) return <div>Loading...</div>
+  if (isPending) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <AudioLines animate="path-loop" speed={3} className="size-10 text-blue-500 animate-pulse"/>
+        <p className="text-sm text-muted-foreground mt-4">Preparing your dashboard...</p>
+      </div>
+    )
+  }
 
   if (error) return <div>Error: {error.message}</div>
 

@@ -4,7 +4,7 @@ import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import CustomerForm from "@/components/forms/customer-form";
 import { useCustomers } from "@/hooks/use-customers";
-import TableSkeleton from "@/components/table-skeleton";
+import TableSkeleton from "@/components/loading/table-skeleton";
 import ErrorPage from "@/components/error-page";
 
 export default function CustomerMasterDataPage() {

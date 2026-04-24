@@ -4,13 +4,12 @@ import { DataTable } from "./data-table";
 import { columns, Shipment } from "./columns";
 import ShipmentForm from "@/components/forms/shipment-form";
 import { useShipments } from "@/hooks/use-shipments";
+import TableSkeleton from "@/components/loading/table-skeleton";
 
 export default function ShipmentPage() {
     const { data, isLoading, error } = useShipments()
 
     if (error) return <div>Error: {error.message}</div>
-
-    console.log(data)
 
     /**
      * Function to assign order numbers to shipments: Order number is in the format of <count>/<month in romans>/<year>.
@@ -52,7 +51,7 @@ export default function ShipmentPage() {
 
             {/* Table */}
             <div className='container mx-auto py-10'>
-                { isLoading ? <div>Loading...</div> : <DataTable columns={columns} data={data} />}
+                { isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
             </div>
         </div>
     )

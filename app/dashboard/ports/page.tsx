@@ -4,7 +4,7 @@ import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import PortForm from "@/components/forms/port-form";
 import { usePorts } from "@/hooks/use-ports";
-import TableSkeleton from "@/components/table-skeleton";
+import TableSkeleton from "@/components/loading/table-skeleton";
 import ErrorPage from "@/components/error-page";
 
 export default function PortMasterDataPage() {

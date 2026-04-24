@@ -154,7 +154,7 @@ export default function VesselForm({
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value ? field.state.value.split('T')[0] : ''}
-                                            onChange={(e) => field.handleChange(ISOFormat(e.target.value))}
+                                            onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
                                             type="date"
                                         />
                                         { field.state.meta.errors ? (
@@ -173,7 +173,7 @@ export default function VesselForm({
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value ? field.state.value.split('T')[0] : ''}
-                                            onChange={(e) => field.handleChange(ISOFormat(e.target.value))}
+                                            onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
                                             type="date"
                                         />
                                         { field.state.meta.errors ? (

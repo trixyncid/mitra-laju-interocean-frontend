@@ -5,7 +5,6 @@ import { use } from "react"
 import { IconArrowLeft, IconBrandWhatsapp, IconBuildingFactory2 } from "@tabler/icons-react"
 import { useCustomerById } from "@/hooks/use-customers"
 import ErrorPage from "@/components/error-page"
-import DetailPageSkeleton from "@/components/detail-page-skeleton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Dot } from "lucide-react"
@@ -22,6 +21,7 @@ import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import CostingHistoryPage from "./(costings)/costing-history-page"
 import { Costing as CustomerCosting } from "./(costings)/costing-column"
 import { Costing } from "@/app/dashboard/costings/columns"
+import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
 
 type CustomerContact = {
     id: string
@@ -110,6 +110,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 invoiceNumber: costing.vendorInvoiceNumber,
                 amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
                 shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
+                updatedAt: costing.updatedAt ?? "",
             } as CustomerCosting)))
         }
 
@@ -147,9 +148,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
 
-    if (isLoading) return <DetailPageSkeleton />
+    if (isLoading) return <CustomerVendorDetailLoading />
 
-    return (
+    return (  
         <div className="px-4 lg:px-6">
             <div className="mb-5">
                 <Button asChild variant="ghost" className="text-slate-500">

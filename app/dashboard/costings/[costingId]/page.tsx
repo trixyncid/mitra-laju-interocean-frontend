@@ -9,6 +9,7 @@ import { useCostingById } from "@/hooks/use-costings";
 import { amountCalculation, formatDate } from "@/lib/utils";
 import DocumentUploadForm from "@/components/forms/document-upload-form";
 import { costingService } from "@/services/costing.service";
+import CostingLoading from "@/components/loading/costing-loading";
 
 export type CostingAttachment = {
     id: string
@@ -26,9 +27,9 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
 
     const { data: costing, isLoading: isLoadingCosting, error: errorCosting } = useCostingById(costingId)
 
-    if (isLoadingCosting) return "Loading..."
+    if (isLoadingCosting) return <CostingLoading />
 
-    console.log(costing)
+    if (errorCosting) return <div>Error: {errorCosting.message}</div>
 
     return (
         <div className="px-4 lg:px-6">

@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
 import Link from "next/link"
+import { localDate } from "@/lib/utils"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -10,7 +11,8 @@ export type Costing = {
   id: string
   invoiceNumber: string
   amount: number
-  shipmentOrderNumber: string
+  shipmentOrderNumber: string 
+  updatedAt: string
 }
 
 export const columns: ColumnDef<Costing>[] = [
@@ -39,5 +41,10 @@ export const columns: ColumnDef<Costing>[] = [
   {
     accessorKey: "updatedAt",
     header: "Updated At",
+    cell: ({ row }) => {
+      return <div className="flex items-center">
+        <p>{ localDate(row.original.updatedAt.split("T")[0]) }</p>
+      </div>
+    }
   }
 ]

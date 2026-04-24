@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useState } from "react"
 import { shipmentsService } from "@/services/shipments.service"
+import ShipmentLoading from "@/components/loading/shipment-loading"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -82,10 +83,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
     })
 
 
-    if (isLoading) return <DetailPageSkeleton />
-
-    console.log("Shipment detail data", data)
-    console.log("Shipment Operational", data?.shipmentOperational === null)
+    if (isLoading) return <ShipmentLoading />
 
     return (
         <div className="px-4 lg:px-6">

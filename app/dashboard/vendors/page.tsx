@@ -4,7 +4,7 @@ import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import VendorForm from "@/components/forms/vendor-form";
 import { useVendors } from "@/hooks/use-vendors";
-import TableSkeleton from "@/components/table-skeleton";
+import TableSkeleton from "@/components/loading/table-skeleton";
 import ErrorPage from "@/components/error-page";
 
 export default function VendorMasterDataPage() {

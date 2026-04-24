@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useVendorById } from "@/hooks/use-vendors"
 import { use } from "react"
 import { IconArrowLeft, IconBrandWhatsapp, IconFerry } from "@tabler/icons-react"
-import DetailPageSkeleton from "@/components/detail-page-skeleton"
+import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
@@ -48,7 +48,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
 
     console.log(data)
 
-    if (isLoading) return <DetailPageSkeleton />
+    if (isLoading) return <CustomerVendorDetailLoading />
 
     if (error) return <div>Error: {error.message}</div>
 
@@ -57,6 +57,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
         invoiceNumber: costing.vendorInvoiceNumber,
         amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
         shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
+        updatedAt: costing.updatedAt ?? "",
     }))
 
     const vendorShipments: LinkedShipment[] = data.costings.map((costing: Costing) => ({

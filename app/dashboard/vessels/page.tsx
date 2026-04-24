@@ -4,7 +4,7 @@ import { useVessels } from "@/hooks/use-vessels";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import VesselForm from "@/components/forms/vessel-form";
-import TableSkeleton from "@/components/table-skeleton";
+import TableSkeleton from "@/components/loading/table-skeleton";
 import ErrorPage from "@/components/error-page";
 
 export default function VesselMasterDataPage() {

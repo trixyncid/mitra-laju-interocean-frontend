@@ -4,14 +4,13 @@ import { columns } from "./columns"
 import { DataTable } from "./data-table";
 import CostingForm from "@/components/forms/costing-form";
 import { useCostings } from "@/hooks/use-costings";
-import TableSkeleton from "@/components/table-skeleton";
+import TableSkeleton from "@/components/loading/table-skeleton";
+import ErrorPage from "@/components/error-page";
 
 export default function CostingPage() {
     const { data: costings, isLoading: isLoadingCostings, error: errorCostings } = useCostings()
-    
-    if (isLoadingCostings) return <TableSkeleton />
 
-    console.log(costings)
+    if (errorCostings) return <ErrorPage />
 
     return (
         <div className="px-4 lg:px-6">
@@ -27,7 +26,7 @@ export default function CostingPage() {
 
             {/* Costing List */}
             <div className='container mx-auto py-10'>
-                <DataTable columns={columns} data={costings} />
+                { isLoadingCostings ? <TableSkeleton /> : <DataTable columns={columns} data={costings} />}
             </div>
         </div>
     )
