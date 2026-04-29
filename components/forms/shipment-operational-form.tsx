@@ -2,24 +2,21 @@
 
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
-import { Pencil } from "lucide-react"
-import { IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconPlus } from "@tabler/icons-react"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { usePorts } from "@/hooks/use-ports"
 import { Port } from "@/app/dashboard/ports/columns"
 import { Input } from "../ui/input"
 import { useGetLocationsByCustomerId } from "@/hooks/use-customers"
-import { useCreateShipmentOperational, useUpdateShipmentOperational, useDeleteShipmentOperational } from "@/hooks/use-shipments"
-import { shipmentsService } from "@/services/shipments.service"
+import { useCreateShipmentOperational, useUpdateShipmentOperational } from "@/hooks/use-shipments"
 import { useQueryClient } from "@tanstack/react-query"
 import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
 import { ISOFormat } from "@/lib/utils"
 import { toast } from "sonner"
-import { Switch } from "../ui/switch"
 
 export type Location = {
     id: string
@@ -62,7 +59,6 @@ export default function ShipmentOperationalForm({
     status: string | undefined
 }) {
     const [open, setOpen] = useState(false)
-    const queryClient = useQueryClient()
     
     const { data: ports, isLoading: portsLoading, error: portsError } = usePorts()
     const { data: locations, isLoading: locationsLoading, error: locationsError } = useGetLocationsByCustomerId(customerCodeId ?? "")
