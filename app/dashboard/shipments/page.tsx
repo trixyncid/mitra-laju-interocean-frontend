@@ -46,7 +46,7 @@ export default function ShipmentPage() {
                     <p>{ data?.filter((shipment: Shipment) => shipment.isActive).length } active shipments</p>
                 </div>
 
-                <ShipmentForm mode="create" id={undefined} orderNumber={orderNumberAssignment(data)} customerCodeId={undefined} customerShipperId={undefined} />
+                <ShipmentForm mode="create" id={undefined} orderNumber={orderNumberAssignment(data)} customerCodeId={undefined} customerShipperId={undefined} isActive={undefined} />
             </div>
 
             {/* Table */}

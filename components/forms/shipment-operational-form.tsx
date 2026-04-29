@@ -13,9 +13,13 @@ import { Port } from "@/app/dashboard/ports/columns"
 import { Input } from "../ui/input"
 import { useGetLocationsByCustomerId } from "@/hooks/use-customers"
 import { useCreateShipmentOperational, useUpdateShipmentOperational, useDeleteShipmentOperational } from "@/hooks/use-shipments"
+import { shipmentsService } from "@/services/shipments.service"
+import { useQueryClient } from "@tanstack/react-query"
 import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
 import { ISOFormat } from "@/lib/utils"
+import { toast } from "sonner"
+import { Switch } from "../ui/switch"
 
 export type Location = {
     id: string
@@ -37,7 +41,9 @@ export default function ShipmentOperationalForm({
     eta,
     blNumber,
     bookingNumber,
-    customerCodeId
+    customerCodeId,
+    customerChargeAmount,
+    status
 }: {
     id: string | undefined,
     eta: string | undefined
@@ -52,9 +58,11 @@ export default function ShipmentOperationalForm({
     blNumber: string | undefined,
     bookingNumber: string | undefined,
     customerCodeId: string,
+    customerChargeAmount: number | undefined
+    status: string | undefined
 }) {
     const [open, setOpen] = useState(false)
-    const [openDelete, setOpenDelete] = useState(false)
+    const queryClient = useQueryClient()
     
     const { data: ports, isLoading: portsLoading, error: portsError } = usePorts()
     const { data: locations, isLoading: locationsLoading, error: locationsError } = useGetLocationsByCustomerId(customerCodeId ?? "")
@@ -62,7 +70,6 @@ export default function ShipmentOperationalForm({
 
     const createShipmentOperational = useCreateShipmentOperational(shipmentId ?? "")
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId ?? "")
-    const deleteShipmentOperational = useDeleteShipmentOperational(shipmentId ?? "")
 
     const form = useForm({
         defaultValues: {
@@ -79,10 +86,15 @@ export default function ShipmentOperationalForm({
             bookingNumber: bookingNumber ?? "",
         },
         onSubmit: async ({ value }) => {
+            const payload = {
+                ...value,
+                eta: value.eta === "" ? null : value.eta,
+            }
+
             if (mode === "create") {
                 createShipmentOperational.mutate({
                     shipmentId: shipmentId ?? "",
-                    shipmentOperational: value,
+                    shipmentOperational: payload,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -93,7 +105,7 @@ export default function ShipmentOperationalForm({
                 updateShipmentOperational.mutate({
                     shipmentId: shipmentId ?? "",
                     id: id ?? "",
-                    shipmentOperational: value,
+                    shipmentOperational: payload,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -296,13 +308,12 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="eta"
-                                validators={{ onChange: ({ value }) => !value ? "ETA is required" : undefined }}
                             >
                                 {
                                     ( field ) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">ETA</Label>
-                                            <Input value={field.state.value ? field.state.value.split('T')[0] : ''} onChange={(e) => field.handleChange(ISOFormat(e.target.value))} type="date" />
+                                            <Input value={field.state.value ? field.state.value.split('T')[0] : ''} onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")} type="date" />
                                         </div>
                                     )
                                 }
@@ -343,31 +354,21 @@ export default function ShipmentOperationalForm({
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={openDelete} onOpenChange={setOpenDelete}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Shipment Operational</DialogTitle>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button type="submit" variant="destructive" disabled={ deleteShipmentOperational.isPending } onClick={() => {
-                            deleteShipmentOperational.mutate({
-                                shipmentId: shipmentId ?? "",
-                                id: id ?? "",
-                            }, {
-                                onSuccess: () => {
-                                    setOpenDelete(false)
-                                }
-                            })
-                        }}>{ deleteShipmentOperational.isPending ? "Deleting..." : "Delete"}</Button>
-                        <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
-                        </DialogClose>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {
+                mode === "edit" && customerChargeAmount !== 0 && customerChargeAmount !== null
+                ?
+                <Button type="button" size="sm" onClick={() => {
+                    updateShipmentOperational.mutate({
+                        shipmentId: shipmentId ?? "",
+                        id: id ?? "",
+                        shipmentOperational: { status: status === "paid" ? "unpaid" : "paid" },
+                    }, {
+                        onSuccess: () => {
+                            toast.success("Shipment operational payment status updated successfully")
+                        }
+                    })
+                }} disabled={updateShipmentOperational.isPending}>{ updateShipmentOperational.isPending ? "Updating..." : status === "paid" ? "Mark as Unpaid" : "Mark as Paid"}</Button>
+                : null}
         </div>
         
     )

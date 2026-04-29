@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useCustomers, useGetShippersByCustomerCodeId } from "@/hooks/use-customers";
 import { useCreateShipment, useUpdateShipment } from "@/hooks/use-shipments";
+import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { Pencil } from "lucide-react";
@@ -25,12 +26,14 @@ export default function ShipmentForm({
     orderNumber,
     customerCodeId,
     customerShipperId,
+    isActive
 }: {
     id: string | undefined,
     mode: "edit" | "create",
     orderNumber: string | undefined,
     customerCodeId: string | undefined,
     customerShipperId: string | undefined
+    isActive: boolean | undefined
 }) {
     const createShipment = useCreateShipment()
     const updateShipment = useUpdateShipment()
@@ -41,6 +44,7 @@ export default function ShipmentForm({
             orderNumber: orderNumber ?? "",
             customerCodeId: customerCodeId ?? "",
             customerShipperId: customerShipperId ?? "-",
+            isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
             if (mode === "create") {
@@ -50,7 +54,7 @@ export default function ShipmentForm({
                     orderNumber: value.orderNumber,
                     customerCodeId: value.customerCodeId,
                     customerShipperId: value.customerShipperId,
-                    isActive: true,
+                    isActive: value.isActive,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -67,7 +71,7 @@ export default function ShipmentForm({
                         orderNumber: value.orderNumber,
                         customerCodeId: value.customerCodeId,
                         customerShipperId: value.customerShipperId,
-                        isActive: true,
+                        isActive: value.isActive,
                     }
                 }, {
                     onSuccess: () => {
@@ -209,6 +213,16 @@ export default function ShipmentForm({
                                     </div>
                                 )}
                             </form.Field>
+                            { mode === "edit" ? <form.Field
+                                    name="isActive"
+                                >
+                                    {( field ) => (
+                                    <div className="my-3">
+                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
+                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                    </div>
+                                )}
+                            </form.Field> : null}
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={createShipment.isPending || updateShipment.isPending}>{ mode === "edit" ? (updateShipment.isPending ? "Updating..." : "Save Changes") : (createShipment.isPending ? "Creating..." : "Create")}</Button>

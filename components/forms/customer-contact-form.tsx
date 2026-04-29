@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useCreateCustomerContact, useUpdateCustomerContact, useDeleteCustomerContact } from "@/hooks/use-customers"
-import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconPlus, IconTrash, IconPencil } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 import { useState } from "react"
 
@@ -70,7 +70,7 @@ export default function CustomerContactForm({
         <div className="flex flex-row items-center gap-x-2">
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="sm"><IconEdit /></Button>: <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
+                    { mode === "edit" ? <Button variant="outline" size="sm"><IconPencil /></Button>: <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { use } from "react"
 import ShipmentOperationalForm from "@/components/forms/shipment-operational-form"
 import { useShipmentById, useUpdateShipmentOperational } from "@/hooks/use-shipments"
-import DetailPageSkeleton from "@/components/detail-page-skeleton"
 import { amountCalculation, formatDate } from "@/lib/utils"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
 import DocumentUploadForm from "@/components/forms/document-upload-form"
@@ -57,6 +56,8 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
     
     const { data, isLoading, error } = useShipmentById(shipmentId)
 
+    console.log("Shipment data", data)
+
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId)
 
     const form = useForm({
@@ -95,15 +96,15 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
 
             <div className="flex flex-row items-start justify-between gap-x-4 my-8">
                 <div>
-                    <h1 className="text-2xl font-bold">Order Number { data.orderNumber }</h1>
-                    <p className="text-slate-500">{ data.shipmentOperational === null ? "No shipment detail yet" : `Shipment detail last updated on  ${formatDate(data.shipmentOperational.updatedAt.split("T")[0])} by ${ data.shipmentOperational.updatedBy.name as string}` }</p>
+                    <h1 className="text-2xl font-bold">Order Number - { data.orderNumber }</h1>
+                    <p className="text-slate-500">{ data.shipmentOperational === null ? "-" : `Shipment detail last updated on  ${formatDate(data.shipmentOperational.updatedAt.split("T")[0])} by ${ data.shipmentOperational.updatedBy.name as string}` }</p>
                 </div>
                 <div>
                     {
                         data?.shipmentOperational === null ? (
-                            <ShipmentOperationalForm mode="create" id={undefined} shipmentId={data.id} shipmentType={undefined} portDepartureId={undefined} portDestinationId={undefined} loadingLocationId={undefined} unloadingLocationId={undefined} blNumber={undefined} bookingNumber={undefined} customerCodeId={data?.customerCodeId} vesselId={undefined} eta={undefined} />
+                            <ShipmentOperationalForm mode="create" id={undefined} shipmentId={data.id} shipmentType={undefined} portDepartureId={undefined} portDestinationId={undefined} loadingLocationId={undefined} unloadingLocationId={undefined} blNumber={undefined} bookingNumber={undefined} customerCodeId={data?.customerCodeId} vesselId={undefined} eta={undefined} customerChargeAmount={undefined} status={undefined} />
                         ) : (
-                            <ShipmentOperationalForm mode="edit" id={data.shipmentOperational.id} shipmentId={data.id} shipmentType={data.shipmentOperational.shipmentType} portDepartureId={data.shipmentOperational.portDepartureId} portDestinationId={data.shipmentOperational.portDestinationId} loadingLocationId={data.shipmentOperational.loadingLocationId} unloadingLocationId={data.shipmentOperational.unloadingLocationId} blNumber={data.shipmentOperational.blNumber} bookingNumber={data.shipmentOperational.bookingNumber} customerCodeId={data?.customerCodeId} vesselId={data.shipmentOperational.vesselId} eta={data.shipmentOperational.eta} />
+                            <ShipmentOperationalForm mode="edit" id={data.shipmentOperational.id} shipmentId={data.id} shipmentType={data.shipmentOperational.shipmentType} portDepartureId={data.shipmentOperational.portDepartureId} portDestinationId={data.shipmentOperational.portDestinationId} loadingLocationId={data.shipmentOperational.loadingLocationId} unloadingLocationId={data.shipmentOperational.unloadingLocationId} blNumber={data.shipmentOperational.blNumber} bookingNumber={data.shipmentOperational.bookingNumber} customerCodeId={data?.customerCodeId} vesselId={data.shipmentOperational.vesselId} eta={data.shipmentOperational.eta} customerChargeAmount={data.shipmentOperational.customerChargeAmount} status={data.shipmentOperational.status} />
                         )
                     }
                 </div>
@@ -111,8 +112,8 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
             
             {
                 data?.shipmentOperational === null ? (
-                    <div>
-                        <p>No shipment operational data found</p>
+                    <div className="flex align-center justify-center">
+                        <p className="">No shipment operational data found</p>
                     </div>
                 ) : (
                     <div className="flex flex-start gap-x-4">
@@ -259,32 +260,42 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     <CardTitle>LINKED COSTINGS</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div>
-                                        <table className="w-full text-left">
-                                            <thead className="text-slate-500 border-b bg-slate-100 text-sm">
-                                                <tr>
-                                                    <th className="py-2 px-4">DESCRIPTION</th>
-                                                    <th className="py-2 px-4">VENDOR</th>
-                                                    <th className="py-2 px-4">AMOUNT</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {   
-                                                    data.costings.map((costing: Costing) => (
-                                                        <tr key={costing.id}>
-                                                            <td className="py-2 px-4">{ costing.description }</td>
-                                                            <td className="py-2 px-4">{ costing.vendor.vendorName }</td>
-                                                            <td className="py-2 px-4">{ amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</td>
-                                                        </tr>
-                                                    ))
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    {
+                                        data.costings.length === 0 ? (
+                                            <div>
+                                                <p>No linked costings found</p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <div>
+                                                    <table className="w-full text-left">
+                                                        <thead className="text-slate-500 border-b bg-slate-100 text-sm">
+                                                            <tr>
+                                                                <th className="py-2 px-4">DESCRIPTION</th>
+                                                                <th className="py-2 px-4">VENDOR</th>
+                                                                <th className="py-2 px-4">AMOUNT</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {   
+                                                                data.costings.map((costing: Costing) => (
+                                                                    <tr key={costing.id}>
+                                                                        <td className="py-2 px-4">{ costing.description }</td>
+                                                                        <td className="py-2 px-4">{ costing.vendor.vendorName }</td>
+                                                                        <td className="py-2 px-4">{ amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</td>
+                                                                    </tr>
+                                                                ))
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
 
-                                    <div className="mt-4 flex justify-end">
-                                        <p className="text-sm text-slate-500">Total Cost: <span className="font-semibold">{ data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</span></p>
-                                    </div>
+                                                <div className="mt-4 flex justify-end">
+                                                    <p className="text-sm text-slate-500">Total Cost: <span className="font-semibold">{ data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</span></p>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
                                 </CardContent>
                             </Card>
                         </div>

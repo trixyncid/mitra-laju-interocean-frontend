@@ -1,15 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
-import { IconEye, IconFile, IconTrash } from "@tabler/icons-react";
+import { IconEye, IconFile } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { use } from "react";
-import { useCostingById } from "@/hooks/use-costings";
+import { useCostingById, useUpdateCosting } from "@/hooks/use-costings";
 import { amountCalculation, formatDate } from "@/lib/utils";
 import DocumentUploadForm from "@/components/forms/document-upload-form";
 import { costingService } from "@/services/costing.service";
 import CostingLoading from "@/components/loading/costing-loading";
+import { toast } from "sonner";
 
 export type CostingAttachment = {
     id: string
@@ -25,43 +25,41 @@ export type CostingAttachment = {
 export default function CostingDetailPage({ params }: { params: Promise<{ costingId: string }> }) {
     const { costingId } = use(params)
 
+    const updateCosting = useUpdateCosting()
+
     const { data: costing, isLoading: isLoadingCosting, error: errorCosting } = useCostingById(costingId)
 
     if (isLoadingCosting) return <CostingLoading />
 
     if (errorCosting) return <div>Error: {errorCosting.message}</div>
 
+    console.log(costing)
+
     return (
         <div className="px-4 lg:px-6">
             {/* Header */}
             <div className="mb-5 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Cost Entry: #CST-2026-001</h1>
+                    <h1 className="text-2xl font-bold">Costing Number - {costing?.costingNumber}</h1>
                     <p className="text-slate-400 text-sm">Last modified on { formatDate(costing?.updatedAt?.split("T")[0]) } by {costing?.updatedBy?.name}</p>
                 </div>
 
                 <div className="flex items-center justify-between gap-x-3">
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="destructive"><IconTrash /> Delete</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Permanent Delete</DialogTitle>
-                            </DialogHeader>
-                            <DialogDescription>
-                                Are you sure you want to delete the costing? Once this action is performed you will not be able to restore this costing.
-                            </DialogDescription>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit" variant="destructive">Delete</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* <CostingForm mode="edit" description="Trucking Fee" price={123000} currency={15000} containerNumber="CNTR001" vat={10} pph23={1} vendorInvoiceNumber="INV-001-2025" vendorName="1" />     */}
+                    <Button size="sm" onClick={() => {
+                        updateCosting.mutate({
+                            id: costingId,
+                            costing: {
+                                status: costing?.status === "unpaid" ? "paid" : "unpaid"
+                            }
+                        }, {
+                            onSuccess: () => {
+                                toast.success("Costing status updated successfully")
+                            },
+                            onError: (error: Error) => {
+                                toast.error(error.message)
+                            }
+                        })
+                    }} disabled={updateCosting.isPending}>{ updateCosting.isPending ? "Updating..." : costing?.status === "unpaid" ? "Mark as Paid" : "Mark as Unpaid"}</Button>
                 </div>
             </div>
 
@@ -71,7 +69,7 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                 <div className="w-9/12">
                     <Card>
                         <CardContent>
-                            <h1 className="font-bold mb-4">COSTING DETAILS</h1>
+                            <h1 className="font-bold mb-4">COSTING DETAILS <span></span></h1>
                             
                             <div className="grid grid-cols-2 gap-x-4">
                                 <div>

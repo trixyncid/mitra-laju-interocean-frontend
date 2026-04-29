@@ -2,7 +2,7 @@ import { Skeleton } from "../ui/skeleton";
 
 export default function ShipmentLoading() {
     return (
-        <div>
+        <div className="px-4 lg:px-6">
             <Skeleton className="w-50 h-5 mb-8" />
 
             <div className="flex flex-row items-center justify-between gap-x-4">

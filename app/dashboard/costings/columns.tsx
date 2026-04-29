@@ -2,7 +2,7 @@
 
 import LinkCostingForm from "@/components/forms/link-costing-form"
 import CostingForm from "@/components/forms/costing-form"
-import { amountCalculation, formatDate, localDate } from "@/lib/utils"
+import { amountCalculation, localDate } from "@/lib/utils"
 import { IconLinkOff } from "@tabler/icons-react"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -12,6 +12,7 @@ import Link from "next/link"
 
 export type Costing = {
     id: string
+    costingNumber: string
     createdAt: string
     description: string
     price: number
@@ -43,10 +44,12 @@ export const columns: ColumnDef<Costing>[] = [
         }
     },
     {
-        accessorKey: "createdAt",
-        header: "Created Date",
+        accessorKey: "costingNumber",
+        header: "Costing #",
         cell: ({ row }) => {
-            return <div>{ formatDate(row.original.createdAt.split("T")[0]) }</div>
+            return <div className="flex items-center">
+                <p>{ row.original.costingNumber }</p>
+            </div>
         }
     },
     {
@@ -78,7 +81,7 @@ export const columns: ColumnDef<Costing>[] = [
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-            return <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", row.original.status === "PAID" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}> <Dot className="animate-pulse -mr-1" /> { row.original.status === "PAID" ? "Paid" : "Unpaid" }</div>
+            return <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", row.original.status === "paid" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}> <Dot className="animate-pulse -mr-1" /> { row.original.status === "paid" ? "Paid" : "Unpaid" }</div>
         }
     },
     {
@@ -101,7 +104,7 @@ export const columns: ColumnDef<Costing>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex items-center gap-x-2">
-                    <CostingForm mode="edit" id={row.original.id} description={row.original.description} price={row.original.price} currency={row.original.currency} containerId={row.original.containerId} vatPercentage={row.original.vatPercentage} pph23Percentage={row.original.pph23Percentage} vendorInvoiceNumber={row.original.vendorInvoiceNumber} vendorId={row.original.vendorId} />
+                    <CostingForm mode="edit" id={row.original.id} costingNumber={row.original.costingNumber} description={row.original.description} price={row.original.price} currency={row.original.currency} containerId={row.original.containerId} vatPercentage={row.original.vatPercentage} pph23Percentage={row.original.pph23Percentage} vendorInvoiceNumber={row.original.vendorInvoiceNumber} vendorId={row.original.vendorId} />
                     <LinkCostingForm id={row.original.id} shipmentId={row.original.shipment?.id ?? undefined} />
                 </div>
             )

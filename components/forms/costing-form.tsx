@@ -7,7 +7,7 @@ import { IconPencil, IconPlus } from "@tabler/icons-react"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useGetShipmentOperationalContainers } from "@/hooks/use-shipments"
 import { useVendors } from "@/hooks/use-vendors"
 import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
@@ -17,6 +17,7 @@ import { useCreateCosting, useUpdateCosting } from "@/hooks/use-costings"
 export default function CostingForm({
     mode,
     id,
+    costingNumber,
     description,
     price,
     currency,
@@ -28,6 +29,7 @@ export default function CostingForm({
 }: {
     mode: "edit" | "create"
     id: string | undefined,
+    costingNumber: string | undefined,
     description: string | undefined,
     price: number | undefined,
     currency: number | undefined,
@@ -47,6 +49,7 @@ export default function CostingForm({
 
     const form = useForm({
         defaultValues: {
+            costingNumber: costingNumber ?? "",
             description: description ?? "",
             price: price ?? "",
             currency: currency ?? "",
@@ -59,6 +62,7 @@ export default function CostingForm({
         onSubmit: async ({ value }) => {
             if (mode === "create") {
                 createCosting.mutate({
+                    costingNumber: value.costingNumber,
                     description: value.description,
                     price: Number(value.price),
                     currency: Number(value.currency),
@@ -77,6 +81,7 @@ export default function CostingForm({
                 updateCosting.mutate({
                     id: id as string,
                     costing: {
+                        costingNumber: value.costingNumber,
                         description: value.description,
                         price: Number(value.price),
                         currency: Number(value.currency),
@@ -96,6 +101,12 @@ export default function CostingForm({
         }
     })
 
+    useEffect(() => {
+        if (mode === "create" && costingNumber) {
+            form.setFieldValue("costingNumber", costingNumber)
+        }
+    }, [costingNumber, form, mode])
+
     return (
         <div>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -112,6 +123,20 @@ export default function CostingForm({
                         form.handleSubmit()
                     }}>
                         <div>
+                            <form.Field
+                                name="costingNumber"
+                                validators={{
+                                    onChange: ({ value }) =>
+                                        !value ? "Costing Number is required" : undefined,
+                                }}
+                            >
+                                {( field ) => (
+                                    <div className="my-3">
+                                        <Label htmlFor={field.name} className="my-2">Costing Number</Label>
+                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} disabled={true} />
+                                    </div>
+                                )}
+                            </form.Field>
                             <form.Field name="description" validators={{ onChange: ({ value }) => !value ? "Description is required" : undefined }}>
                                 {( field ) => (
                                     <div className="my-3">

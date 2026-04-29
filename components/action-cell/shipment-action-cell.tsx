@@ -6,6 +6,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Button } from "../ui/button";
 import { IconTrash } from "@tabler/icons-react";
 import { useDeleteShipment } from "@/hooks/use-shipments";
+import { toast } from "sonner";
 
 // Create action cell page
 export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
@@ -14,7 +15,7 @@ export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
 
     return (
         <div className="flex items-center gap-x-2">
-            <ShipmentForm mode="edit" id={row.original.id} orderNumber={row.original.orderNumber} customerCodeId={row.original.customerCodeId} customerShipperId={row.original.customerShipperId} />
+            <ShipmentForm mode="edit" id={row.original.id} orderNumber={row.original.orderNumber} customerCodeId={row.original.customerCodeId} customerShipperId={row.original.customerShipperId} isActive={row.original.isActive} />
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
@@ -32,6 +33,10 @@ export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
                             deleteShipment.mutate(row.original.id ?? "", {
                                 onSuccess: () => {
                                     setOpen(false)
+                                },
+                                onError: (error: Error) => {
+                                    console.log("Error: ", error)
+                                    toast.warning(error.message)
                                 }
                             })
                         }}>Delete</Button>

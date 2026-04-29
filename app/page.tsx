@@ -1,9 +1,19 @@
+"use client"
+
 import { GalleryVerticalEnd } from "lucide-react"
 import { LoginForm } from "@/components/forms/login-form"
 import backgroundImage from "@/public/images/login-background.png"
 import Image from "next/image"
+import { authClient } from "@/lib/auth-client"
+import { redirect } from "next/navigation"
 
 export default function LoginPage() {
+  const { data: session, isPending } = authClient.useSession()
+
+  if (isPending) return <div></div>
+
+  if (session) redirect("/dashboard")
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">

@@ -83,6 +83,11 @@ export default function CustomerShipperForm({
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Name</Label>
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                        {
+                                            field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            ) : null
+                                        }
                                     </div>
                                 )}
                             </form.Field>
@@ -91,6 +96,11 @@ export default function CustomerShipperForm({
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Phone Number</Label>
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                        {
+                                            field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            ) : null
+                                        }
                                     </div>
                                 )}
                             </form.Field>
@@ -99,6 +109,11 @@ export default function CustomerShipperForm({
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Country</Label>
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                        {
+                                            field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            ) : null
+                                        }
                                     </div>
                                 )}
                             </form.Field>

@@ -2,7 +2,7 @@ import { Skeleton } from "../ui/skeleton";
 
 export default function CostingLoading() {
     return (
-        <div>
+        <div className="px-4 lg:px-6">
             <div className="flex flex-row items-center justify-between gap-x-4">
                 <div>
                     <Skeleton className="w-100 h-8 mb-2" />

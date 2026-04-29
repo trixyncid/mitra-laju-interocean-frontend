@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useCreateVendorContact, useDeleteVendorContact, useUpdateVendorContact } from "@/hooks/use-vendors"
-import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -91,7 +91,7 @@ export default function VendorContactForm({
         <div className="flex flex-row items-center gap-x-2">
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="icon"><IconEdit /></Button> : <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
+                    { mode === "edit" ? <Button variant="outline" size="icon"><IconPencil /></Button> : <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

@@ -181,7 +181,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                     <Separator className="mt-4"/>
 
                                     {
-                                        location.vendorContacts.length === 0 ? <p>No contacts found for this location ...</p> :
+                                        location.vendorContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p> :
                                         location.vendorContacts.map((contact: VendorContact) => (        
                                             <div key={contact.id}>
                                                 <div className="flex flex-row items-center justify-between my-2">
