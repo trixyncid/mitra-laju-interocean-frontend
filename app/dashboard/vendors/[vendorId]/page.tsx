@@ -60,15 +60,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
         updatedAt: costing.updatedAt ?? "",
     }))
 
-    const vendorShipments: LinkedShipment[] = data.costings.map((costing: Costing) => ({
-        id: costing.shipment?.id ?? "",
-        eta: costing.shipment?.shipmentOperational?.eta ?? "",
-        orderNumber: costing.shipment?.orderNumber ?? "",
-        customerCode: costing.shipment?.customerCode?.customerCode ?? "",
-        customerShipper: costing.shipment?.customerShipper?.name ?? "",
-        departureCountry: costing.shipment?.shipmentOperational?.portDeparture?.portCountry ?? "",
-        arrivalCountry: costing.shipment?.shipmentOperational?.portDestination?.portCountry ?? "",
-    }))
+    const vendorShipments: LinkedShipment[] = data.costings
+        .filter((costing: Costing) => costing.shipment != null)
+        .map((costing: Costing) => ({
+            id: costing.shipment.id,
+            eta: costing.shipment.shipmentOperational?.eta ?? "",
+            orderNumber: costing.shipment.orderNumber,
+            customerCode: costing.shipment.customerCode?.customerCode ?? "",
+            customerShipper: costing.shipment.customerShipper?.name ?? "",
+            departureCountry: costing.shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
+            arrivalCountry: costing.shipment.shipmentOperational?.portDestination?.portCountry ?? "",
+        }))
+        .filter((shipment: LinkedShipment, index: number, self: LinkedShipment[]) =>
+            self.findIndex((s: LinkedShipment) => s.id === shipment.id) === index
+        )
 
     /**
      * Function to calculate the total YTD spend for a vendor
@@ -90,6 +95,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
      */
     const totalActiveShipments = () => {
         return data.costings.filter((costing: Costing) => costing.shipment?.isActive).length
+    }
+
+    const calculateOutstandingBills = () => {
+        let total = 0
+
+        for (const costing of data.costings) {
+            if (costing.status !== "paid") {
+                total += amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage)
+            }
+        }
+
+        return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
     }
 
     return (
@@ -135,7 +152,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                         </div>
 
                         <div className="w-full">
-                            <p className="mt-2 font-bold text-xl">Rp. 1,000,000</p>
+                            <p className="mt-2 font-bold text-xl">{ calculateOutstandingBills() }</p>
                             <p className="mb-2 text-sm text-slate-500">Outstanding <br /> Bills</p>
                         </div>
 
@@ -147,7 +164,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
             <Tabs defaultValue="offices-and-contacts" className="mt-6">
                 <TabsList>
                     <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.vendorLocations.length }</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ vendorShipments.length }</span></TabsTrigger>
                     <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="offices-and-contacts">

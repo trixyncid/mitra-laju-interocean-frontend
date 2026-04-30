@@ -144,7 +144,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
         return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
     }
-    
+
+    const calculateOutstandingBills = () => {
+        let total = 0
+
+        for (const shipment of data?.shipments) {
+            if (shipment.shipmentOperational?.status !== "paid" && shipment.shipmentOperational?.customerChargeAmount) {
+                total += shipment.shipmentOperational.customerChargeAmount
+            }
+        }
+
+        return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
+    }
 
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
 
@@ -191,7 +202,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         </div>
 
                         <div className="w-full">
-                            <p className="mt-2 font-bold text-xl">Rp. 1,000,000</p>
+                            <p className="mt-2 font-bold text-xl">{ calculateOutstandingBills() }</p>
                             <p className="mb-2 text-sm text-slate-500">Outstanding <br /> Bills</p>
                         </div>
                     </div>

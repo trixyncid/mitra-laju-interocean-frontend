@@ -10,6 +10,7 @@ import DocumentUploadForm from "@/components/forms/document-upload-form";
 import { costingService } from "@/services/costing.service";
 import CostingLoading from "@/components/loading/costing-loading";
 import { toast } from "sonner";
+import clsx from "clsx";
 
 export type CostingAttachment = {
     id: string
@@ -69,7 +70,7 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                 <div className="w-9/12">
                     <Card>
                         <CardContent>
-                            <h1 className="font-bold mb-4">COSTING DETAILS <span></span></h1>
+                            <h1 className="font-bold mb-4">COSTING DETAILS <span className={clsx("text-xs mx-2 font-normal", costing?.status === "paid" ? "text-green-500 bg-green-100 rounded-md px-2 py-1" : "text-orange-500 bg-orange-100 rounded-md px-2 py-1")}>{ costing?.status === "paid" ? "Paid" : "Unpaid" }</span></h1>
                             
                             <div className="grid grid-cols-2 gap-x-4">
                                 <div>

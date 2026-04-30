@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { useState } from "react"
 import { shipmentsService } from "@/services/shipments.service"
 import ShipmentLoading from "@/components/loading/shipment-loading"
+import clsx from "clsx"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -120,7 +121,10 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                         <div className="w-[70%]">
                             <Card className="my-6">
                                 <CardHeader>
-                                    <CardTitle>SHIPMENT OVERVIEW</CardTitle>
+                                    <CardTitle className="flex items-center">
+                                        <h1>SHIPMENT OVERVIEW</h1>
+                                        <p className={clsx("text-xs mx-2 font-normal", data.shipmentOperational.status === "paid" ? "text-green-500 bg-green-100 rounded-md px-2 py-1" : "text-orange-500 bg-orange-100 rounded-md px-2 py-1")}>{ data.shipmentOperational.status === "paid" ? "Paid" : "Unpaid" }</p>
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 gap-x-4">
