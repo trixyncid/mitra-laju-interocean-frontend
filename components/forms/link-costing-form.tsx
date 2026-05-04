@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form"
 import { Button } from "../ui/button"
-import { IconLink, IconTrash } from "@tabler/icons-react"
+import { IconLink, IconLinkOff, IconTrash } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
@@ -93,6 +93,24 @@ export default function LinkCostingForm({
                             </form.Field>
                         </div>
                         <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                disabled={updateCosting.isPending}
+                                onClick={() => {
+                                    updateCosting.mutate({
+                                        id: id,
+                                        costing: { shipmentId: null }
+                                    }, {
+                                        onSuccess: () => {
+                                            setOpen(false)
+                                            form.reset()
+                                        }
+                                    })
+                                }}
+                            >
+                                <IconLinkOff />Unlink
+                            </Button>
                             <Button type="submit" disabled={updateCosting.isPending}>{ updateCosting.isPending ? "Linking..." : "Link Costing" }</Button>
                         </DialogFooter>
                     </form>

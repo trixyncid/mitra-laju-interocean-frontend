@@ -17,12 +17,23 @@ import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
 import { ISOFormat } from "@/lib/utils"
 import { toast } from "sonner"
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+    ComboboxTrigger,
+    ComboboxValue,
+  } from "@/components/ui/combobox"
 
 export type Location = {
     id: string
     addressLine1: string
     city: string
     country: string
+    customerShipperId: string
 }
 
 export default function ShipmentOperationalForm({
@@ -39,6 +50,7 @@ export default function ShipmentOperationalForm({
     blNumber,
     bookingNumber,
     customerCodeId,
+    customerShipperId,
     customerChargeAmount,
     status
 }: {
@@ -55,6 +67,7 @@ export default function ShipmentOperationalForm({
     blNumber: string | undefined,
     bookingNumber: string | undefined,
     customerCodeId: string,
+    customerShipperId: string | undefined,
     customerChargeAmount: number | undefined
     status: string | undefined
 }) {
@@ -66,6 +79,13 @@ export default function ShipmentOperationalForm({
 
     const createShipmentOperational = useCreateShipmentOperational(shipmentId ?? "")
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId ?? "")
+
+    type ComboItem = { value: string; label: string }
+    const portItems: ComboItem[] = ports?.map((p: Port) => ({ value: p.id ?? "", label: `${p.portName}, ${p.portCountry}` })) ?? []
+    const filteredLocations = customerShipperId
+        ? locations?.filter((l: Location) => l.customerShipperId === customerShipperId).map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
+        : locations ?? []
+    const locationItems: ComboItem[] = locations?.map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
 
     const form = useForm({
         defaultValues: {
@@ -114,11 +134,18 @@ export default function ShipmentOperationalForm({
 
     return (
         <div className="flex items-center gap-x-2">
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline">Edit Shipment Operational</Button> : <Button><IconPlus /> Add Shipment Operational</Button>}
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                    onInteractOutside={(e) => {
+                        const target = e.target as Element
+                        if (target.closest('[data-slot="combobox-content"]')) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle>{ mode === "edit" ? "Edit Shipment Operational" : "Add Shipment Operational"}</DialogTitle>
                     </DialogHeader>
@@ -186,20 +213,25 @@ export default function ShipmentOperationalForm({
                                     ( field ) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">Port of Departure (From)</Label>
-                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a port departure" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {
-                                                        ports?.map((port: Port) => (
-                                                            <SelectItem key={port.id} value={port.id ?? ""}>{ port.portName }, { port.portCountry }</SelectItem>
-                                                        )) ?? (
-                                                            <SelectItem value="-">No ports found</SelectItem>
-                                                        )
-                                                    }
-                                                </SelectContent>
-                                            </Select>
+                                            <Combobox
+                                                items={portItems}
+                                                value={portItems.find(item => item.value === field.state.value) ?? null}
+                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
+                                                isItemEqualToValue={(a, b) => a.value === b.value}
+                                            >
+                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select port of departure..." /></Button>} />
+                                                <ComboboxContent>
+                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
+                                                    <ComboboxEmpty>No ports found.</ComboboxEmpty>
+                                                    <ComboboxList>
+                                                        {(item) => (
+                                                            <ComboboxItem key={item.value} value={item}>
+                                                                {item.label}
+                                                            </ComboboxItem>
+                                                        )}
+                                                    </ComboboxList>
+                                                </ComboboxContent>
+                                            </Combobox>
                                             { field.state.meta.errors ? (
                                                 <em className="text-xs text-red-500">{field.state.meta.errors}</em>
                                             ) : null }
@@ -217,20 +249,25 @@ export default function ShipmentOperationalForm({
                                     ( field ) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">Port of Destination (To)</Label>
-                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a port destination" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {
-                                                        ports?.map((port: Port) => (
-                                                            <SelectItem key={port.id} value={port.id ?? ""}>{ port.portName }, { port.portCountry }</SelectItem>
-                                                        )) ?? (
-                                                            <SelectItem value="-">No ports found</SelectItem>
-                                                        )
-                                                    }
-                                                </SelectContent>
-                                            </Select>
+                                            <Combobox
+                                                items={portItems}
+                                                value={portItems.find(item => item.value === field.state.value) ?? null}
+                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
+                                                isItemEqualToValue={(a, b) => a.value === b.value}
+                                            >
+                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select port of destination..." /></Button>} />
+                                                <ComboboxContent>
+                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
+                                                    <ComboboxEmpty>No ports found.</ComboboxEmpty>
+                                                    <ComboboxList>
+                                                        {(item) => (
+                                                            <ComboboxItem key={item.value} value={item}>
+                                                                {item.label}
+                                                            </ComboboxItem>
+                                                        )}
+                                                    </ComboboxList>
+                                                </ComboboxContent>
+                                            </Combobox>
                                             { field.state.meta.errors ? (
                                                 <em className="text-xs text-red-500">{field.state.meta.errors}</em>
                                             ) : null }
@@ -248,20 +285,25 @@ export default function ShipmentOperationalForm({
                                     ( field ) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">Loading Location (Stuffing)</Label>
-                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a loading location" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {
-                                                        locations?.map((location: Location) => (
-                                                            <SelectItem key={location.id} value={location.id ?? ""}>{ location.addressLine1 }, { location.city }, { location.country }</SelectItem>
-                                                        )) ?? (
-                                                            <SelectItem value="-">No locations found</SelectItem>
-                                                        )
-                                                    }
-                                                </SelectContent>
-                                            </Select>
+                                            <Combobox
+                                                items={filteredLocations}
+                                                value={filteredLocations.find((item: ComboItem) => item.value === field.state.value) ?? null}
+                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
+                                                isItemEqualToValue={(a, b) => a.value === b.value}
+                                            >
+                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select stuffing location..." /></Button>} />
+                                                <ComboboxContent>
+                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
+                                                    <ComboboxEmpty>No locations found.</ComboboxEmpty>
+                                                    <ComboboxList>
+                                                        {(item) => (
+                                                            <ComboboxItem key={item.value} value={item.value}>
+                                                                {item.label}
+                                                            </ComboboxItem>
+                                                        )}
+                                                    </ComboboxList>
+                                                </ComboboxContent>
+                                            </Combobox>
                                             { field.state.meta.errors ? (
                                                 <em className="text-xs text-red-500">{field.state.meta.errors}</em>
                                             ) : null }
@@ -279,20 +321,25 @@ export default function ShipmentOperationalForm({
                                     ( field ) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">Unloading Location (Unstuffing)</Label>
-                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a unloading location" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {
-                                                        locations?.map((location: Location) => (
-                                                            <SelectItem key={location.id} value={location.id ?? ""}>{ location.addressLine1 }, { location.city }, { location.country }</SelectItem>
-                                                        )) ?? (
-                                                            <SelectItem value="-">No locations found</SelectItem>
-                                                        )
-                                                    }
-                                                </SelectContent>
-                                            </Select>
+                                            <Combobox
+                                                items={locationItems}
+                                                value={locationItems.find(item => item.value === field.state.value) ?? null}
+                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
+                                                isItemEqualToValue={(a, b) => a.value === b.value}
+                                            >
+                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select unstuffing location..." /></Button>} />
+                                                <ComboboxContent>
+                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
+                                                    <ComboboxEmpty>No locations found.</ComboboxEmpty>
+                                                    <ComboboxList>
+                                                        {(item) => (
+                                                            <ComboboxItem key={item.value} value={item}>
+                                                                {item.label}
+                                                            </ComboboxItem>
+                                                        )}
+                                                    </ComboboxList>
+                                                </ComboboxContent>
+                                            </Combobox>
                                             { field.state.meta.errors ? (
                                                 <em className="text-xs text-red-500">{field.state.meta.errors}</em>
                                             ) : null }
