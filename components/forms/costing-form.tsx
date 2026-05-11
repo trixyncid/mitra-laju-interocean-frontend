@@ -12,7 +12,35 @@ import { useGetShipmentOperationalContainers } from "@/hooks/use-shipments"
 import { useVendors } from "@/hooks/use-vendors"
 import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
 import { Vendor } from "@/app/dashboard/vendors/columns"
-import { useCreateCosting, useUpdateCosting } from "@/hooks/use-costings"
+import { useCreateCosting, useCostings, useUpdateCosting } from "@/hooks/use-costings"
+import { Costing } from "@/app/dashboard/costings/columns"
+
+const MONTH_IN_ROMANS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+const parseCostingNumberDate = (costingNumber: string | undefined): { monthIndex: number, year: number } | null => {
+    if (!costingNumber) return null
+    const parts = costingNumber.split("/")
+    if (parts.length !== 3) return null
+    const monthIndex = MONTH_IN_ROMANS.indexOf(parts[1]) + 1
+    const year = parseInt(parts[2], 10)
+    if (monthIndex === 0 || isNaN(year)) return null
+    return { monthIndex, year }
+}
+
+const computeCostingNumber = (allCostings: Costing[], monthIndex: number, year: number, excludeCostingNumber?: string): string => {
+    const romanMonth = MONTH_IN_ROMANS[monthIndex - 1]
+    const count = (allCostings ?? []).filter((costing: Costing) => {
+        if (excludeCostingNumber && costing.costingNumber === excludeCostingNumber) return false
+        const parts = costing.costingNumber?.split("/")
+        if (!parts || parts.length !== 3) return false
+        return parts[1] === romanMonth && parts[2] === year.toString()
+    }).length
+    return `${count + 1}/${romanMonth}/${year}`
+}
+
+const currentYear = new Date().getFullYear()
+const YEAR_OPTIONS = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i)
 
 export default function CostingForm({
     mode,
@@ -39,10 +67,18 @@ export default function CostingForm({
     vendorInvoiceNumber: string | undefined,
     vendorId: string | undefined,
 }) {
-    const [ open, setOpen ] = useState(false)
+    const [open, setOpen] = useState(false)
 
     const createCosting = useCreateCosting()
     const updateCosting = useUpdateCosting()
+    const { data: allCostings } = useCostings()
+
+    const parsedDate = parseCostingNumberDate(costingNumber)
+    const defaultMonth = parsedDate?.monthIndex ?? (new Date().getMonth() + 1)
+    const defaultYear = parsedDate?.year ?? new Date().getFullYear()
+
+    const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
+    const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
 
     const { data: shipmentOperationalContainers, isLoading: isLoadingShipmentOperationalContainers, error: errorShipmentOperationalContainers } = useGetShipmentOperationalContainers()
     const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors()
@@ -102,10 +138,18 @@ export default function CostingForm({
     })
 
     useEffect(() => {
-        if (mode === "create" && costingNumber) {
+        if (!allCostings) return
+
+        if (mode === "edit" && selectedMonth === defaultMonth && selectedYear === defaultYear && costingNumber) {
             form.setFieldValue("costingNumber", costingNumber)
+            return
         }
-    }, [costingNumber, form, mode])
+
+        const excludeCosting = mode === "edit" ? costingNumber : undefined
+        const computed = computeCostingNumber(allCostings, selectedMonth, selectedYear, excludeCosting)
+        form.setFieldValue("costingNumber", computed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedMonth, selectedYear, allCostings, mode, costingNumber, defaultMonth, defaultYear])
 
     return (
         <div>
@@ -123,6 +167,42 @@ export default function CostingForm({
                         form.handleSubmit()
                     }}>
                         <div>
+                            <div className="my-3 grid grid-cols-2 gap-x-3">
+                                <div>
+                                    <Label className="my-2">Month</Label>
+                                    <Select
+                                        value={String(selectedMonth)}
+                                        onValueChange={(value) => setSelectedMonth(Number(value))}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select month" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {MONTH_NAMES.map((name, i) => (
+                                                <SelectItem key={i + 1} value={String(i + 1)}>
+                                                    {name} ({MONTH_IN_ROMANS[i]})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="my-2">Year</Label>
+                                    <Select
+                                        value={String(selectedYear)}
+                                        onValueChange={(value) => setSelectedYear(Number(value))}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select year" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {YEAR_OPTIONS.map((year) => (
+                                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                             <form.Field
                                 name="costingNumber"
                                 validators={{
@@ -130,7 +210,7 @@ export default function CostingForm({
                                         !value ? "Costing Number is required" : undefined,
                                 }}
                             >
-                                {( field ) => (
+                                {(field) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Costing Number</Label>
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} disabled={true} />
@@ -176,39 +256,44 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="containerId" validators={{ onChange: ({ value }) => value === "-" ? "Container is required" : undefined }}>
-                                {( field ) => (
-                                    <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Container Number</Label>
-                                        <Select
-                                            value={field.state.value as string}
-                                            onValueChange={(value) => field.handleChange(value)}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select a container number" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {
-                                                    isLoadingShipmentOperationalContainers ? (
-                                                        <SelectItem value="-">Loading...</SelectItem>
-                                                    ) : errorShipmentOperationalContainers ? (
-                                                        <SelectItem value="-">Error loading containers</SelectItem>
-                                                    ) : shipmentOperationalContainers?.length === 0 ? (
-                                                        <SelectItem value="-">No containers found</SelectItem>
-                                                    ) : shipmentOperationalContainers.map((container: ShipmentOperationalContainer) => (
-                                                        <SelectItem key={container.id} value={container.id as string}>{container.containerNumber} ({container.sealNumber})</SelectItem>
-                                                    ))
-                                                }
-                                            </SelectContent>
-                                        </Select>
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
-                                    </div>
-                                )}
-                            </form.Field>
+                            {
+                                mode === "create" ?
+                                <></>
+                                :
+                                <form.Field name="containerId" validators={{ onChange: ({ value }) => value === "-" ? "Container is required" : undefined }}>
+                                    {( field ) => (
+                                        <div className="my-3">
+                                            <Label htmlFor={field.name} className="my-2">Container Number</Label>
+                                            <Select
+                                                value={field.state.value as string}
+                                                onValueChange={(value) => field.handleChange(value)}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select a container number" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {
+                                                        isLoadingShipmentOperationalContainers ? (
+                                                            <SelectItem value="-">Loading...</SelectItem>
+                                                        ) : errorShipmentOperationalContainers ? (
+                                                            <SelectItem value="-">Error loading containers</SelectItem>
+                                                        ) : shipmentOperationalContainers?.length === 0 ? (
+                                                            <SelectItem value="-">No containers found</SelectItem>
+                                                        ) : shipmentOperationalContainers.map((container: ShipmentOperationalContainer) => (
+                                                            <SelectItem key={container.id} value={container.id as string}>{container.containerNumber} ({container.sealNumber})</SelectItem>
+                                                        ))
+                                                    }
+                                                </SelectContent>
+                                            </Select>
+                                            {
+                                                field.state.meta.errors ? (
+                                                    <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                ) : null
+                                            }
+                                        </div>
+                                    )}
+                                </form.Field>
+                            }
                             <form.Field 
                                 name="vatPercentage"
                                 validators={{ onChange: ({ value }) => value === "" ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be less than or equal to 100" : undefined }}
