@@ -63,3 +63,14 @@ export const localDate = (dateStr: string) => {
     year: "numeric"
   }).format(new Date(dateStr))
 }
+
+/**
+ * Calculate the net amount of a selling entry after VAT and PPH23 deductions.
+ * @param amount - Base selling amount in IDR
+ * @param vatPercentage - VAT percentage (e.g. 11 for 11%)
+ * @param pph23Percentage - PPH23 withholding tax percentage
+ * @returns Net amount after deductions
+ */
+export const sellingNetAmount = (amount: number, vatPercentage: number, pph23Percentage: number) => {
+  return amount - (amount * vatPercentage / 100) - (amount * pph23Percentage / 100)
+}

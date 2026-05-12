@@ -7,6 +7,7 @@ import {
   IconFileDollar,
   IconInnerShadowTop,
   IconLayoutDashboard,
+  IconReceipt,
   IconShip,
   IconTruck,
   IconUsersGroup,
@@ -67,6 +68,11 @@ const data = {
       name: "Costing",
       url: "/dashboard/costings",
       icon: IconFileDollar,
+    },
+    {
+      name: "Selling",
+      url: "/dashboard/sellings",
+      icon: IconReceipt,
     },
   ]
 }
