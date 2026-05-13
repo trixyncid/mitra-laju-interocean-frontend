@@ -14,6 +14,7 @@ export const useShipmentById = (id: string) => {
     return useQuery({
         queryKey: ["shipments", id],
         queryFn: () => shipmentsService.getById(id),
+        enabled: !!id,
     });
 }
 

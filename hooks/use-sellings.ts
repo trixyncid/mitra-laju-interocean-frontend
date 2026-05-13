@@ -23,6 +23,7 @@ export const useCreateSelling = () => {
         mutationFn: (selling: unknown) => sellingService.create(selling),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["sellings"] })
+            queryClient.invalidateQueries({ queryKey: ["shipments"] })
             toast.success("Selling created successfully")
         },
         onError: (error: Error) => {
@@ -38,6 +39,7 @@ export const useUpdateSelling = () => {
         mutationFn: ({ id, selling }: { id: string, selling: unknown }) => sellingService.update(id, selling),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["sellings"] })
+            queryClient.invalidateQueries({ queryKey: ["shipments"] })
             toast.success("Selling updated successfully")
         },
         onError: (error: Error) => {
@@ -53,6 +55,7 @@ export const useDeleteSelling = () => {
         mutationFn: (id: string) => sellingService.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["sellings"] })
+            queryClient.invalidateQueries({ queryKey: ["shipments"] })
             toast.success("Selling deleted successfully")
         },
         onError: (error: Error) => {

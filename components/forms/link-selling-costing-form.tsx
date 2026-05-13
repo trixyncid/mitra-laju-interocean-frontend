@@ -2,13 +2,13 @@
 
 import { useForm } from "@tanstack/react-form"
 import { Button } from "../ui/button"
-import { IconLink, IconLinkOff } from "@tabler/icons-react"
+import { IconLink, IconPlus } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Label } from "../ui/label"
-import { useUpdateSelling } from "@/hooks/use-sellings"
+import { useCostings, useUpdateCosting } from "@/hooks/use-costings"
+import { useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { useShipments } from "@/hooks/use-shipments"
-import { Shipment } from "@/app/dashboard/shipments/columns"
+import { Costing } from "@/app/dashboard/costings/columns"
 import {
     Combobox,
     ComboboxContent,
@@ -20,34 +20,34 @@ import {
     ComboboxValue,
 } from "@/components/ui/combobox"
 
-export default function LinkSellingShipmentForm({
+export default function LinkSellingCostingForm({
     sellingId,
-    shipmentId,
 }: {
     sellingId: string
-    shipmentId: string | undefined
 }) {
     const [open, setOpen] = useState(false)
 
-    const { data: shipments, isLoading } = useShipments()
-    const updateSelling = useUpdateSelling()
+    const { data: costings, isLoading } = useCostings()
+    const updateCosting = useUpdateCosting()
+    const queryClient = useQueryClient()
 
     type ComboItem = { value: string; label: string }
-    const shipmentItems: ComboItem[] =
-        shipments?.map((s: Shipment) => ({
-            value: s.id ?? "",
-            label: s.orderNumber,
+    const costingItems: ComboItem[] =
+        costings?.map((c: Costing) => ({
+            value: c.id,
+            label: `${c.costingNumber} — ${c.description}`,
         })) ?? []
 
     const form = useForm({
         defaultValues: {
-            shipmentId: shipmentId ?? "",
+            costingId: "",
         },
         onSubmit: async ({ value }) => {
-            updateSelling.mutate(
-                { id: sellingId, selling: { shipmentId: value.shipmentId } },
+            updateCosting.mutate(
+                { id: value.costingId, costing: { sellingId } },
                 {
                     onSuccess: () => {
+                        queryClient.invalidateQueries({ queryKey: ["sellings", sellingId] })
                         setOpen(false)
                         form.reset()
                     },
@@ -59,8 +59,9 @@ export default function LinkSellingShipmentForm({
     return (
         <Dialog open={open} onOpenChange={setOpen} modal={false}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="icon">
-                    <IconLink className="size-4" />
+                <Button variant="outline" size="sm">
+                    <IconPlus className="mr-1 size-4" />
+                    Add Costing
                 </Button>
             </DialogTrigger>
             <DialogContent
@@ -72,7 +73,7 @@ export default function LinkSellingShipmentForm({
                 }}
             >
                 <DialogHeader>
-                    <DialogTitle>Link to Shipment</DialogTitle>
+                    <DialogTitle>Link Costing to Selling</DialogTitle>
                 </DialogHeader>
                 <form
                     onSubmit={(e) => {
@@ -83,33 +84,33 @@ export default function LinkSellingShipmentForm({
                 >
                     <div>
                         <form.Field
-                            name="shipmentId"
+                            name="costingId"
                             validators={{
-                                onChange: ({ value }) => !value ? "Please select a shipment" : undefined,
+                                onChange: ({ value }) => !value ? "Please select a costing" : undefined,
                             }}
                         >
                             {(field) => (
                                 <div className="my-5">
-                                    <Label className="my-2">Shipment Order Number</Label>
+                                    <Label className="my-2">Costing</Label>
                                     {isLoading ? (
-                                        <p className="text-sm text-slate-400">Loading shipments...</p>
+                                        <p className="text-sm text-slate-400">Loading costings...</p>
                                     ) : (
                                         <Combobox
-                                            items={shipmentItems}
-                                            value={shipmentItems.find((item) => item.value === field.state.value) ?? null}
+                                            items={costingItems}
+                                            value={costingItems.find((item) => item.value === field.state.value) ?? null}
                                             onValueChange={(item) => field.handleChange(item?.value ?? "")}
                                             isItemEqualToValue={(a, b) => a.value === b.value}
                                         >
                                             <ComboboxTrigger
                                                 render={
                                                     <Button type="button" variant="outline" className="w-full justify-between font-normal">
-                                                        <ComboboxValue placeholder="Search shipment order number..." />
+                                                        <ComboboxValue placeholder="Search costing number or description..." />
                                                     </Button>
                                                 }
                                             />
                                             <ComboboxContent>
                                                 <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                <ComboboxEmpty>No shipments found.</ComboboxEmpty>
+                                                <ComboboxEmpty>No costings found.</ComboboxEmpty>
                                                 <ComboboxList>
                                                     {(item) => (
                                                         <ComboboxItem key={item.value} value={item}>
@@ -128,23 +129,8 @@ export default function LinkSellingShipmentForm({
                         </form.Field>
                     </div>
                     <DialogFooter>
-                        {shipmentId && (
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                disabled={updateSelling.isPending}
-                                onClick={() => {
-                                    updateSelling.mutate(
-                                        { id: sellingId, selling: { shipmentId: null } },
-                                        { onSuccess: () => setOpen(false) }
-                                    )
-                                }}
-                            >
-                                <IconLinkOff className="mr-1 size-4" /> Unlink
-                            </Button>
-                        )}
-                        <Button type="submit" disabled={updateSelling.isPending}>
-                            {updateSelling.isPending ? "Linking..." : "Link Shipment"}
+                        <Button type="submit" disabled={updateCosting.isPending}>
+                            {updateCosting.isPending ? "Linking..." : "Link Costing"}
                         </Button>
                     </DialogFooter>
                 </form>

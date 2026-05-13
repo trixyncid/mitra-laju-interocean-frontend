@@ -15,6 +15,7 @@ import { useDeleteSelling } from "@/hooks/use-sellings"
 import { toast } from "sonner"
 import { useState } from "react"
 import { Row } from "@tanstack/react-table"
+import LinkSellingShipmentForm from "@/components/forms/link-selling-shipment-form"
 
 export type Selling = {
     id: string
@@ -37,14 +38,9 @@ function SellingActionCell({ row }: { row: Row<Selling> }) {
 
     return (
         <div className="flex items-center gap-x-2">
-            <SellingForm
-                mode="edit"
-                id={row.original.id}
-                sellingNumber={row.original.sellingNumber}
-                description={row.original.description}
-                amount={row.original.amount}
-                vatPercentage={row.original.vatPercentage}
-                pph23Percentage={row.original.pph23Percentage}
+            <LinkSellingShipmentForm
+                sellingId={row.original.id}
+                shipmentId={row.original.shipmentId ?? undefined}
             />
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>

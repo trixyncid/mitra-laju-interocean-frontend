@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { IconArrowLeft, IconLinkOff } from "@tabler/icons-react"
 import { useSellingById, useUpdateSelling } from "@/hooks/use-sellings"
-import { sellingNetAmount, localDate } from "@/lib/utils"
+import { useUpdateCosting } from "@/hooks/use-costings"
+import { useQueryClient } from "@tanstack/react-query"
+import { sellingNetAmount, localDate, amountCalculation } from "@/lib/utils"
 import SellingForm from "@/components/forms/selling-form"
-import LinkSellingShipmentForm from "@/components/forms/link-selling-shipment-form"
+import LinkSellingCostingForm from "@/components/forms/link-selling-costing-form"
 import SellingLoading from "@/components/loading/selling-loading"
 import { toast } from "sonner"
 
@@ -18,7 +20,10 @@ type LinkedCosting = {
     id: string
     costingNumber: string
     description: string
-    amount: number
+    price: number
+    currency: number
+    vatPercentage: number
+    pph23Percentage: number
     vendor: { vendorName: string }
 }
 
@@ -27,6 +32,10 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
 
     const { data: selling, isLoading, error } = useSellingById(sellingId)
     const updateSelling = useUpdateSelling()
+    const updateCosting = useUpdateCosting()
+    const queryClient = useQueryClient()
+
+    console.log("Selling", selling)
 
     if (isLoading) return <SellingLoading />
     if (error) return <div className="px-4 lg:px-6">Error: {error.message}</div>
@@ -107,6 +116,17 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                         <Label className="text-xs text-slate-500">DESCRIPTION</Label>
                                         <p className="font-semibold">{selling?.description}</p>
                                     </div>
+                                    <div>
+                                        <Label className="text-xs text-slate-500">LINKED SHIPMENT</Label>
+                                        {selling?.shipment === null ? (
+                                            <div className="flex items-center gap-x-1 text-slate-400">
+                                                <IconLinkOff className="size-3.5" />
+                                                <p className="text-sm">Not linked</p>
+                                            </div>
+                                        ) : (
+                                            <p className="font-semibold text-blue-600">{selling?.shipment?.orderNumber}</p>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="space-y-4">
                                     <div>
@@ -122,42 +142,20 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                         </CardContent>
                     </Card>
 
-                    {/* Linked Shipment */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                                <span>LINKED SHIPMENT</span>
-                                <LinkSellingShipmentForm
-                                    sellingId={sellingId}
-                                    shipmentId={selling?.shipmentId ?? undefined}
-                                />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {selling?.shipment === null ? (
-                                <div className="flex items-center gap-x-2 text-slate-400">
-                                    <IconLinkOff className="size-4 animate-pulse" />
-                                    <p className="text-sm">No shipment linked yet</p>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-x-3">
-                                    <div>
-                                        <Label className="text-xs text-slate-500">ORDER NUMBER</Label>
-                                        <p className="font-semibold text-blue-600">{selling?.shipment?.orderNumber}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
                     {/* Linked Costings */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>LINKED COSTINGS</CardTitle>
+                            <CardTitle className="flex items-center justify-between">
+                                <span>LINKED COSTINGS</span>
+                                <LinkSellingCostingForm sellingId={sellingId} />
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {!selling?.costings || selling.costings.length === 0 ? (
-                                <p className="text-sm text-slate-400">No costings linked to this selling yet.</p>
+                                <div className="flex items-center gap-x-2 text-slate-400">
+                                    <IconLinkOff className="size-4 animate-pulse" />
+                                    <p className="text-sm">No costings linked to this selling yet.</p>
+                                </div>
                             ) : (
                                 <table className="w-full text-left">
                                     <thead className="text-slate-500 border-b bg-slate-100 text-xs">
@@ -165,6 +163,8 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                             <th className="py-2 px-4">COSTING #</th>
                                             <th className="py-2 px-4">DESCRIPTION</th>
                                             <th className="py-2 px-4">VENDOR</th>
+                                            <th className="py-2 px-4">AMOUNT (Rp)</th>
+                                            <th className="py-2 px-4"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -173,6 +173,32 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                                 <td className="py-2 px-4 font-medium">{costing.costingNumber}</td>
                                                 <td className="py-2 px-4 text-sm">{costing.description}</td>
                                                 <td className="py-2 px-4 text-sm">{costing.vendor?.vendorName}</td>
+                                                <td className="py-2 px-4 text-sm">
+                                                    {amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage)
+                                                        .toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                                </td>
+                                                <td className="py-2 px-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                        disabled={updateCosting.isPending}
+                                                        onClick={() => {
+                                                            updateCosting.mutate(
+                                                                { id: costing.id, costing: { sellingId: null } },
+                                                                {
+                                                                    onSuccess: () => {
+                                                                        queryClient.invalidateQueries({ queryKey: ["sellings", sellingId] })
+                                                                        toast.success("Costing unlinked")
+                                                                    },
+                                                                    onError: (err: Error) => toast.error(err.message),
+                                                                }
+                                                            )
+                                                        }}
+                                                    >
+                                                        <IconLinkOff className="size-3.5" />
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

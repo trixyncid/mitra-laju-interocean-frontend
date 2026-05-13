@@ -8,7 +8,7 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useEffect, useState } from "react"
-import { useGetShipmentOperationalContainers } from "@/hooks/use-shipments"
+import { useShipmentById } from "@/hooks/use-shipments"
 import { useVendors } from "@/hooks/use-vendors"
 import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
 import { Vendor } from "@/app/dashboard/vendors/columns"
@@ -54,6 +54,7 @@ export default function CostingForm({
     pph23Percentage,
     vendorInvoiceNumber,
     vendorId,
+    shipmentId,
 }: {
     mode: "edit" | "create"
     id: string | undefined,
@@ -66,6 +67,7 @@ export default function CostingForm({
     pph23Percentage: number | undefined,
     vendorInvoiceNumber: string | undefined,
     vendorId: string | undefined,
+    shipmentId: string | null | undefined,
 }) {
     const [open, setOpen] = useState(false)
 
@@ -80,7 +82,9 @@ export default function CostingForm({
     const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
     const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
 
-    const { data: shipmentOperationalContainers, isLoading: isLoadingShipmentOperationalContainers, error: errorShipmentOperationalContainers } = useGetShipmentOperationalContainers()
+    const { data: shipmentData, isLoading: isLoadingContainers } = useShipmentById(shipmentId ?? "")
+    const shipmentContainers: ShipmentOperationalContainer[] =
+        shipmentData?.shipmentOperational?.shipmentOperationalContainers ?? []
     const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors()
 
     const form = useForm({
@@ -256,12 +260,9 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            {
-                                mode === "create" ?
-                                <></>
-                                :
+                            {shipmentId && (
                                 <form.Field name="containerId" validators={{ onChange: ({ value }) => value === "-" ? "Container is required" : undefined }}>
-                                    {( field ) => (
+                                    {(field) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">Container Number</Label>
                                             <Select
@@ -272,28 +273,26 @@ export default function CostingForm({
                                                     <SelectValue placeholder="Select a container number" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {
-                                                        isLoadingShipmentOperationalContainers ? (
-                                                            <SelectItem value="-">Loading...</SelectItem>
-                                                        ) : errorShipmentOperationalContainers ? (
-                                                            <SelectItem value="-">Error loading containers</SelectItem>
-                                                        ) : shipmentOperationalContainers?.length === 0 ? (
-                                                            <SelectItem value="-">No containers found</SelectItem>
-                                                        ) : shipmentOperationalContainers.map((container: ShipmentOperationalContainer) => (
-                                                            <SelectItem key={container.id} value={container.id as string}>{container.containerNumber} ({container.sealNumber})</SelectItem>
+                                                    {isLoadingContainers ? (
+                                                        <SelectItem value="-">Loading...</SelectItem>
+                                                    ) : shipmentContainers.length === 0 ? (
+                                                        <SelectItem value="-">No containers found for this shipment</SelectItem>
+                                                    ) : (
+                                                        shipmentContainers.map((container: ShipmentOperationalContainer) => (
+                                                            <SelectItem key={container.id} value={container.id as string}>
+                                                                {container.containerNumber} ({container.sealNumber})
+                                                            </SelectItem>
                                                         ))
-                                                    }
+                                                    )}
                                                 </SelectContent>
                                             </Select>
-                                            {
-                                                field.state.meta.errors ? (
-                                                    <em className="text-xs text-red-500">{field.state.meta.errors}</em>
-                                                ) : null
-                                            }
+                                            {field.state.meta.errors ? (
+                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            ) : null}
                                         </div>
                                     )}
                                 </form.Field>
-                            }
+                            )}
                             <form.Field 
                                 name="vatPercentage"
                                 validators={{ onChange: ({ value }) => value === "" ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be less than or equal to 100" : undefined }}

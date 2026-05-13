@@ -2,13 +2,14 @@
 
 import { IconArrowLeft, IconEye, IconFile } from "@tabler/icons-react"
 import Link from "next/link"
+import { Dot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { use } from "react"
 import ShipmentOperationalForm from "@/components/forms/shipment-operational-form"
 import { useShipmentById, useUpdateShipmentOperational } from "@/hooks/use-shipments"
-import { amountCalculation, formatDate } from "@/lib/utils"
+import { amountCalculation, formatDate, sellingNetAmount } from "@/lib/utils"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
 import DocumentUploadForm from "@/components/forms/document-upload-form"
 import { Costing } from "../../costings/columns"
@@ -42,6 +43,16 @@ export type ShipmentOperationalAttachment = {
     updatedBy: { name: string}
 }
 
+type ShipmentLinkedSelling = {
+    id: string
+    sellingNumber: string
+    description: string
+    amount: number
+    vatPercentage: number
+    pph23Percentage: number
+    status: string
+}
+
 
 export default function ShipmentDetailPage({ params }: { params: Promise<{ shipmentId: string }> }) {
     const { shipmentId } = use(params)
@@ -55,9 +66,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
 
     const [ open, setOpen ] = useState(false)
     
-    const { data, isLoading, error } = useShipmentById(shipmentId)
+    const { data, isLoading } = useShipmentById(shipmentId)
 
-    console.log("Shipment data", data)
+    const sellings: ShipmentLinkedSelling[] = (data as { sellings?: ShipmentLinkedSelling[] })?.sellings ?? []
 
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId)
 
@@ -300,6 +311,58 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                             </div>
                                         )
                                     }
+                                </CardContent>
+                            </Card>
+
+                            <Card className="my-6">
+                                <CardHeader>
+                                    <CardTitle>LINKED SELLINGS</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {sellings.length === 0 ? (
+                                        <p>No linked sellings found</p>
+                                    ) : (
+                                        <div>
+                                            <table className="w-full text-left">
+                                                <thead className="text-slate-500 border-b bg-slate-100 text-sm">
+                                                    <tr>
+                                                        <th className="py-2 px-4">SELLING #</th>
+                                                        <th className="py-2 px-4">DESCRIPTION</th>
+                                                        <th className="py-2 px-4">NET AMOUNT (Rp)</th>
+                                                        <th className="py-2 px-4">STATUS</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {sellings.map((selling: ShipmentLinkedSelling) => (
+                                                        <tr key={selling.id}>
+                                                            <td className="py-2 px-4 font-semibold text-blue-600">
+                                                                <Link href={`/dashboard/sellings/${selling.id}`} className="hover:underline">
+                                                                    {selling.sellingNumber}
+                                                                </Link>
+                                                            </td>
+                                                            <td className="py-2 px-4">{selling.description}</td>
+                                                            <td className="py-2 px-4">
+                                                                {sellingNetAmount(selling.amount, selling.vatPercentage, selling.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                                            </td>
+                                                            <td className="py-2 px-4">
+                                                                <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", selling.status === "paid" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}>
+                                                                    <Dot className="animate-pulse -mr-1" /> {selling.status === "paid" ? "Paid" : "Unpaid"}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <div className="mt-4 flex justify-end">
+                                                <p className="text-sm text-slate-500">
+                                                    Total selling (net):{" "}
+                                                    <span className="font-semibold">
+                                                        {sellings.reduce((acc, s) => acc + sellingNetAmount(s.amount, s.vatPercentage, s.pph23Percentage), 0).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
