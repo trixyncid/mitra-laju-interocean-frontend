@@ -35,10 +35,15 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
     const updateCosting = useUpdateCosting()
     const queryClient = useQueryClient()
 
-    console.log("Selling", selling)
-
     if (isLoading) return <SellingLoading />
     if (error) return <div className="px-4 lg:px-6">Error: {error.message}</div>
+
+    const totalFromCostings =
+        selling?.costings?.reduce(
+            (acc: number, c: LinkedCosting) =>
+                acc + amountCalculation(c.price, c.currency, c.vatPercentage, c.pph23Percentage),
+            0
+        ) ?? 0
 
     const net = sellingNetAmount(selling?.amount ?? 0, selling?.vatPercentage ?? 0, selling?.pph23Percentage ?? 0)
 
@@ -61,7 +66,6 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                 <div className="flex items-center gap-x-2">
                     <Button
                         size="sm"
-                        variant="outline"
                         onClick={() => {
                             updateSelling.mutate({
                                 id: sellingId,
@@ -217,28 +221,45 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                             </div>
 
                             <div className="mb-4">
-                                <h4 className="text-sm text-slate-500 text-center">NET AMOUNT (Rp)</h4>
+                                <h4 className="text-sm text-slate-500 text-center">Net Selling Amount (Rp)</h4>
                                 <h2 className="font-bold text-2xl text-center text-blue-600">
-                                    {net.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                    { net.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
                                 </h2>
                             </div>
 
                             <div className="border rounded-md">
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p className="text-sm">Base Amount</p>
+                                    <p className="text-sm">Gross Selling Amount</p>
                                     <p className="font-semibold text-sm">
-                                        {(selling?.amount ?? 0).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                        { (Number(selling?.amount)).toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }
                                     </p>
                                 </div>
+
+                                <div className="flex items-center justify-between py-3 px-2 border-b">
+                                    <p className="text-sm">Costing Amount</p>
+                                    <p className="font-semibold text-sm">
+                                        {totalFromCostings.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                    </p>
+                                </div>
+
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
                                     <p className="text-sm">VAT</p>
                                     <p className={clsx("text-sm", selling?.vatPercentage === 0 ? "px-2 py-0.5 bg-orange-100 text-orange-500 rounded-full" : "font-semibold")}>
                                         {selling?.vatPercentage !== 0 ? `${selling?.vatPercentage}%` : "Not applicable"}
                                     </p>
                                 </div>
-                                <div className="flex items-center justify-between py-3 px-2">
+
+                                <div className="flex items-center justify-between py-3 px-2 border-b">
                                     <p className="text-sm">PPH 23</p>
                                     <p className="font-semibold text-sm">{selling?.pph23Percentage}%</p>
+                                </div>
+
+                                {/* Revenue */}
+                                <div className="flex items-center justify-between py-3 px-2 border-b">
+                                    <p className="text-sm">Revenue</p>
+                                    <p className={clsx(`font-semibold text-sm`, net - totalFromCostings > 0 ? "text-green-500" : "text-red-500")}>
+                                        {(net - totalFromCostings).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>

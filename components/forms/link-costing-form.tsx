@@ -5,11 +5,20 @@ import { Button } from "../ui/button"
 import { IconLink, IconLinkOff, IconTrash } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "../ui/dialog"
 import { Label } from "../ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useUpdateCosting, useDeleteCosting } from "@/hooks/use-costings"
 import { useState } from "react"
 import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+    ComboboxTrigger,
+    ComboboxValue,
+} from "@/components/ui/combobox"
 
 export default function LinkCostingForm({
     id,
@@ -21,10 +30,17 @@ export default function LinkCostingForm({
     const [open, setOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
 
-    const { data: shipments, isLoading: isLoadingShipments, error: errorShipments } = useShipments()
+    const { data: shipments, isLoading, error: errorShipments } = useShipments()
 
     const deleteCosting = useDeleteCosting()
     const updateCosting = useUpdateCosting()
+
+    type ComboItem = { value: string; label: string }
+    const shipmentItems: ComboItem[] =
+        shipments?.map((s: Shipment) => ({
+            value: s.id ?? "",
+            label: s.orderNumber,
+        })) ?? []
 
     const form = useForm({
         defaultValues: {
@@ -47,13 +63,20 @@ export default function LinkCostingForm({
 
     return (
         <div className="flex items-center gap-x-2">
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
                 <DialogTrigger asChild>
                     <Button variant="outline" size="icon">
                         <IconLink />
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                    onInteractOutside={(e) => {
+                        const target = e.target as Element
+                        if (target.closest('[data-slot="combobox-content"]')) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle>Link Costing</DialogTitle>
                     </DialogHeader>
@@ -63,31 +86,47 @@ export default function LinkCostingForm({
                         form.handleSubmit()
                     }}>
                         <div>
-                            <form.Field name="shipmentId" validators={{ onChange: ({ value }) => !value ? "Shipment Order Number is required" : undefined }}>
-                                {( field ) => (
+                            <form.Field
+                                name="shipmentId"
+                                validators={{ onChange: ({ value }) => !value ? "Please select a shipment" : undefined }}
+                            >
+                                {(field) => (
                                     <div className="my-5">
-                                        <Label htmlFor={field.name} className="my-2">Shipment Order Number</Label>
-                                        <Select
-                                            value={field.state.value}
-                                            onValueChange={(value) => field.handleChange(value)}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select a shipment order number" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {
-                                                    isLoadingShipments ? (
-                                                        <SelectItem value="-">Loading...</SelectItem>
-                                                    ) : errorShipments ? (
-                                                        <SelectItem value="-">Error loading shipments</SelectItem>
-                                                    ) : shipments?.length === 0 ? (
-                                                        <SelectItem value="-">No shipments found</SelectItem>
-                                                    ) : shipments.map((shipment: Shipment) => (
-                                                        <SelectItem key={shipment.id} value={shipment.id ?? ""}>{shipment.orderNumber}</SelectItem>
-                                                    ))
-                                                }
-                                            </SelectContent>
-                                        </Select>
+                                        <Label className="my-2">Shipment Order Number</Label>
+                                        {isLoading ? (
+                                            <p className="text-sm text-slate-400">Loading shipments...</p>
+                                        ) : errorShipments ? (
+                                            <p className="text-sm text-red-500">Error loading shipments</p>
+                                        ) : (
+                                            <Combobox
+                                                items={shipmentItems}
+                                                value={shipmentItems.find((item) => item.value === field.state.value) ?? null}
+                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
+                                                isItemEqualToValue={(a, b) => a.value === b.value}
+                                            >
+                                                <ComboboxTrigger
+                                                    render={
+                                                        <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                                                            <ComboboxValue placeholder="Search shipment order number..." />
+                                                        </Button>
+                                                    }
+                                                />
+                                                <ComboboxContent>
+                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
+                                                    <ComboboxEmpty>No shipments found.</ComboboxEmpty>
+                                                    <ComboboxList>
+                                                        {(item) => (
+                                                            <ComboboxItem key={item.value} value={item}>
+                                                                {item.label}
+                                                            </ComboboxItem>
+                                                        )}
+                                                    </ComboboxList>
+                                                </ComboboxContent>
+                                            </Combobox>
+                                        )}
+                                        {field.state.meta.errors ? (
+                                            <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>

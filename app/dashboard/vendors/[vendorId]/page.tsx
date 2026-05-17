@@ -2,10 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { useVendorById } from "@/hooks/use-vendors"
-import { use } from "react"
+import { use, useMemo, useState } from "react"
 import { IconArrowLeft, IconBrandWhatsapp, IconFerry } from "@tabler/icons-react"
 import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
 import Link from "next/link"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
 import { Dot } from "lucide-react"
@@ -46,7 +47,27 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
     const { vendorId } = use(params)
     const { data, isLoading, error } = useVendorById(vendorId)
 
-    console.log(data)
+    const [locationSearch, setLocationSearch] = useState<string>("")
+
+    const filteredVendorLocations = useMemo(() => {
+        const locations = data?.vendorLocations ?? []
+        const q = locationSearch.trim().toLowerCase()
+        if (!q) return locations
+        return locations.filter((location: VendorLocation) => {
+            const haystack = [
+                location.addressLine1,
+                location.addressLine2 ?? "",
+                location.addressLine3 ?? "",
+                location.city,
+                location.province,
+                location.country,
+                location.postalCode ?? "",
+            ]
+                .join(" ")
+                .toLowerCase()
+            return haystack.includes(q)
+        })
+    }, [data?.vendorLocations, locationSearch])
 
     if (isLoading) return <CustomerVendorDetailLoading />
 
@@ -173,10 +194,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                         <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} vendorId={vendorId} />
                     </div>
 
+                    <Input
+                        placeholder="Search locations by address, city, province, or country"
+                        className="w-full max-w-sm mb-4"
+                        value={locationSearch ?? ""}
+                        onChange={(e) => setLocationSearch(e.target.value)}
+                    />
+
                     {
                         data.vendorLocations.length === 0 ? <p>No locations found for this vendor ...</p> :
-                        data.vendorLocations.map((location: VendorLocation) => (
-                            <Card key={location.id}>
+                        filteredVendorLocations.length === 0 ? (
+                            <p className="text-sm text-slate-500">No locations match &quot;{locationSearch.trim()}&quot;.</p>
+                        ) :
+                        filteredVendorLocations.map((location: VendorLocation) => (
+                            <Card key={location.id} className="mb-4">
                                 <CardContent>
                                     <div className="flex flex-row items-start justify-between">
                                         <div>

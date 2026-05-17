@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { use } from "react"
+import { use, useMemo, useState } from "react"
 import { IconArrowLeft, IconBrandWhatsapp, IconBuildingFactory2 } from "@tabler/icons-react"
 import { useCustomerById } from "@/hooks/use-customers"
 import ErrorPage from "@/components/error-page"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Dot } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
 import clsx from "clsx"
 import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -70,7 +71,19 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     const { customerId } = use(params)
     const { data, isLoading, error } = useCustomerById(customerId)
 
-    console.log('data', data)
+    const [shipperSearch, setShipperSearch] = useState<string>("")
+
+    const filteredShippers = useMemo(() => {
+        const shippers = data?.customerShippers ?? []
+        const q = shipperSearch.trim().toLowerCase()
+        if (!q) return shippers
+        return shippers.filter((shipper: CustomerShipper) => {
+            const haystack = [shipper.name, shipper.phoneNumber ?? "", shipper.country ?? ""]
+                .join(" ")
+                .toLowerCase()
+            return haystack.includes(q)
+        })
+    }, [data?.customerShippers, shipperSearch])
     /**
      * Function to count the total number of customer locations for a customer
      * @returns {number} The total number of customer locations
@@ -221,11 +234,22 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         <p className="text-sm text-slate-500 my-2 flex flex-row">{ data.customerShippers.length } shippers <Dot /> { totalCustomerLocations } locations <Dot /> { totalCustomerContacts } contacts</p>
                         <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
                     </div>
+
+                    <Input
+                        placeholder="Search shippers by name, phone, or country"
+                        className="w-full max-w-sm mb-4"
+                        value={shipperSearch ?? ""}
+                        onChange={(e) => setShipperSearch(e.target.value)}
+                    />
+
                     <Accordion type="multiple">
                         {
                             data.customerShippers.length === 0 ? <p>No shippers found for this customer ...</p>
                             :
-                            data.customerShippers.map((shipper: CustomerShipper) => (
+                            filteredShippers.length === 0 ? (
+                                <p className="text-sm text-slate-500">No shippers match &quot;{shipperSearch.trim()}&quot;.</p>
+                            ) :
+                            filteredShippers.map((shipper: CustomerShipper) => (
                                 <AccordionItem value={shipper.id} key={shipper.id}>
                                     <AccordionTrigger className="flex flex-row items-center">
                                         <div>
