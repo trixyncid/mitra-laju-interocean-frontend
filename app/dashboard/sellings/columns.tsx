@@ -3,10 +3,11 @@
 import { sellingNetAmount } from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
 import { IconLinkOff } from "@tabler/icons-react"
-import { Dot, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import Link from "next/link"
-import clsx from "clsx"
 import { localDate } from "@/lib/utils"
+import { PaymentStatusChip, UnlinkedChip } from "@/components/ui/status-chip"
+import { primaryText, secondaryText } from "@/lib/design"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { IconTrash } from "@tabler/icons-react"
@@ -44,7 +45,7 @@ function SellingActionCell({ row }: { row: Row<Selling> }) {
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon">
-                        <IconTrash className="text-red-500 hover:bg-red-50" />
+                        <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -81,9 +82,9 @@ export const columns: ColumnDef<Selling>[] = [
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => (
-            <div className="font-semibold flex items-center gap-x-1">
+            <div className={`${primaryText} flex items-center gap-x-1`}>
                 <Link href={`/dashboard/sellings/${row.original.id}`} className="hover:underline flex items-center gap-x-1">
-                    {row.original.description} <Info className="w-3.5 h-3.5 text-slate-400" />
+                    {row.original.description} <Info className="size-3.5 text-muted-foreground" />
                 </Link>
             </div>
         )
@@ -91,7 +92,7 @@ export const columns: ColumnDef<Selling>[] = [
     {
         accessorKey: "sellingNumber",
         header: "Selling #",
-        cell: ({ row }) => <p>{row.original.sellingNumber}</p>
+        cell: ({ row }) => <span className={secondaryText}>{row.original.sellingNumber}</span>
     },
     {
         accessorKey: "amount",
@@ -107,32 +108,30 @@ export const columns: ColumnDef<Selling>[] = [
         accessorKey: "shipment",
         header: "Shipment Order #",
         cell: ({ row }) => (
-            <div className={clsx("px-3 py-1 rounded-full w-fit text-xs", row.original.shipment === null ? "bg-red-100 text-red-500" : "")}>
-                {row.original.shipment === null
-                    ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div>
-                    : row.original.shipment.orderNumber
-                }
-            </div>
+            row.original.shipment === null ? (
+                <span className="inline-flex items-center gap-x-2">
+                    <UnlinkedChip />
+                    <IconLinkOff className="size-3 text-muted-foreground" />
+                </span>
+            ) : (
+                <span className={secondaryText}>{row.original.shipment.orderNumber}</span>
+            )
         )
     },
     {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => (
-            <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", row.original.status === "paid" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}>
-                <Dot className="animate-pulse -mr-1" /> {row.original.status === "paid" ? "Paid" : "Unpaid"}
-            </div>
-        )
+        cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "paid"} />
     },
     {
         accessorKey: "updatedBy",
         header: "Modified By",
-        cell: ({ row }) => <div>{(row.original.updatedBy as { name: string } | undefined)?.name}</div>
+        cell: ({ row }) => <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
     },
     {
         accessorKey: "updatedAt",
         header: "Modified At",
-        cell: ({ row }) => <div>{localDate(row.original.updatedAt as string)}</div>
+        cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>
     },
     {
         accessorKey: "",

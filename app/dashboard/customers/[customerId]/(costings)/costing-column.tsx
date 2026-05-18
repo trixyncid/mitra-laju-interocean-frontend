@@ -21,7 +21,7 @@ export const columns: ColumnDef<Costing>[] = [
     header: "Invoice Number",
     cell: ({ row }) => {
       return <div className="font-bold flex items-center gap-x-1">
-        <Link href={`/dashboard/costings/${row.original.id}`} className="hover:underline">{ row.original.invoiceNumber }</Link><Info className="w-3.5 h-3.5 text-slate-400" />
+        <Link href={`/dashboard/costings/${row.original.id}`} className="hover:underline">{ row.original.invoiceNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
     }
   },

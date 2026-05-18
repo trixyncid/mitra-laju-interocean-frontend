@@ -6,8 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
 
 import { Providers } from "../providers";
-import { authClient } from "@/lib/auth-client";
-import { redirect } from "next/navigation";
+import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 
 export default function DashboardLayout({
@@ -15,20 +14,20 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { data: session, isPending, error } = authClient.useSession()
+  const { session, isPending, error, isRedirecting } = useRequireAuth()
 
-  if (isPending) {
+  if (isPending || isRedirecting) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
-        <AudioLines animate="path-loop" speed={3} className="size-10 text-blue-500 animate-pulse"/>
-        <p className="text-sm text-muted-foreground mt-4">Preparing your dashboard...</p>
+        <AudioLines animate="path-loop" speed={3} className="size-10 text-ring animate-pulse"/>
+        <p className="mt-4 text-sm text-muted-foreground">Preparing your dashboard...</p>
       </div>
     )
   }
 
   if (error) return <div>Error: {error.message}</div>
 
-  if (!session) return redirect("/")
+  if (!session) return null
 
   return (
     <>
@@ -46,7 +45,7 @@ export default function DashboardLayout({
             <SiteHeader />
               <div className="flex flex-1 flex-col">
                 <div className="@container/main flex flex-1 flex-col gap-2">
-                  <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                  <div className="flex flex-col">
                     {children}
                     <Toaster 
                         richColors

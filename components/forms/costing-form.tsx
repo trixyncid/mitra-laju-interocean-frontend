@@ -228,7 +228,7 @@ export default function CostingForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -241,7 +241,7 @@ export default function CostingForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -254,7 +254,7 @@ export default function CostingForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -287,7 +287,7 @@ export default function CostingForm({
                                                 </SelectContent>
                                             </Select>
                                             {field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null}
                                         </div>
                                     )}
@@ -303,7 +303,7 @@ export default function CostingForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -319,7 +319,7 @@ export default function CostingForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -332,7 +332,7 @@ export default function CostingForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -365,7 +365,7 @@ export default function CostingForm({
                                         </Select>
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>

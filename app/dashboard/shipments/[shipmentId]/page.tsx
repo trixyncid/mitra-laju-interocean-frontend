@@ -21,6 +21,7 @@ import { useState } from "react"
 import { shipmentsService } from "@/services/shipments.service"
 import ShipmentLoading from "@/components/loading/shipment-loading"
 import clsx from "clsx"
+import { DashboardPage } from "@/components/layout/dashboard-page"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -98,9 +99,26 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
 
     if (isLoading) return <ShipmentLoading />
 
+    const totalVendorCost = data.costings.reduce(
+        (acc: number, costing: Costing) =>
+            acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
+        0
+    )
+    const totalCustomerCharge = sellings.reduce(
+        (acc, selling) =>
+            acc + sellingNetAmount(selling.amount, selling.vatPercentage, selling.pph23Percentage),
+        0
+    )
+    const grossProfit = totalCustomerCharge - totalVendorCost
+    const margin =
+        totalCustomerCharge > 0 ? (grossProfit / totalCustomerCharge) * 100 : null
+
+    const formatIdr = (value: number) =>
+        value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
+
     return (
-        <div className="px-4 lg:px-6">
-            <Button asChild variant="ghost" className="text-slate-500">
+        <DashboardPage>
+            <Button asChild variant="ghost" className="text-muted-foreground">
                 <Link href={`/dashboard/shipments`}>
                     <IconArrowLeft className="text-2xl"/> Back to shipments
                 </Link>
@@ -109,7 +127,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
             <div className="flex flex-row items-start justify-between gap-x-4 my-8">
                 <div>
                     <h1 className="text-2xl font-bold">Order Number - { data.orderNumber }</h1>
-                    <p className="text-slate-500">{ data.shipmentOperational === null ? "-" : `Shipment detail last updated on  ${formatDate(data.shipmentOperational.updatedAt.split("T")[0])} by ${ data.shipmentOperational.updatedBy.name as string}` }</p>
+                    <p className="text-muted-foreground">{ data.shipmentOperational === null ? "-" : `Shipment detail last updated on  ${formatDate(data.shipmentOperational.updatedAt.split("T")[0])} by ${ data.shipmentOperational.updatedBy.name as string}` }</p>
                 </div>
                 <div>
                     {
@@ -129,12 +147,12 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                     </div>
                 ) : (
                     <div className="flex flex-start gap-x-4">
-                        <div className="w-[70%]">
+                        <div className="min-w-0 flex-1 lg:w-[75%]">
                             <Card className="my-6">
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
                                         <h1>SHIPMENT OVERVIEW</h1>
-                                        <p className={clsx("text-xs mx-2 font-normal", data.shipmentOperational.status === "paid" ? "text-green-500 bg-green-100 rounded-md px-2 py-1" : "text-orange-500 bg-orange-100 rounded-md px-2 py-1")}>{ data.shipmentOperational.status === "paid" ? "Paid" : "Unpaid" }</p>
+                                        <p className={clsx("text-xs mx-2 font-normal", data.shipmentOperational.status === "paid" ? "text-secondary-foreground bg-secondary rounded-md px-2 py-1" : "text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] rounded-md px-2 py-1")}>{ data.shipmentOperational.status === "paid" ? "Paid" : "Unpaid" }</p>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -142,19 +160,19 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                         {/* Left Side */}
                                         <div>
                                             <div>
-                                                <Label className="text-xs text-slate-500">SHIPMENT ORDER NUMBER</Label>
+                                                <Label className="text-xs text-muted-foreground">SHIPMENT ORDER NUMBER</Label>
                                                 <p className="font-semibold text-blue-600">{ data.orderNumber }</p>
                                             </div>
 
                                             <div className="my-4">
-                                                <Label className="text-xs text-slate-500">CONTAINER NUMBER</Label>
+                                                <Label className="text-xs text-muted-foreground">CONTAINER NUMBER</Label>
                                                 <p className="font-semibold text-blue-600">
                                                     CONTAINER001
                                                 </p>
                                             </div>
 
                                             <div className="my-4">
-                                                <Label className="text-xs text-slate-500">ORIGIN PORT</Label>
+                                                <Label className="text-xs text-muted-foreground">ORIGIN PORT</Label>
                                                 <p className="font-semibold">{ data.shipmentOperational.portDeparture.portName as string } ({ data.shipmentOperational.portDeparture.portCountry as string })</p>
                                             </div>
                                         </div>
@@ -162,17 +180,17 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                         {/* Right Side */}
                                         <div>
                                             <div>
-                                                <Label className="text-xs text-slate-500">CUSTOMER</Label>
+                                                <Label className="text-xs text-muted-foreground">CUSTOMER</Label>
                                                 <p className="font-semibold">{ data.customerCode.customerName as string } ({ data.customerCode.customerCode as string })</p>
                                             </div>
 
                                             <div className="my-4">
-                                                <Label className="text-xs text-slate-500">ASSIGNED VESSEL</Label>
+                                                <Label className="text-xs text-muted-foreground">ASSIGNED VESSEL</Label>
                                                 <p className="font-semibold">{ data.shipmentOperational.vessel.vesselName as string } / { data.shipmentOperational.vessel.voyageNumber as string }</p>
                                             </div>
 
                                             <div className="my-4">
-                                                <Label className="text-xs text-slate-500">DESTINATION PORT</Label>
+                                                <Label className="text-xs text-muted-foreground">DESTINATION PORT</Label>
                                                 <p className="font-semibold">{ data.shipmentOperational.portDestination.portName as string } ({ data.shipmentOperational.portDestination.portCountry as string })</p>
 
                                             </div>
@@ -196,10 +214,10 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                         data?.shipmentOperationalAttachments.map((attachment: ShipmentOperationalAttachment) => (
                                             <div key={attachment.id} className="border rounded-md px-3 py-2 flex items-center gap-x-2 justify-between mb-4">
                                                 <div className="flex items-center gap-x-2">
-                                                    <IconFile className="text-blue-500 bg-blue-100 rounded-md p-1 size-8" />
+                                                    <IconFile className="text-ring bg-blue-100 rounded-md p-1 size-8" />
                                                     <div>
-                                                        <p className="text-sm text-slate-500">{ attachment.attachmentName } - { attachment.fileName }</p>
-                                                        <p className="text-xs text-slate-500">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) } by { attachment.updatedBy.name as string }</p>
+                                                        <p className="text-sm text-muted-foreground">{ attachment.attachmentName } - { attachment.fileName }</p>
+                                                        <p className="text-xs text-muted-foreground">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) } by { attachment.updatedBy.name as string }</p>
                                                     </div>
                                                 </div>
 
@@ -209,7 +227,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                         size="icon"
                                                         onClick={() => shipmentsService.viewShipmentOperationalAttachment(data.id, attachment.id!)}
                                                     >
-                                                        <IconEye className="text-slate-500 size-4" />
+                                                        <IconEye className="text-muted-foreground size-4" />
                                                     </Button>
                                                     <DocumentUploadForm mode="edit" module="shipment" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
                                                 </div>
@@ -237,7 +255,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                         ) : (        
                                             <div>
                                                 <table className="w-full text-left">
-                                                    <thead className="text-slate-500 border-b bg-slate-100 text-xs">
+                                                    <thead className="text-muted-foreground border-b bg-muted text-xs">
                                                         <tr>
                                                             <th className="py-2 px-4">CONTAINER NUMBER</th>
                                                             <th className="py-2 px-4">SEAL NUMBER</th>
@@ -284,7 +302,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                             <div>
                                                 <div>
                                                     <table className="w-full text-left">
-                                                        <thead className="text-slate-500 border-b bg-slate-100 text-sm">
+                                                        <thead className="text-muted-foreground border-b bg-muted text-sm">
                                                             <tr>
                                                                 <th className="py-2 px-4">DESCRIPTION</th>
                                                                 <th className="py-2 px-4">VENDOR</th>
@@ -306,7 +324,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                 </div>
 
                                                 <div className="mt-4 flex justify-end">
-                                                    <p className="text-sm text-slate-500">Total Cost: <span className="font-semibold">{ data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</span></p>
+                                                    <p className="text-sm text-muted-foreground">Total Cost: <span className="font-semibold">{formatIdr(totalVendorCost)}</span></p>
                                                 </div>
                                             </div>
                                         )
@@ -324,7 +342,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     ) : (
                                         <div>
                                             <table className="w-full text-left">
-                                                <thead className="text-slate-500 border-b bg-slate-100 text-sm">
+                                                <thead className="text-muted-foreground border-b bg-muted text-sm">
                                                     <tr>
                                                         <th className="py-2 px-4">SELLING #</th>
                                                         <th className="py-2 px-4">DESCRIPTION</th>
@@ -345,7 +363,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                                 {sellingNetAmount(selling.amount, selling.vatPercentage, selling.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
                                                             </td>
                                                             <td className="py-2 px-4">
-                                                                <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", selling.status === "paid" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}>
+                                                                <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", selling.status === "paid" ? "bg-secondary text-secondary-foreground" : "bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)]")}>
                                                                     <Dot className="animate-pulse -mr-1" /> {selling.status === "paid" ? "Paid" : "Unpaid"}
                                                                 </div>
                                                             </td>
@@ -354,10 +372,10 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                 </tbody>
                                             </table>
                                             <div className="mt-4 flex justify-end">
-                                                <p className="text-sm text-slate-500">
+                                                <p className="text-sm text-muted-foreground">
                                                     Total selling (net):{" "}
                                                     <span className="font-semibold">
-                                                        {sellings.reduce((acc, s) => acc + sellingNetAmount(s.amount, s.vatPercentage, s.pph23Percentage), 0).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                                        {formatIdr(totalCustomerCharge)}
                                                     </span>
                                                 </p>
                                             </div>
@@ -367,7 +385,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                             </Card>
                         </div>
 
-                        <div className="w-[30%]">
+                        <div className="w-full shrink-0 lg:w-[25%]">
                             <Card className="my-6">
                                 <CardHeader>
                                     <CardTitle>FINANCIAL SUMMARY</CardTitle>
@@ -375,56 +393,38 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                 <CardContent>
                                     <div>
                                         <div className="py-2 flex items-center justify-between border-b">
-                                            <Label className="text-slate-500">Total Vendor Cost</Label>
-                                            <p className="font-semibold text-red-500">- { data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
+                                            <Label className="text-muted-foreground">Total Vendor Cost</Label>
+                                            <p className="font-semibold text-[var(--mli-on-error-container)]">- {formatIdr(totalVendorCost)}</p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between border-b">
-                                            <Label className="text-slate-500">Customer Charge</Label>
-                                            <p className="font-semibold">{ data.shipmentOperational.customerChargeAmount === null ? "Rp. 0" : data.shipmentOperational.customerChargeAmount.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
+                                            <Label className="text-muted-foreground">Customer Charge</Label>
+                                            <p className="font-semibold">{formatIdr(totalCustomerCharge)}</p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between border-b">
-                                            <Label className="text-slate-500 font-bold">Gross Profit</Label>
-                                            <p className="font-semibold text-green-500">{ data.shipmentOperational.customerChargeAmount === null || data.shipmentOperational.customerChargeAmount === 0 ? <span className="text-orange-500 bg-orange-100 rounded-md px-2 py-1 text-xs font-medium">Unavailable</span> : (data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</p>
+                                            <Label className="text-muted-foreground font-bold">Gross Profit</Label>
+                                            <p
+                                                className={clsx(
+                                                    "font-semibold",
+                                                    grossProfit >= 0
+                                                        ? "text-secondary-foreground"
+                                                        : "text-[var(--mli-on-error-container)]"
+                                                )}
+                                            >
+                                                {formatIdr(grossProfit)}
+                                            </p>
                                         </div>
                                         <div className="py-2 flex items-center justify-between">
-                                            <Label className="text-slate-500">Margin</Label>
-                                            <p className="font-semibold">{ data.shipmentOperational.customerChargeAmount === null || data.shipmentOperational.customerChargeAmount === 0 ? <span className="text-orange-500 bg-orange-100 rounded-md px-2 py-1 text-xs font-medium">Unavailable</span> : ((data.shipmentOperational.customerChargeAmount - data.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)) / data.shipmentOperational.customerChargeAmount * 100).toFixed(2) + "%" }</p>
+                                            <Label className="text-muted-foreground">Margin</Label>
+                                            <p className="font-semibold">
+                                                {margin === null ? (
+                                                    <span className="text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] rounded-md px-2 py-1 text-xs font-medium">
+                                                        Unavailable
+                                                    </span>
+                                                ) : (
+                                                    `${margin.toFixed(2)}%`
+                                                )}
+                                            </p>
                                         </div>
-                                    </div>
-
-                                    <div className="w-full flex justify-end mt-4">
-                                        <Dialog open={open} onOpenChange={setOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button size="sm"> Edit</Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Edit Financial Summary</DialogTitle>
-                                                </DialogHeader>
-                                                <form onSubmit={(e) => {
-                                                    e.preventDefault()
-                                                    e.stopPropagation()
-                                                    form.handleSubmit()
-                                                }}>
-                                                    <div>
-                                                        <form.Field name="customerChargeAmount" validators={{ onChange: ({ value }) => !value ? "Customer charge amount is required" : undefined }}>
-                                                            {( field ) => (
-                                                                <div>
-                                                                    <Label htmlFor={field.name} className="mb-2">Customer Charge</Label>
-                                                                    <Input type="number" id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                                    {field.state.meta.errors ? (
-                                                                        <em className="text-xs text-red-500">{field.state.meta.errors}</em>
-                                                                    ) : null}
-                                                                </div>
-                                                            )}
-                                                        </form.Field>
-                                                    </div>
-                                                    <DialogFooter className="mt-4">
-                                                        <Button type="submit" disabled={updateShipmentOperational.isPending}>{ updateShipmentOperational.isPending ? "Saving..." : "Save" }</Button>
-                                                    </DialogFooter>
-                                                </form>
-                                            </DialogContent>
-                                        </Dialog>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -432,6 +432,6 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                     </div>
                 )
             }
-        </div>
+        </DashboardPage>
     )
 }

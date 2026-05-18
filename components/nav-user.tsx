@@ -67,14 +67,14 @@ export function NavUser({
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuItem className="cursor-pointer text-red-500 hover:text-red-500" onClick={() => authClient.signOut({
+            <DropdownMenuItem className="cursor-pointer text-[var(--mli-on-error-container)] hover:text-[var(--mli-on-error-container)]" onClick={() => authClient.signOut({
               fetchOptions: {
                 onSuccess: () => {
                   toast.success("Logged out successfully")
                 },
               }
             })}>
-                <IconLogout className="text-red-500 animate-pulse" /> Log out
+                <IconLogout className="text-[var(--mli-on-error-container)] animate-pulse" /> Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

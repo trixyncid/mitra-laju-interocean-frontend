@@ -16,7 +16,7 @@ export default function VendorActionCell({ row }: { row: Row<Vendor> }) {
             <VendorForm mode="edit" id={row.original.id} vendorName={row.original.vendorName} vendorCode={row.original.vendorCode} npwp={row.original.npwp ?? undefined} isActive={row.original.isActive} />
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

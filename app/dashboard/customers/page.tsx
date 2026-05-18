@@ -6,30 +6,29 @@ import CustomerForm from "@/components/forms/customer-form";
 import { useCustomers } from "@/hooks/use-customers";
 import TableSkeleton from "@/components/loading/table-skeleton";
 import ErrorPage from "@/components/error-page";
+import {
+    DashboardPage,
+    DashboardPageCard,
+    DashboardPageHeader,
+} from "@/components/layout/dashboard-page";
 
 export default function CustomerMasterDataPage() {
     const { data, isLoading, error } = useCustomers()
 
-    console.log(data)
-
     if (error) return <ErrorPage />
 
     return (
-        <div className="px-4 lg:px-6">
-            {/* Header */}
-            <div className="flex items-center justify-between container mx-auto">
-                <div>
-                    <h1 className="text-xl font-bold">Customer Management</h1>
-                    <p>View and manage your client database, view profiles, and update contact information.</p>
-                </div>
-
-                <CustomerForm mode="create" id={undefined} customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
-            </div>
-
-            {/* Table */}
-            <div className='container mx-auto py-10'>
-                { isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
-            </div>
-        </div>
+        <DashboardPage>
+            <DashboardPageHeader
+                title="Customer Management"
+                description="View and manage your client database, view profiles, and update contact information."
+                action={
+                    <CustomerForm mode="create" id={undefined} customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
+                }
+            />
+            <DashboardPageCard>
+                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
+            </DashboardPageCard>
+        </DashboardPage>
     )
 }

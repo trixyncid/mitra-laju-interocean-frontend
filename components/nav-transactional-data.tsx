@@ -1,13 +1,13 @@
-import {
-    SidebarGroup,
-    SidebarGroupLabel,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-  } from "@/components/ui/sidebar"
+"use client"
 
-import Link from "next/link"
 import { type Icon } from "@tabler/icons-react"
+
+import { NavSidebarLink } from "@/components/nav-sidebar-link"
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+} from "@/components/ui/sidebar"
 
 export function NavTransactionalData({
   items,
@@ -23,14 +23,12 @@ export function NavTransactionalData({
       <SidebarGroupLabel>Transactional Data</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <Link href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <NavSidebarLink
+            key={item.name}
+            href={item.url}
+            label={item.name}
+            icon={item.icon}
+          />
         ))}
       </SidebarMenu>
     </SidebarGroup>

@@ -16,7 +16,7 @@ export default function PortActionCell({ row }: { row: Row<Port> }) {
             <PortForm mode="edit" portName={row.original.portName} portCountry={row.original.portCountry} isActive={row.original.isActive} id={row.original.id} />
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

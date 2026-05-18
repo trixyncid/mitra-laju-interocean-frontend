@@ -24,7 +24,7 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     header: "Shipment Order Number",
     cell: ({ row }) => {
       return <div className="font-bold flex items-center gap-x-1">
-        <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link><Info className="w-3.5 h-3.5 text-slate-400" />
+        <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
     }
   },
@@ -42,12 +42,12 @@ export const columns: ColumnDef<LinkedShipment>[] = [
       return (
         row.original.departureCountry !== "" && row.original.arrivalCountry !== "" ? (
           <div className="flex flex-row items-center gap-x-2">
-            <p className="text-sm text-slate-500">{ row.original.departureCountry }</p>
+            <p className="text-sm text-muted-foreground">{ row.original.departureCountry }</p>
             <IconArrowRight className="w-4 h-4" />
-            <p className="text-sm text-slate-500">{ row.original.arrivalCountry }</p>
+            <p className="text-sm text-muted-foreground">{ row.original.arrivalCountry }</p>
           </div>
         ) : (
-          <p className="text-sm text-orange-500 bg-orange-50 px-2 rounded-full w-fit">Unavailable</p>
+          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-full w-fit">Unavailable</p>
         )
       )
     },
@@ -58,10 +58,10 @@ export const columns: ColumnDef<LinkedShipment>[] = [
       return (
         row.original.eta !== "" ? (
           <div className="flex flex-row items-center gap-x-2">
-            <p className="text-sm text-slate-500">{ formatDate(row.original.eta) }</p>
+            <p className="text-sm text-muted-foreground">{ formatDate(row.original.eta) }</p>
           </div>
         ) : (
-          <p className="text-sm text-orange-500 bg-orange-50 px-2 rounded-full w-fit">Unavailable</p>
+          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-full w-fit">Unavailable</p>
         )
       )
     }

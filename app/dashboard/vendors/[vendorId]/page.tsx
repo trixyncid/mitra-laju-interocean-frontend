@@ -20,6 +20,7 @@ import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import CostingHistoryPage from "./(costings)/costing-history-page"
 import { Costing } from "../../costings/columns"
 import { LinkedShipment } from "./(shipments)/shipment-columns"
+import { DashboardPage } from "@/components/layout/dashboard-page"
 
 type VendorContact = {
     id: string
@@ -131,10 +132,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
     }
 
     return (
-        <div className="px-4 lg:px-6">
+        <DashboardPage>
             {/* Header */}
             <div className="mb-5">
-                <Button asChild variant="ghost" className="text-slate-500">
+                <Button asChild variant="ghost" className="text-muted-foreground">
                     <Link href={`/dashboard/vendors`}>
                         <IconArrowLeft className="text-2xl"/> Back to vendors
                     </Link>
@@ -145,12 +146,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                 <CardContent>
                     <div className="flex items-center gap-x-4">
                         <div className="border border-2 rounded-lg p-3">
-                            <IconFerry className="text-blue-500 w-10 h-10" />
+                            <IconFerry className="text-ring w-10 h-10" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold">{data.vendorName}</h1>
-                            <p className="text-sm text-slate-500 flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: {data.vendorCode}</p>
-                            <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", data?.isActive ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {data?.isActive ? "Active" : "Inactive"}</p>
+                            <h1 className="text-headline-lg">{data.vendorName}</h1>
+                            <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: {data.vendorCode}</p>
+                            <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", data?.isActive ? "text-secondary-foreground bg-secondary/50" : "bg-[var(--mli-error-container)]/50 text-[var(--mli-on-error-container)]")}><Dot className="animate-pulse"/> {data?.isActive ? "Active" : "Inactive"}</p>
                         </div>
                     </div>
 
@@ -159,22 +160,22 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                     <div className="grid grid-cols-4 text-center">
                         <div className="w-full border-r">
                             <p className="mt-2 font-bold text-xl">{ totalActiveShipments() }</p>
-                            <p className="mb-2 text-sm text-slate-500">Active <br /> Shipments</p>
+                            <p className="mb-2 text-sm text-muted-foreground">Active <br /> Shipments</p>
                         </div>
 
                         <div className="w-full border-r">
                             <p className="mt-2 font-bold text-xl">{ data.costings.length }</p>
-                            <p className="mb-2 text-sm text-slate-500">Total <br /> Assignments</p>
+                            <p className="mb-2 text-sm text-muted-foreground">Total <br /> Assignments</p>
                         </div>
 
                         <div className="w-full border-r">
                             <p className="mt-2 font-bold text-xl">{ calculateYTDSpend() }</p>
-                            <p className="mb-2 text-sm text-slate-500">YTD <br /> Spend</p>
+                            <p className="mb-2 text-sm text-muted-foreground">YTD <br /> Spend</p>
                         </div>
 
                         <div className="w-full">
                             <p className="mt-2 font-bold text-xl">{ calculateOutstandingBills() }</p>
-                            <p className="mb-2 text-sm text-slate-500">Outstanding <br /> Bills</p>
+                            <p className="mb-2 text-sm text-muted-foreground">Outstanding <br /> Bills</p>
                         </div>
 
                     </div>
@@ -184,19 +185,19 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
             {/* Tabs */}
             <Tabs defaultValue="offices-and-contacts" className="mt-6">
                 <TabsList>
-                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.vendorLocations.length }</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ vendorShipments.length }</span></TabsTrigger>
-                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-blue-500 px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
+                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.vendorLocations.length }</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ vendorShipments.length }</span></TabsTrigger>
+                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="offices-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
-                        <p className="text-sm text-slate-500 my-2 flex flex-row">{ data.vendorLocations.length } offices <Dot /> { data.vendorLocations.map((loc: VendorLocation) => loc.vendorContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
+                        <p className="text-sm text-muted-foreground my-2 flex flex-row">{ data.vendorLocations.length } offices <Dot /> { data.vendorLocations.map((loc: VendorLocation) => loc.vendorContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
                         <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} vendorId={vendorId} />
                     </div>
 
                     <Input
                         placeholder="Search locations by address, city, province, or country"
-                        className="w-full max-w-sm mb-4"
+                        className="mb-4 w-full max-w-md"
                         value={locationSearch ?? ""}
                         onChange={(e) => setLocationSearch(e.target.value)}
                     />
@@ -204,7 +205,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                     {
                         data.vendorLocations.length === 0 ? <p>No locations found for this vendor ...</p> :
                         filteredVendorLocations.length === 0 ? (
-                            <p className="text-sm text-slate-500">No locations match &quot;{locationSearch.trim()}&quot;.</p>
+                            <p className="text-sm text-muted-foreground">No locations match &quot;{locationSearch.trim()}&quot;.</p>
                         ) :
                         filteredVendorLocations.map((location: VendorLocation) => (
                             <Card key={location.id} className="mb-4">
@@ -213,9 +214,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                         <div>
                                             <div className="flex flex-row items-start gap-x-2">
                                                 <h2 className="text-lg font-bold">{ location.addressLine1 }</h2>
-                                                <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-green-500 bg-green-100/50" : "bg-red-100/50 text-red-500")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
+                                                <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-secondary-foreground bg-secondary/50" : "bg-[var(--mli-error-container)]/50 text-[var(--mli-on-error-container)]")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
                                             </div>
-                                            <div className="text-xs text-slate-500">
+                                            <div className="text-xs text-muted-foreground">
                                                 <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
                                                 <p>Last updated on { formatDate(location.updatedAt) } by { location.updatedBy?.name ?? "Unknown" }</p>
                                             </div>
@@ -239,11 +240,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                                         </Avatar>
                                                         <div>
                                                             <h2 className="font-semibold text-sm">{ contact.contactName }</h2>
-                                                            <p className="text-xs text-slate-500">{ contact.email === "" ? "No email provided" : contact.email }</p>
+                                                            <p className="text-xs text-muted-foreground">{ contact.email === "" ? "No email provided" : contact.email }</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-row items-center gap-x-2">
-                                                        <p className="text-sm text-slate-500">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
+                                                        <p className="text-sm text-muted-foreground">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
                                                         <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
                                                         <VendorContactForm mode="edit" id={contact.id} contactName={contact.contactName} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} vendorId={vendorId} locationId={location.id} />
                                                     </div>
@@ -265,6 +266,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                     <CostingHistoryPage vendorName={data.vendorName} vendorCostings={vendorCostings} />
                 </TabsContent>
             </Tabs>
-        </div>
+        </DashboardPage>
     )
 }

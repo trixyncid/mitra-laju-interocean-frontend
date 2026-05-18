@@ -248,7 +248,7 @@ export default function ShipmentForm({
                                             </SelectContent>
                                         </Select>
                                         {field.state.meta.errors ? (
-                                            <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                         ) : null}
                                     </div>
                                 )}
@@ -288,7 +288,7 @@ export default function ShipmentForm({
                                             </SelectContent>
                                         </Select>
                                         {field.state.meta.errors ? (
-                                            <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                         ) : null}
                                     </div>
                                 )}

@@ -1,18 +1,13 @@
 "use client"
 
-import {
-  type Icon,
-} from "@tabler/icons-react"
+import { type Icon } from "@tabler/icons-react"
 
+import { NavSidebarLink } from "@/components/nav-sidebar-link"
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
-import Link from "next/link"
 
 export function NavMasterData({
   items,
@@ -28,14 +23,12 @@ export function NavMasterData({
       <SidebarGroupLabel>Master Data</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <Link href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <NavSidebarLink
+            key={item.name}
+            href={item.url}
+            label={item.name}
+            icon={item.icon}
+          />
         ))}
       </SidebarMenu>
     </SidebarGroup>

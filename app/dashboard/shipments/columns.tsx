@@ -1,13 +1,13 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import clsx from "clsx"
 import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
 import { IconArrowRight } from "@tabler/icons-react"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
-import { Dot, Info } from "lucide-react"
-
+import { Info } from "lucide-react"
+import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { primaryText, secondaryText } from "@/lib/design"
 
 export type Shipment = {
     id?: string
@@ -26,68 +26,65 @@ export const columns: ColumnDef<Shipment>[] = [
     {
         accessorKey: "orderNumber",
         header: "Order Number",
-        cell: ({ row }) => {
-            return <div className="font-bold flex items-center gap-x-1">
-                <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link><Info className="w-3.5 h-3.5 text-slate-400" />
+        cell: ({ row }) => (
+            <div className={`${primaryText} flex items-center gap-x-1`}>
+                <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link>
+                <Info className="size-3.5 text-muted-foreground" />
             </div>
-        }
+        )
     },
     {
         accessorKey: "customerCode",
         header: "Customer Code",
-        cell: ({ row }) => {
-            return <div className="text-sm text-slate-500">{ row.original.customerCode?.customerName } ({ row.original.customerCode?.customerCode })</div>
-        }
+        cell: ({ row }) => (
+            <span className={secondaryText}>
+                {row.original.customerCode?.customerName} ({row.original.customerCode?.customerCode})
+            </span>
+        )
     },
     {
         accessorKey: "customerShipper",
         header: "Customer Shipper",
         enableGlobalFilter: false,
-        cell: ({ row }) => {
-            return <div className="text-sm text-slate-500">{ row.original.customerShipper?.name }</div>
-        }
+        cell: ({ row }) => <span className={secondaryText}>{row.original.customerShipper?.name}</span>
     },
     {
         accessorKey: "shipmentOperational",
         header: "Route",
         cell: ({ row }) => {
+            if (!row.original.shipmentOperational) {
+                return <WarningChip>Unavailable</WarningChip>
+            }
             return (
-                <div>
-                    {
-                        row.original.shipmentOperational === null ? <div className="bg-orange-50 text-orange-500 px-3 rounded-full w-fit">Unavailable</div> :
-                        <div className="text-sm text-slate-500 flex flex-row items-center gap-x-1">{ row.original.shipmentOperational?.portDeparture?.portCountry as string } <IconArrowRight className="w-4 h-4" /> { row.original.shipmentOperational?.portDestination?.portCountry as string }</div>
-                    }
-                </div>
+                <span className={`${secondaryText} flex flex-row items-center gap-x-1`}>
+                    {row.original.shipmentOperational.portDeparture.portCountry}
+                    <IconArrowRight className="size-4" />
+                    {row.original.shipmentOperational.portDestination.portCountry}
+                </span>
             )
         }
     },
     {
         accessorKey: "updatedBy",
         header: "Modified By",
-        cell: ({ row }) => {
-            return <div className="text-sm text-slate-500">{ (row.original.updatedBy as { name: string } | undefined)?.name }</div>
-        }
+        cell: ({ row }) => (
+            <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
+        )
     },
     {
         accessorKey: "updatedAt",
         header: "Modified At",
-        cell: ({ row }) => {
-            return <div className="text-sm text-slate-500">{ formatDate(row.original.updatedAt as string) }</div>
-        }
+        cell: ({ row }) => <span className={secondaryText}>{formatDate(row.original.updatedAt as string)}</span>
     },
     {
         accessorKey: "isActive",
         header: "Status",
-        cell: ({ row }) => {
-            return <div className={clsx("pl-1 pr-3 w-fit rounded-full flex items-center text-xs", row.original.isActive ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500")}><Dot className="animate-pulse -mr-1" /> { row.original.isActive ? "Active" : "Inactive" }</div>
-        },
+        cell: ({ row }) => <StatusChip active={row.original.isActive} />,
         enableGlobalFilter: false,
     },
     {
         accessorKey: "",
         header: "Action",
-        cell: ({ row }) => {
-            return <ShipmentActionCell row={row} />
-        },
+        cell: ({ row }) => <ShipmentActionCell row={row} />,
     },
 ]

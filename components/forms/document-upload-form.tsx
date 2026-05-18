@@ -130,7 +130,7 @@ export default function DocumentUploadForm({
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     {
-                        mode === "create" ? <Button variant="outline" size="sm"><IconPlus className="text-slate-500 size-4" />Upload</Button> : <Button variant="outline" size="icon"><IconPencil className="text-slate-500 size-4" /></Button>
+                        mode === "create" ? <Button variant="outline" size="sm"><IconPlus className="text-muted-foreground size-4" />Upload</Button> : <Button variant="outline" size="icon"><IconPencil className="text-muted-foreground size-4" /></Button>
                     }
                 </DialogTrigger>
                 <DialogContent>
@@ -151,7 +151,7 @@ export default function DocumentUploadForm({
                                     <Label htmlFor={field.name} className="mb-1">Document Name</Label>
                                     <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                                     { field.state.meta.errors ? (
-                                        <em className="text-xs text-red-500">{ field.state.meta.errors }</em>
+                                        <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
                                     ) : null }
                                 </div>
                             )}
@@ -167,7 +167,7 @@ export default function DocumentUploadForm({
                                             <Label htmlFor={field.name} className="mb-1">Document File</Label>
                                             <Input type="file" id={field.name} name={field.name} onChange={(e) => field.handleChange(e.target.files?.[0] ?? null)} />
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{ field.state.meta.errors }</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
                                             ) : null }
                                         </div>
                                     )}
@@ -188,7 +188,7 @@ export default function DocumentUploadForm({
                 mode === "edit" ? (
                     <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" size="icon"><IconTrash className="text-red-500 size-4" /></Button>
+                            <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] size-4" /></Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>

@@ -102,7 +102,7 @@ export default function ShipmentContainerForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -121,7 +121,7 @@ export default function ShipmentContainerForm({
                                         <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -144,7 +144,7 @@ export default function ShipmentContainerForm({
                                         </Select>
                                         {
                                             field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null
                                         }
                                     </div>
@@ -161,7 +161,7 @@ export default function ShipmentContainerForm({
             { mode === "edit" ? (
                 <Dialog open={openDelete} onOpenChange={setOpenDelete}>
                     <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                        <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>

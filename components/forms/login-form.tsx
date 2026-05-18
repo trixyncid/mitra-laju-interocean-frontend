@@ -30,21 +30,20 @@ export function LoginForm({
         onSubmit: async ({ value }) => {
             setIsSubmitting(true)
 
-            await authClient.signIn.email({
+            const { error } = await authClient.signIn.email({
                 email: value.email,
                 password: value.password,
-                fetchOptions: {
-                    onSuccess: () => {
-                        toast.success("Login successful")
-                        router.push("/dashboard")
-                    },
-                    onError: (ctx) => {
-                        toast.error(ctx.error.message)
-                    }
-                }
             })
 
             setIsSubmitting(false)
+
+            if (error) {
+                toast.error(error.message ?? "Login failed")
+                return
+            }
+
+            toast.success("Login successful")
+            router.replace("/dashboard")
         },
     })
 
@@ -76,7 +75,7 @@ export function LoginForm({
                     <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                     <Input id={field.name} type="email" placeholder="m@example.com" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                     {field.state.meta.errors ? (
-                    <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                    <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                     ) : null}
                 </div>
                 )
@@ -101,7 +100,7 @@ export function LoginForm({
                         </div>
                     </div>
                     {field.state.meta.errors ? (
-                    <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                    <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                     ) : null}
                 </div>
                 )

@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Label } from "../ui/label"
 import { useCostings, useUpdateCosting } from "@/hooks/use-costings"
 import { useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Costing } from "@/app/dashboard/costings/columns"
 import {
     Combobox,
@@ -32,11 +32,16 @@ export default function LinkSellingCostingForm({
     const queryClient = useQueryClient()
 
     type ComboItem = { value: string; label: string }
-    const costingItems: ComboItem[] =
-        costings?.map((c: Costing) => ({
-            value: c.id,
-            label: `${c.costingNumber} — ${c.description}`,
-        })) ?? []
+    const costingItems: ComboItem[] = useMemo(
+        () =>
+            costings
+                ?.filter((c: Costing) => !c.sellingId)
+                .map((c: Costing) => ({
+                    value: c.id,
+                    label: `${c.costingNumber} — ${c.description}`,
+                })) ?? [],
+        [costings]
+    )
 
     const form = useForm({
         defaultValues: {
@@ -93,7 +98,7 @@ export default function LinkSellingCostingForm({
                                 <div className="my-5">
                                     <Label className="my-2">Costing</Label>
                                     {isLoading ? (
-                                        <p className="text-sm text-slate-400">Loading costings...</p>
+                                        <p className="text-sm text-muted-foreground">Loading costings...</p>
                                     ) : (
                                         <Combobox
                                             items={costingItems}
@@ -110,7 +115,7 @@ export default function LinkSellingCostingForm({
                                             />
                                             <ComboboxContent>
                                                 <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                <ComboboxEmpty>No costings found.</ComboboxEmpty>
+                                                <ComboboxEmpty>No unlinked costings found.</ComboboxEmpty>
                                                 <ComboboxList>
                                                     {(item) => (
                                                         <ComboboxItem key={item.value} value={item}>
@@ -122,7 +127,7 @@ export default function LinkSellingCostingForm({
                                         </Combobox>
                                     )}
                                     {field.state.meta.errors ? (
-                                        <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                     ) : null}
                                 </div>
                             )}

@@ -1,11 +1,12 @@
 "use client"
 
-import clsx from "clsx"
 import { ColumnDef } from "@tanstack/react-table"
 import Link from "next/link"
-import { Dot, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import VendorActionCell from "@/components/action-cell/vendor-action-cell"
 import { localDate } from "@/lib/utils"
+import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { primaryText, secondaryText } from "@/lib/design"
 
 export type Vendor = {
     id?: string
@@ -21,49 +22,49 @@ export const columns: ColumnDef<Vendor>[] = [
     {
         accessorKey: "vendorName",
         header: "Vendor Name",
-        cell: ({ row }) => {
-            return <div className="font-bold flex items-center gap-x-1">
-                <Link href={`/dashboard/vendors/${row.original.id}`} className="hover:underline">{ row.original.vendorName }</Link><Info className="w-3.5 h-3.5 text-slate-400" />
+        cell: ({ row }) => (
+            <div className={`${primaryText} flex items-center gap-x-1`}>
+                <Link href={`/dashboard/vendors/${row.original.id}`} className="hover:underline">{ row.original.vendorName }</Link>
+                <Info className="size-3.5 text-muted-foreground" />
             </div>
-        }
+        )
     },
     {
         accessorKey: "vendorCode",
-        header: "Vendor Code"
+        header: "Vendor Code",
+        cell: ({ row }) => <span className={secondaryText}>{row.original.vendorCode}</span>
     },
     {
         accessorKey: "npwp",
         header: "NPWP",
         cell: ({ row }) => {
-            return <div className="">{ row.original.npwp === undefined || row.original.npwp === null || row.original.npwp === "" ? <p className="bg-orange-50 text-orange-500 px-3 rounded-full w-fit">Unavailable</p> : `${ row.original.npwp }`}</div>
+            return row.original.npwp ? (
+                <span className={secondaryText}>{row.original.npwp}</span>
+            ) : (
+                <WarningChip>Unavailable</WarningChip>
+            )
         }
     },
     {
         accessorKey: "updatedBy",
         header: "Modified By",
-        cell: ({ row }) => {
-            return <div>{ (row.original.updatedBy as { name: string } | undefined)?.name }</div>
-        }
+        cell: ({ row }) => (
+            <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
+        )
     },
     {
         accessorKey: "updatedAt",
         header: "Modified At",
-        cell: ({ row }) => {
-            return <div>{ localDate(row.original.updatedAt as string) }</div>
-        }
+        cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>
     },
     {
         accessorKey: "isActive",
         header: "Status",
-        cell: ({ row }) => {
-            return <div className={clsx("pl-1 pr-3 w-fit rounded-full flex items-center text-xs", row.original.isActive ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500")}><Dot className="animate-pulse -mr-1" /> { row.original.isActive ? "Active" : "Inactive" }</div>
-        }
+        cell: ({ row }) => <StatusChip active={row.original.isActive} />
     },
     {
         accessorKey: "",
         header: "Action",
-        cell: ({ row }) => {
-            return <VendorActionCell row={row} />
-        }
+        cell: ({ row }) => <VendorActionCell row={row} />
     },
 ]

@@ -23,7 +23,7 @@ export const columns: ColumnDef<Costing>[] = [
     header: "Invoice Number",
     cell: ({ row }) => {
       return <div className="font-bold flex items-center gap-x-1">
-        <Link href={`/dashboard/costings/${row.original.id}`} className="hover:underline">{ row.original.invoiceNumber }</Link><Info className="w-3.5 h-3.5 text-slate-400" />
+        <Link href={`/dashboard/costings/${row.original.id}`} className="hover:underline">{ row.original.invoiceNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
     }
   },
@@ -31,7 +31,7 @@ export const columns: ColumnDef<Costing>[] = [
     accessorKey: "shipmentOrderNumber",
     header: "Shipment Order Number",
     cell: ({ row }) => {
-      return <div className={clsx("px-3 py-1 rounded-full w-fit text-xs", row.original.shipmentOrderNumber === "" ? "bg-red-100 text-red-500" : "")}>{ row.original.shipmentOrderNumber === "" ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div> : row.original.shipmentOrderNumber }</div>
+      return <div className={clsx("px-3 py-1 rounded-full w-fit text-xs", row.original.shipmentOrderNumber === "" ? "bg-[var(--mli-error-container)] text-[var(--mli-on-error-container)]" : "")}>{ row.original.shipmentOrderNumber === "" ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div> : row.original.shipmentOrderNumber }</div>
     }
   },
   {

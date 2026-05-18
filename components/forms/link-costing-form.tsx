@@ -94,9 +94,9 @@ export default function LinkCostingForm({
                                     <div className="my-5">
                                         <Label className="my-2">Shipment Order Number</Label>
                                         {isLoading ? (
-                                            <p className="text-sm text-slate-400">Loading shipments...</p>
+                                            <p className="text-sm text-muted-foreground">Loading shipments...</p>
                                         ) : errorShipments ? (
-                                            <p className="text-sm text-red-500">Error loading shipments</p>
+                                            <p className="text-sm text-[var(--mli-on-error-container)]">Error loading shipments</p>
                                         ) : (
                                             <Combobox
                                                 items={shipmentItems}
@@ -125,7 +125,7 @@ export default function LinkCostingForm({
                                             </Combobox>
                                         )}
                                         {field.state.meta.errors ? (
-                                            <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                         ) : null}
                                     </div>
                                 )}
@@ -159,7 +159,7 @@ export default function LinkCostingForm({
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon">
-                        <IconTrash className="text-red-500 hover:bg-red-50" />
+                        <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
                     </Button>
                 </DialogTrigger>
                 <DialogContent>

@@ -92,7 +92,7 @@ export default function LinkSellingShipmentForm({
                                 <div className="my-5">
                                     <Label className="my-2">Shipment Order Number</Label>
                                     {isLoading ? (
-                                        <p className="text-sm text-slate-400">Loading shipments...</p>
+                                        <p className="text-sm text-muted-foreground">Loading shipments...</p>
                                     ) : (
                                         <Combobox
                                             items={shipmentItems}
@@ -121,7 +121,7 @@ export default function LinkSellingShipmentForm({
                                         </Combobox>
                                     )}
                                     {field.state.meta.errors ? (
-                                        <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                     ) : null}
                                 </div>
                             )}

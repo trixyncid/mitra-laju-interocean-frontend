@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Syne } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const syne = Syne({
-  variable: "--font-syne",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -19,10 +19,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    
       <html lang="en">
         <body
-          className={`${syne.className} antialiased`}
+          className={`${inter.variable} font-sans antialiased`}
           suppressHydrationWarning
         >
           {children}

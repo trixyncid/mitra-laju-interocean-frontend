@@ -1,16 +1,12 @@
 import { Skeleton } from "../ui/skeleton";
+import { DashboardPage } from "@/components/layout/dashboard-page";
 
 export default function CustomerVendorDetailLoading() {
     return (
-        <div className="px-4 lg:px-6">
-            <Skeleton className="w-50 h-5 mb-5" />
-            <Skeleton className="w-full h-50 mb-5" />
-            <Skeleton className="w-100 h-5 mb-5" />
-            <div className="flex items-center justify-between">
-                <Skeleton className="w-50 h-5 mb-5" />
-                <Skeleton className="w-30 h-5 mb-5" />
-            </div>
-            <Skeleton className="w-full h-30 mb-5" />
-        </div>
+        <DashboardPage>
+            <Skeleton className="mb-6 h-10 w-48" />
+            <Skeleton className="h-48 w-full rounded-[2rem]" />
+            <Skeleton className="mt-6 h-96 w-full rounded-[2rem]" />
+        </DashboardPage>
     )
 }

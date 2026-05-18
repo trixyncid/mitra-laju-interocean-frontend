@@ -3,8 +3,8 @@
 import PortActionCell from "@/components/action-cell/port-action-cell"
 import { localDate} from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
-import clsx from "clsx"
-import { Dot } from "lucide-react"
+import { StatusChip } from "@/components/ui/status-chip"
+import { primaryText, secondaryText } from "@/lib/design"
 
 export type Port = {
     id?: string
@@ -19,40 +19,33 @@ export const columns: ColumnDef<Port>[] = [
     {
         accessorKey: "portName",
         header: "Port Name",
-        cell: ({ row }) => {
-            return <div className="font-bold">{ row.original.portName }</div>
-        }
+        cell: ({ row }) => <span className={primaryText}>{ row.original.portName }</span>
     },
     {
         accessorKey: "portCountry",
-        header: "Country"
+        header: "Country",
+        cell: ({ row }) => <span className={secondaryText}>{row.original.portCountry}</span>
     },
     {
         accessorKey: "updatedBy",
         header: "Modified By",
-        cell: ({ row }) => {
-            return <div>{ (row.original.updatedBy as { name: string } | undefined)?.name }</div>
-        },
+        cell: ({ row }) => (
+            <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
+        ),
     },
     {
         accessorKey: "updatedAt",
         header: "Modified At",
-        cell: ({ row }) => {
-            return <div>{ localDate(row.original.updatedAt as string) }</div>
-        },
+        cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>,
     },
     {
         accessorKey: "isActive",
         header: "Status",
-        cell: ({ row }) => {
-            return <div className={clsx("pl-1 pr-3 w-fit rounded-full flex items-center text-xs", row.original.isActive ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500")}><Dot className="animate-pulse -mr-1" /> { row.original.isActive ? "Active" : "Inactive" }</div>
-        }
+        cell: ({ row }) => <StatusChip active={row.original.isActive} />
     },
     {
         accessorKey: "",
         header: "Action",
-        cell: ({ row }) => {
-            return <PortActionCell row={row} />
-        }
+        cell: ({ row }) => <PortActionCell row={row} />
     },
 ]

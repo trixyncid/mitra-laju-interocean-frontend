@@ -16,7 +16,7 @@ export default function CustomerActionCell({ row }: { row: Row<Customer> }) {
             <CustomerForm mode="edit" customerCode={row.original.customerCode} customerName={row.original.customerName} npwp={row.original.npwp} isActive={row.original.isActive} id={row.original.id} />
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

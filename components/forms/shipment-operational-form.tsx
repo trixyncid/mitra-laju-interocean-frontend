@@ -170,7 +170,7 @@ export default function ShipmentOperationalForm({
                                                 </SelectContent>
                                             </Select>
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null }
                                         </div>
                                     )
@@ -196,7 +196,7 @@ export default function ShipmentOperationalForm({
                                                 </SelectContent>
                                             </Select>
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null }
                                         </div>
                                     )
@@ -232,7 +232,7 @@ export default function ShipmentOperationalForm({
                                                 </ComboboxContent>
                                             </Combobox>
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null }
                                         </div>
                                     )
@@ -268,7 +268,7 @@ export default function ShipmentOperationalForm({
                                                 </ComboboxContent>
                                             </Combobox>
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null }
                                         </div>
                                     )
@@ -304,7 +304,7 @@ export default function ShipmentOperationalForm({
                                                 </ComboboxContent>
                                             </Combobox>
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null }
                                         </div>
                                     )
@@ -340,7 +340,7 @@ export default function ShipmentOperationalForm({
                                                 </ComboboxContent>
                                             </Combobox>
                                             { field.state.meta.errors ? (
-                                                <em className="text-xs text-red-500">{field.state.meta.errors}</em>
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
                                             ) : null }
                                         </div>
                                     )

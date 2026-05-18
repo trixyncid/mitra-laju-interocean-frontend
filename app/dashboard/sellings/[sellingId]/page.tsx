@@ -15,6 +15,7 @@ import SellingForm from "@/components/forms/selling-form"
 import LinkSellingCostingForm from "@/components/forms/link-selling-costing-form"
 import SellingLoading from "@/components/loading/selling-loading"
 import { toast } from "sonner"
+import { DashboardPage } from "@/components/layout/dashboard-page"
 
 type LinkedCosting = {
     id: string
@@ -36,7 +37,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
     const queryClient = useQueryClient()
 
     if (isLoading) return <SellingLoading />
-    if (error) return <div className="px-4 lg:px-6">Error: {error.message}</div>
+    if (error) return <DashboardPage><div className="text-destructive">Error: {error.message}</div></DashboardPage>
 
     const totalFromCostings =
         selling?.costings?.reduce(
@@ -48,8 +49,8 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
     const net = sellingNetAmount(selling?.amount ?? 0, selling?.vatPercentage ?? 0, selling?.pph23Percentage ?? 0)
 
     return (
-        <div className="px-4 lg:px-6">
-            <Button asChild variant="ghost" className="text-slate-500 mb-2">
+        <DashboardPage>
+            <Button asChild variant="ghost" className="text-muted-foreground mb-2">
                 <Link href="/dashboard/sellings">
                     <IconArrowLeft /> Back to sellings
                 </Link>
@@ -59,7 +60,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
             <div className="mb-6 flex items-start justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Selling — {selling?.sellingNumber}</h1>
-                    <p className="text-slate-400 text-sm">
+                    <p className="text-muted-foreground text-sm">
                         Last modified on {localDate(selling?.updatedAt)} by {selling?.updatedBy?.name}
                     </p>
                 </div>
@@ -93,7 +94,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
 
             <div className="flex items-start gap-x-4">
                 {/* Left column */}
-                <div className="w-[70%] space-y-4">
+                <div className="min-w-0 flex-1 space-y-4 lg:w-[75%]">
 
                     {/* Selling Details */}
                     <Card>
@@ -102,8 +103,8 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                 SELLING DETAILS
                                 <span className={clsx("text-xs font-normal rounded-md px-2 py-1",
                                     selling?.status === "paid"
-                                        ? "text-green-500 bg-green-100"
-                                        : "text-orange-500 bg-orange-100"
+                                        ? "text-secondary-foreground bg-secondary"
+                                        : "text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)]"
                                 )}>
                                     {selling?.status === "paid" ? "Paid" : "Unpaid"}
                                 </span>
@@ -113,17 +114,17 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                             <div className="grid grid-cols-2 gap-x-4">
                                 <div className="space-y-4">
                                     <div>
-                                        <Label className="text-xs text-slate-500">SELLING NUMBER</Label>
+                                        <Label className="text-xs text-muted-foreground">SELLING NUMBER</Label>
                                         <p className="font-semibold text-blue-600">{selling?.sellingNumber}</p>
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-slate-500">DESCRIPTION</Label>
+                                        <Label className="text-xs text-muted-foreground">DESCRIPTION</Label>
                                         <p className="font-semibold">{selling?.description}</p>
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-slate-500">LINKED SHIPMENT</Label>
+                                        <Label className="text-xs text-muted-foreground">LINKED SHIPMENT</Label>
                                         {selling?.shipment === null ? (
-                                            <div className="flex items-center gap-x-1 text-slate-400">
+                                            <div className="flex items-center gap-x-1 text-muted-foreground">
                                                 <IconLinkOff className="size-3.5" />
                                                 <p className="text-sm">Not linked</p>
                                             </div>
@@ -134,11 +135,11 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                 </div>
                                 <div className="space-y-4">
                                     <div>
-                                        <Label className="text-xs text-slate-500">VAT</Label>
+                                        <Label className="text-xs text-muted-foreground">VAT</Label>
                                         <p className="font-semibold">{selling?.vatPercentage}%</p>
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-slate-500">PPH 23</Label>
+                                        <Label className="text-xs text-muted-foreground">PPH 23</Label>
                                         <p className="font-semibold">{selling?.pph23Percentage}%</p>
                                     </div>
                                 </div>
@@ -156,13 +157,13 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                         </CardHeader>
                         <CardContent>
                             {!selling?.costings || selling.costings.length === 0 ? (
-                                <div className="flex items-center gap-x-2 text-slate-400">
+                                <div className="flex items-center gap-x-2 text-muted-foreground">
                                     <IconLinkOff className="size-4 animate-pulse" />
                                     <p className="text-sm">No costings linked to this selling yet.</p>
                                 </div>
                             ) : (
                                 <table className="w-full text-left">
-                                    <thead className="text-slate-500 border-b bg-slate-100 text-xs">
+                                    <thead className="text-muted-foreground border-b bg-muted text-xs">
                                         <tr>
                                             <th className="py-2 px-4">COSTING #</th>
                                             <th className="py-2 px-4">DESCRIPTION</th>
@@ -185,7 +186,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                                     <Button
                                                         variant="outline"
                                                         size="icon"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                        className="text-[var(--mli-on-error-container)] hover:text-red-600 hover:bg-[var(--mli-error-container)]"
                                                         disabled={updateCosting.isPending}
                                                         onClick={() => {
                                                             updateCosting.mutate(
@@ -213,7 +214,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                 </div>
 
                 {/* Right column — Amount Summary */}
-                <div className="w-[30%]">
+                <div className="w-full shrink-0 lg:w-[25%]">
                     <Card>
                         <CardContent>
                             <div className="mb-4 pt-2">
@@ -221,7 +222,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                             </div>
 
                             <div className="mb-4">
-                                <h4 className="text-sm text-slate-500 text-center">Net Selling Amount (Rp)</h4>
+                                <h4 className="text-sm text-muted-foreground text-center">Net Selling Amount (Rp)</h4>
                                 <h2 className="font-bold text-2xl text-center text-blue-600">
                                     { net.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
                                 </h2>
@@ -244,7 +245,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
 
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
                                     <p className="text-sm">VAT</p>
-                                    <p className={clsx("text-sm", selling?.vatPercentage === 0 ? "px-2 py-0.5 bg-orange-100 text-orange-500 rounded-full" : "font-semibold")}>
+                                    <p className={clsx("text-sm", selling?.vatPercentage === 0 ? "px-2 py-0.5 bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)] rounded-full" : "font-semibold")}>
                                         {selling?.vatPercentage !== 0 ? `${selling?.vatPercentage}%` : "Not applicable"}
                                     </p>
                                 </div>
@@ -257,7 +258,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                                 {/* Revenue */}
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
                                     <p className="text-sm">Revenue</p>
-                                    <p className={clsx(`font-semibold text-sm`, net - totalFromCostings > 0 ? "text-green-500" : "text-red-500")}>
+                                    <p className={clsx(`font-semibold text-sm`, net - totalFromCostings > 0 ? "text-secondary-foreground" : "text-[var(--mli-on-error-container)]")}>
                                         {(net - totalFromCostings).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
                                     </p>
                                 </div>
@@ -266,6 +267,6 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                     </Card>
                 </div>
             </div>
-        </div>
+        </DashboardPage>
     )
 }

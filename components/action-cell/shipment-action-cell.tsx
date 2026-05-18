@@ -19,7 +19,7 @@ export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon"><IconTrash className="text-red-500 hover:bg-red-50" /></Button>
+                    <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

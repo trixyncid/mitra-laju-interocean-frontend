@@ -4,11 +4,11 @@ import LinkCostingForm from "@/components/forms/link-costing-form"
 import CostingForm from "@/components/forms/costing-form"
 import { amountCalculation, localDate } from "@/lib/utils"
 import { IconLinkOff } from "@tabler/icons-react"
-
 import { ColumnDef } from "@tanstack/react-table"
-import clsx from "clsx"
-import { Dot, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import Link from "next/link"
+import { PaymentStatusChip, UnlinkedChip } from "@/components/ui/status-chip"
+import { primaryText, secondaryText } from "@/lib/design"
 
 export type Costing = {
     id: string
@@ -29,6 +29,7 @@ export type Costing = {
     containerId: string
     vendorInvoiceNumber: string
     vendorId: string
+    sellingId?: string | null
     updatedBy?: string,
     updatedAt?: string,
 }
@@ -37,77 +38,72 @@ export const columns: ColumnDef<Costing>[] = [
     {
         accessorKey: "description",
         header: "Description",
-        cell: ({ row }) => {
-            return <div className="flex items-center font-semibold">
-                <Link href={`/dashboard/costings/${ row.original.id }`} className="hover:underline flex items-center gap-x-1">{ row.original.description } <Info className="w-3.5 h-3.5 text-slate-400" /></Link>
+        cell: ({ row }) => (
+            <div className={`${primaryText} flex items-center`}>
+                <Link href={`/dashboard/costings/${ row.original.id }`} className="hover:underline flex items-center gap-x-1">
+                    { row.original.description } <Info className="size-3.5 text-muted-foreground" />
+                </Link>
             </div>
-        }
+        )
     },
     {
         accessorKey: "costingNumber",
         header: "Costing #",
-        cell: ({ row }) => {
-            return <div className="flex items-center">
-                <p>{ row.original.costingNumber }</p>
-            </div>
-        }
+        cell: ({ row }) => <span className={secondaryText}>{ row.original.costingNumber }</span>
     },
     {
         accessorKey: "vendor",
         header: "Vendor Name",
-        cell: ({ row }) => {
-            return <div className="flex items-center">
-                <p>{ row.original.vendor.vendorName }</p>
-            </div>
-        }
+        cell: ({ row }) => <span className={secondaryText}>{ row.original.vendor.vendorName }</span>
     },
     {
         accessorKey: "",
         header: "Amount (Rupiah)",
-        cell: ({ row }) => {
-            return <div className="flex items-center">
-                <p>{ amountCalculation(row.original.price, row.original.currency, row.original.vatPercentage, row.original.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }</p>
-            </div>
-        }
+        cell: ({ row }) => (
+            <span className={secondaryText}>
+                { amountCalculation(row.original.price, row.original.currency, row.original.vatPercentage, row.original.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }
+            </span>
+        )
     },
     {
         accessorKey: "shipment",
         header: "Shipment Order #",
-        cell: ({ row }) => {
-            return <div className={clsx("px-3 py-1 rounded-full w-fit text-xs", row.original.shipment === null ? "bg-red-100 text-red-500" : "")}>{ row.original.shipment === null ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div> : row.original.shipment.orderNumber }</div>
-        }
+        cell: ({ row }) => (
+            row.original.shipment === null ? (
+                <span className="inline-flex items-center gap-x-2">
+                    <UnlinkedChip />
+                    <IconLinkOff className="size-3 text-muted-foreground" />
+                </span>
+            ) : (
+                <span className={secondaryText}>{ row.original.shipment.orderNumber }</span>
+            )
+        )
     },
     {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => {
-            return <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", row.original.status === "paid" ? "bg-green-100 text-green-500" : "bg-orange-100 text-orange-500")}> <Dot className="animate-pulse -mr-1" /> { row.original.status === "paid" ? "Paid" : "Unpaid" }</div>
-        }
+        cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "paid"} />
     },
     {
         accessorKey: "updatedBy",
         header: "Modified By",
-        cell: ({ row }) => {
-            return <div>{ (row.original.updatedBy as { name: string } | undefined)?.name }</div>
-        }
+        cell: ({ row }) => (
+            <span className={secondaryText}>{ (row.original.updatedBy as { name: string } | undefined)?.name }</span>
+        )
     },
     {
         accessorKey: "updatedAt",
         header: "Modified At",
-        cell: ({ row }) => {
-            return <div>{ localDate(row.original.updatedAt as string) }</div>
-        }
+        cell: ({ row }) => <span className={secondaryText}>{ localDate(row.original.updatedAt as string) }</span>
     },
     {
         accessorKey: "",
         header: "Action",
-        cell: ({ row }) => {
-            return (
-                <div className="flex items-center gap-x-2">
-                    <CostingForm mode="edit" id={row.original.id} costingNumber={row.original.costingNumber} description={row.original.description} price={row.original.price} currency={row.original.currency} containerId={row.original.containerId} vatPercentage={row.original.vatPercentage} pph23Percentage={row.original.pph23Percentage} vendorInvoiceNumber={row.original.vendorInvoiceNumber} vendorId={row.original.vendorId} shipmentId={row.original.shipment?.id ?? null} />
-                    <LinkCostingForm id={row.original.id} shipmentId={row.original.shipment?.id ?? undefined} />
-                </div>
-            )
-        }
+        cell: ({ row }) => (
+            <div className="flex items-center gap-x-2">
+                <CostingForm mode="edit" id={row.original.id} costingNumber={row.original.costingNumber} description={row.original.description} price={row.original.price} currency={row.original.currency} containerId={row.original.containerId} vatPercentage={row.original.vatPercentage} pph23Percentage={row.original.pph23Percentage} vendorInvoiceNumber={row.original.vendorInvoiceNumber} vendorId={row.original.vendorId} shipmentId={row.original.shipment?.id ?? null} />
+                <LinkCostingForm id={row.original.id} shipmentId={row.original.shipment?.id ?? undefined} />
+            </div>
+        )
     },
 ]

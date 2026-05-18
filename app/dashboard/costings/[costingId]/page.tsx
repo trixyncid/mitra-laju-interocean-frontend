@@ -11,6 +11,7 @@ import { costingService } from "@/services/costing.service";
 import CostingLoading from "@/components/loading/costing-loading";
 import { toast } from "sonner";
 import clsx from "clsx";
+import { DashboardPage } from "@/components/layout/dashboard-page";
 
 export type CostingAttachment = {
     id: string
@@ -37,12 +38,12 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
     console.log(costing)
 
     return (
-        <div className="px-4 lg:px-6">
+        <DashboardPage>
             {/* Header */}
             <div className="mb-5 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Costing Number - {costing?.costingNumber}</h1>
-                    <p className="text-slate-400 text-sm">Last modified on { formatDate(costing?.updatedAt?.split("T")[0]) } by {costing?.updatedBy?.name}</p>
+                    <p className="text-muted-foreground text-sm">Last modified on { formatDate(costing?.updatedAt?.split("T")[0]) } by {costing?.updatedBy?.name}</p>
                 </div>
 
                 <div className="flex items-center justify-between gap-x-3">
@@ -70,27 +71,27 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                 <div className="w-9/12">
                     <Card>
                         <CardContent>
-                            <h1 className="font-bold mb-4">COSTING DETAILS <span className={clsx("text-xs mx-2 font-normal", costing?.status === "paid" ? "text-green-500 bg-green-100 rounded-md px-2 py-1" : "text-orange-500 bg-orange-100 rounded-md px-2 py-1")}>{ costing?.status === "paid" ? "Paid" : "Unpaid" }</span></h1>
+                            <h1 className="font-bold mb-4">COSTING DETAILS <span className={clsx("text-xs mx-2 font-normal", costing?.status === "paid" ? "text-secondary-foreground bg-secondary rounded-md px-2 py-1" : "text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] rounded-md px-2 py-1")}>{ costing?.status === "paid" ? "Paid" : "Unpaid" }</span></h1>
                             
                             <div className="grid grid-cols-2 gap-x-4">
                                 <div>
                                     <div className="mb-4">
-                                        <p className="text-sm text-slate-500">VENDOR</p>
+                                        <p className="text-sm text-muted-foreground">VENDOR</p>
                                         <p className="font-semibold">{costing?.vendor.vendorName}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-slate-500">CONTAINER NUMBER</p>
+                                        <p className="text-sm text-muted-foreground">CONTAINER NUMBER</p>
                                         <p className="font-semibold">{costing?.container.containerNumber}</p>
                                     </div>
                                 </div>
 
                                 <div>
                                     <div className="mb-4">
-                                        <p className="text-sm text-slate-500">VENDOR INVOICE NUMBER</p>
+                                        <p className="text-sm text-muted-foreground">VENDOR INVOICE NUMBER</p>
                                         <p className="font-semibold">{costing?.vendorInvoiceNumber}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-slate-500">DESCRIPTION</p>
+                                        <p className="text-sm text-muted-foreground">DESCRIPTION</p>
                                         <p className="font-semibold">{costing?.description}</p>
                                     </div>
                                 </div>
@@ -115,10 +116,10 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                                 costing.costingsAttachments.map((attachment: CostingAttachment) => (
                                     <div key={attachment.id} className="border rounded-md px-3 py-2 flex items-center gap-x-2 justify-between mb-4">
                                         <div className="flex items-center gap-x-2">
-                                            <IconFile className="text-blue-500 bg-blue-100 rounded-md p-1 size-8" />
+                                            <IconFile className="text-ring bg-blue-100 rounded-md p-1 size-8" />
                                             <div>
-                                                <p className="text-sm text-slate-500">{ attachment.attachmentName } - { attachment.fileName }</p>
-                                                <p className="text-xs text-slate-500">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) } by { attachment.updatedBy.name as string }</p>
+                                                <p className="text-sm text-muted-foreground">{ attachment.attachmentName } - { attachment.fileName }</p>
+                                                <p className="text-xs text-muted-foreground">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) } by { attachment.updatedBy.name as string }</p>
                                             </div>
                                         </div>
 
@@ -128,7 +129,7 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                                                 size="icon"
                                                 onClick={() => costingService.viewCostingAttachment(costingId, attachment.id!)}
                                             >
-                                                <IconEye className="text-slate-500 size-4" />
+                                                <IconEye className="text-muted-foreground size-4" />
                                             </Button>
                                             <DocumentUploadForm mode="edit" module="costing" shipmentId={undefined} costingId={costingId} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
                                         </div>
@@ -147,7 +148,7 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                             </div>
 
                             <div className="mb-4">
-                                <h4 className="text-sm text-slate-500 text-center">TOTAL COST (Rp)</h4>
+                                <h4 className="text-sm text-muted-foreground text-center">TOTAL COST (Rp)</h4>
                                 <h2 className="font-bold text-2xl text-center text-blue-600">Rp { amountCalculation(costing?.price, costing?.currency, costing?.vatPercentage, costing?.pph23Percentage).toLocaleString("id-ID") }</h2>
                             </div>
 
@@ -162,7 +163,7 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                                 </div>
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
                                     <p>VAT</p>
-                                    <p className={`${costing?.vatPercentage !== 0 ? "" : "px-2 py-1 bg-orange-100 text-orange-500 rounded-full"}`}>{ costing?.vatPercentage !== 0 ? costing?.vatPercentage : "Not applicable" }%</p>
+                                    <p className={`${costing?.vatPercentage !== 0 ? "" : "px-2 py-1 bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)] rounded-full"}`}>{ costing?.vatPercentage !== 0 ? costing?.vatPercentage : "Not applicable" }%</p>
                                 </div>
                                 <div className="flex items-center justify-between py-3 px-2">
                                     <p>PPH23</p>
@@ -173,6 +174,6 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                     </Card>
                 </div>
             </div>
-        </div>
+        </DashboardPage>
     )
 }

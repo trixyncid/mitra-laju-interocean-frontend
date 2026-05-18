@@ -1,32 +1,42 @@
 "use client"
 
-import { DataTable } from "./data-table";
-import { columns, Shipment } from "./columns";
-import ShipmentForm from "@/components/forms/shipment-form";
-import { useShipments } from "@/hooks/use-shipments";
-import TableSkeleton from "@/components/loading/table-skeleton";
+import { columns, type Shipment } from "./columns"
+import { DataTable } from "./data-table"
+import ShipmentForm from "@/components/forms/shipment-form"
+import { useShipments } from "@/hooks/use-shipments"
+import TableSkeleton from "@/components/loading/table-skeleton"
+import ErrorPage from "@/components/error-page"
+import {
+    DashboardPage,
+    DashboardPageCard,
+    DashboardPageHeader,
+} from "@/components/layout/dashboard-page"
 
 export default function ShipmentPage() {
     const { data, isLoading, error } = useShipments()
+    const activeCount = data?.filter((shipment: Shipment) => shipment.isActive).length ?? 0
 
-    if (error) return <div>Error: {error.message}</div>
+    if (error) return <ErrorPage />
 
     return (
-        <div className="px-4 lg:px-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-xl font-bold">Shipments</h1>
-                    <p>{ data?.filter((shipment: Shipment) => shipment.isActive).length } active shipments</p>
-                </div>
-
-                <ShipmentForm mode="create" id={undefined} orderNumber={undefined} customerCodeId={undefined} customerShipperId={undefined} isActive={undefined} />
-            </div>
-
-            {/* Table */}
-            <div className='container mx-auto py-10'>
-                { isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
-            </div>
-        </div>
+        <DashboardPage>
+            <DashboardPageHeader
+                title="Shipment Management"
+                description={`${activeCount} active shipments. View and manage shipments, operational data, and linked transactions.`}
+                action={
+                    <ShipmentForm
+                        mode="create"
+                        id={undefined}
+                        orderNumber={undefined}
+                        customerCodeId={undefined}
+                        customerShipperId={undefined}
+                        isActive={undefined}
+                    />
+                }
+            />
+            <DashboardPageCard>
+                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
+            </DashboardPageCard>
+        </DashboardPage>
     )
 }
