@@ -14,6 +14,7 @@ import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmen
 import { Vendor } from "@/app/dashboard/vendors/columns"
 import { useCreateCosting, useCostings, useUpdateCosting } from "@/hooks/use-costings"
 import { Costing } from "@/app/dashboard/costings/columns"
+import { usePermissions } from "@/hooks/use-permissions"
 
 const MONTH_IN_ROMANS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -70,6 +71,7 @@ export default function CostingForm({
     shipmentId: string | null | undefined,
 }) {
     const [open, setOpen] = useState(false)
+    const { canReadVendorsForCosting } = usePermissions()
 
     const createCosting = useCreateCosting()
     const updateCosting = useUpdateCosting()
@@ -82,10 +84,13 @@ export default function CostingForm({
     const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
     const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
 
-    const { data: shipmentData, isLoading: isLoadingContainers } = useShipmentById(shipmentId ?? "")
+    const fetchDependencies = open && canReadVendorsForCosting()
+    const { data: shipmentData, isLoading: isLoadingContainers } = useShipmentById(
+        fetchDependencies && shipmentId ? shipmentId : ""
+    )
     const shipmentContainers: ShipmentOperationalContainer[] =
         shipmentData?.shipmentOperational?.shipmentOperationalContainers ?? []
-    const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors()
+    const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors(fetchDependencies)
 
     const form = useForm({
         defaultValues: {

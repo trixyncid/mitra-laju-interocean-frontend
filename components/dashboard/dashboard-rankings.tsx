@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Link from "next/link"
 
 import type { DashboardData } from "@/app/dashboard/dashboard-types"
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/table"
 import { tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass } from "@/lib/design"
 import { cn } from "@/lib/utils"
+import { usePermissions } from "@/hooks/use-permissions"
 
 function formatIdr(value: number | string) {
   const amount = typeof value === "string" ? parseFloat(value) : value
@@ -71,7 +73,39 @@ function EmptyRows({ colSpan, message }: { colSpan: number; message: string }) {
   )
 }
 
+function RankingLink({
+  href,
+  canNavigate,
+  children,
+  title,
+}: {
+  href: string
+  canNavigate: boolean
+  children: ReactNode
+  title?: string
+}) {
+  if (!canNavigate) {
+    return (
+      <span className="block truncate font-medium" title={title}>
+        {children}
+      </span>
+    )
+  }
+  return (
+    <Link
+      href={href}
+      className="block truncate font-medium text-primary hover:underline"
+      title={title}
+    >
+      {children}
+    </Link>
+  )
+}
+
 export function DashboardRankings({ data }: { data: DashboardData }) {
+  const { canRead } = usePermissions()
+  const canOpenMasterData = canRead("masterData")
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <RankingTable
@@ -89,13 +123,13 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                       {index + 1}
                     </span>
-                    <Link
+                    <RankingLink
                       href={`/dashboard/customers/${customer.customerId}`}
-                      className="block truncate font-medium text-primary hover:underline"
+                      canNavigate={canOpenMasterData}
                       title={customer.customerName}
                     >
                       {customer.customerName}
-                    </Link>
+                    </RankingLink>
                   </div>
                 </TableCell>
                 <TableCell className={cn(tableCellClass, "text-muted-foreground")}>
@@ -111,34 +145,34 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
       />
 
       <RankingTable
-        title="Top customers by charge amount"
-        description="Highest total customer charges from operationals"
-        headers={["Customer", "Code", "Total charge"]}
+        title="Top customers by selling amount"
+        description="Highest total selling amounts linked to each customer"
+        headers={["Customer", "Code", "Total selling"]}
         rows={
-          data.topCustomersByChargeAmount.length === 0 ? (
-            <EmptyRows colSpan={3} message="No charge amount data in this range." />
+          data.topCustomersBySellingAmount.length === 0 ? (
+            <EmptyRows colSpan={3} message="No selling amount data in this range." />
           ) : (
-            data.topCustomersByChargeAmount.map((customer, index) => (
+            data.topCustomersBySellingAmount.map((customer, index) => (
               <TableRow key={customer.customerId} className={tableRowClass}>
                 <TableCell className={tableCellClass}>
                   <div className="flex items-center gap-2">
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                       {index + 1}
                     </span>
-                    <Link
+                    <RankingLink
                       href={`/dashboard/customers/${customer.customerId}`}
-                      className="block truncate font-medium text-primary hover:underline"
+                      canNavigate={canOpenMasterData}
                       title={customer.customerName}
                     >
                       {customer.customerName}
-                    </Link>
+                    </RankingLink>
                   </div>
                 </TableCell>
                 <TableCell className={cn(tableCellClass, "text-muted-foreground")}>
                   {customer.customerCode}
                 </TableCell>
                 <TableCell className={cn(tableCellClass, "whitespace-nowrap text-right font-medium tabular-nums")}>
-                  {formatIdr(customer.totalChargeAmount)}
+                  {formatIdr(customer.totalSellingAmount)}
                 </TableCell>
               </TableRow>
             ))
@@ -161,13 +195,13 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                       {index + 1}
                     </span>
-                    <Link
+                    <RankingLink
                       href={`/dashboard/vendors/${vendor.vendorId}`}
-                      className="block truncate font-medium text-primary hover:underline"
+                      canNavigate={canOpenMasterData}
                       title={vendor.vendorName}
                     >
                       {vendor.vendorName}
-                    </Link>
+                    </RankingLink>
                   </div>
                 </TableCell>
                 <TableCell className={cn(tableCellClass, "text-muted-foreground")}>
@@ -197,13 +231,13 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                       {index + 1}
                     </span>
-                    <Link
+                    <RankingLink
                       href={`/dashboard/vendors/${vendor.vendorId}`}
-                      className="block truncate font-medium text-primary hover:underline"
+                      canNavigate={canOpenMasterData}
                       title={vendor.vendorName}
                     >
                       {vendor.vendorName}
-                    </Link>
+                    </RankingLink>
                   </div>
                 </TableCell>
                 <TableCell className={cn(tableCellClass, "text-muted-foreground")}>

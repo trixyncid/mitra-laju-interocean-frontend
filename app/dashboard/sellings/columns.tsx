@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { useState } from "react"
 import { Row } from "@tanstack/react-table"
 import LinkSellingShipmentForm from "@/components/forms/link-selling-shipment-form"
+import { usePermissions } from "@/hooks/use-permissions"
 
 export type Selling = {
     id: string
@@ -33,8 +34,11 @@ export type Selling = {
 }
 
 function SellingActionCell({ row }: { row: Row<Selling> }) {
+    const { canWrite } = usePermissions()
     const [open, setOpen] = useState(false)
     const deleteSelling = useDeleteSelling()
+
+    if (!canWrite("sellings")) return null
 
     return (
         <div className="flex items-center gap-x-2">

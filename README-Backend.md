@@ -9,10 +9,11 @@
 1. [Getting Started](#getting-started)
 2. [Environment Variables](#environment-variables)
 3. [Authentication](#authentication)
-4. [Response Format](#response-format)
-5. [Error Handling](#error-handling)
-6. [Data Types & Enums](#data-types--enums)
-7. [Endpoints](#endpoints)
+4. [Authorization (Roles)](#authorization-roles)
+5. [Response Format](#response-format)
+6. [Error Handling](#error-handling)
+7. [Data Types & Enums](#data-types--enums)
+8. [Endpoints](#endpoints)
    - [Health](#health)
    - [Ports](#ports)
    - [Vessels](#vessels)
@@ -22,9 +23,10 @@
    - [Containers](#containers)
    - [Costings](#costings)
    - [Sellings](#sellings)
+   - [Users](#users)
    - [Dashboard](#dashboard)
-8. [File Uploads](#file-uploads)
-9. [Data Model Overview](#data-model-overview)
+9. [File Uploads](#file-uploads)
+10. [Data Model Overview](#data-model-overview)
 
 ---
 
@@ -59,6 +61,8 @@ The server listens on `PORT` (default `3000`).
 | Variable | Description |
 |---|---|
 | `PORT` | Server port (default `3000`) |
+| `NODE_ENV` | Set to `production` on Railway/deployed environments (enables JSON logs) |
+| `LOG_LEVEL` | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace` (default `info` in production, `debug` in dev) |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `FRONTEND_URL` | Frontend origin for CORS and trusted origins |
 | `BETTER_AUTH_SECRET` | Secret key for Better Auth session signing |
@@ -68,6 +72,55 @@ The server listens on `PORT` (default `3000`).
 | `DO_SPACES_SECRET_ACCESS_KEY` | Spaces secret key |
 | `DO_SPACES_BUCKET_NAME` | Spaces bucket name |
 | `DO_SPACES_CDN_DOMAIN` | (Optional) CDN domain to prefix uploaded file URLs |
+
+---
+
+## Logging
+
+The API uses [Pino](https://getpino.io) for structured logging, integrated with Elysia via `@bogeychan/elysia-logger`.
+
+### Development
+
+With `NODE_ENV` unset or not `production`, logs are formatted with **pino-pretty** (colored, human-readable).
+
+### Production (Railway)
+
+Set `NODE_ENV=production`. Logs are written as **JSON lines** to stdout. Railway captures these automatically — use the deploy logs UI to search by:
+
+- `level` — e.g. `50` (error), `40` (warn), `30` (info)
+- `msg` — log message
+- `path`, `method` — HTTP request that failed
+- `err` — serialized error (stack trace on unhandled errors)
+- `errorCode`, `statusCode` — for `AppError` responses
+- `prismaCode` — for database errors
+
+### What gets logged
+
+| Event | Level |
+|---|---|
+| Every HTTP request/response | `info` (auto; `/health` skipped) |
+| `AppError` 4xx (not found, forbidden, validation) | `warn` |
+| `AppError` 5xx | `error` |
+| Zod validation failures | `warn` |
+| Prisma foreign key conflicts | `warn` |
+| Other Prisma errors | `error` |
+| Unhandled exceptions | `error` (includes stack) |
+| Server startup | `info` |
+
+### Example production error log (JSON)
+
+```json
+{
+  "level": 50,
+  "time": 1715587200000,
+  "service": "mitra-laju-interocean-api",
+  "env": "production",
+  "path": "http://localhost:3000/shipments/abc",
+  "method": "GET",
+  "err": { "type": "Error", "message": "...", "stack": "..." },
+  "msg": "Unhandled server error"
+}
+```
 
 ---
 
@@ -85,11 +138,11 @@ Content-Type: application/json
   "name": "John Doe",
   "email": "john@example.com",
   "password": "yourpassword",
-  "role": "user"
+  "role": "viewer"
 }
 ```
 
-`role` is one of: `user` | `admin` | `superadmin`. Defaults to `user`.
+`role` is one of the values listed in [Authorization (Roles)](#authorization-roles). Defaults to `viewer`.
 
 ### Sign In
 
@@ -133,6 +186,55 @@ Every endpoint outside of `/auth/*` and the health routes requires a valid sessi
 
 ---
 
+## Authorization (Roles)
+
+Every protected route checks the authenticated user's `role`. Write operations (`POST`, `PUT`, `DELETE`) are blocked when the role lacks permission (HTTP `403` with code `FORBIDDEN`).
+
+### Roles
+
+| Role | Description |
+|---|---|
+| `viewer` | Read-only access to all modules except user management |
+| `costing_admin` | Full CRUD on **costings** only; read dashboard and containers (for costing forms) |
+| `domestic_admin` | Full CRUD on **DOMESTIC** shipments (operational, containers, attachments) and **costings** |
+| `export_admin` | Full CRUD on **EXPORT** shipments and **costings** |
+| `operational_admin` | Full CRUD on **all shipment types** (`EXPORT`, `IMPORT`, `DOMESTIC`) and **costings** |
+| `admin` | Full access to everything |
+| `superadmin` | Full access to everything |
+
+### Permission matrix
+
+| Resource | viewer | costing_admin | domestic_admin | export_admin | operational_admin | admin / superadmin |
+|---|---|---|---|---|---|---|
+| Ports, vessels, customers, vendors | Read | — | Read | Read | Read | Read + Write |
+| Shipments (+ operational, attachments) | Read | — | Read + Write (DOMESTIC) | Read + Write (EXPORT) | Read + Write (all types) | Read + Write |
+| Containers (`GET /containers`) | Read | Read | Read + Write* | Read + Write* | Read + Write* | Read + Write |
+| Costings | Read | Read + Write | Read + Write | Read + Write | Read + Write | Read + Write |
+| Sellings | Read | — | — | — | — | Read + Write |
+| Dashboard | Read | Read | Read | Read | Read | Read |
+| Users (`/users`) | — | — | — | — | — | Read + Write |
+
+\*Container write is allowed only when the parent operational record matches the role's shipment type.
+
+### Shipment type enforcement
+
+- **domestic_admin** — cannot create or modify `EXPORT` or `IMPORT` operationals.
+- **export_admin** — cannot create or modify `DOMESTIC` or `IMPORT` operationals.
+- **operational_admin** — may use any `shipmentType` on operational records.
+- List endpoints filter results by allowed types (e.g. domestic admins only see DOMESTIC shipments in `GET /shipments`).
+
+### Self-service profile
+
+Any authenticated user may:
+
+- `GET /users/:id` — view their own profile
+- `PUT /users/:id` — update their own profile (cannot change `role`)
+- `PUT /users/:id/password` — change their own password (requires `currentPassword`)
+
+User management (list users, create users, delete users, reset passwords, change others' roles) requires `admin` or `superadmin`.
+
+---
+
 ## Response Format
 
 All responses follow a unified envelope:
@@ -165,6 +267,7 @@ On success, `data` contains the result and `error` is absent. On failure, `data`
 | HTTP Status | Error Code | Cause |
 |---|---|---|
 | `401` | — | No valid session (middleware) |
+| `403` | `FORBIDDEN` | Role lacks permission for this action |
 | `404` | `*_NOT_FOUND` | Resource does not exist |
 | `409` | `*_ALREADY_EXISTS` | Unique constraint violation (duplicate code/name) |
 | `409` | `FOREIGN_KEY_CONSTRAINT` | Deleting a record that still has related children |
@@ -214,8 +317,10 @@ paid | unpaid
 
 ### User Role
 ```
-user | admin | superadmin
+viewer | costing_admin | domestic_admin | export_admin | operational_admin | admin | superadmin
 ```
+
+See [Authorization (Roles)](#authorization-roles) for what each role can do.
 
 ### Decimal Fields
 `price`, `currency`, `vatPercentage`, `pph23Percentage`, `amount` are stored as `DECIMAL(12, 2)`. Send them as **numbers** (e.g. `12.50`). They are returned as **strings** from Prisma to preserve precision — parse with `parseFloat()` or a Decimal library on the frontend.
@@ -730,8 +835,7 @@ Create an operational record for a shipment.
   "portDepartureId": "uuid-of-port",
   "portDestinationId": "uuid-of-port",
   "loadingLocationId": "uuid-of-customer-location",
-  "unloadingLocationId": "uuid-of-customer-location",
-  "customerChargeAmount": 5000000
+  "unloadingLocationId": "uuid-of-customer-location"
 }
 ```
 
@@ -747,7 +851,6 @@ Create an operational record for a shipment.
 | `portDestinationId` | string (UUID) | Yes | |
 | `loadingLocationId` | string (UUID) | Yes | CustomerLocation |
 | `unloadingLocationId` | string (UUID) | Yes | CustomerLocation |
-| `customerChargeAmount` | integer | No | Amount charged to customer |
 
 #### `PUT /shipments/:id/operational/:operationalId`
 Update an operational record. All fields optional; also accepts `status: "paid" | "unpaid"`.
@@ -990,6 +1093,142 @@ Delete a selling.
 
 ---
 
+### Users
+
+Manage application users (Better Auth `User` + credential `Account`). Passwords are hashed with Better Auth's `hashPassword` and never returned in API responses.
+
+Users are **soft-deleted** via `isActive: false` (default `true`). Deactivating a user does not remove ports, shipments, costings, or other records they created — those foreign keys stay intact. All active sessions are revoked on deactivation.
+
+> **Note:** Public self-registration remains available at `POST /auth/sign-up/email`. Use `/users` for admin-managed user CRUD.
+
+#### `GET /users`
+List all **active** users (`isActive: true`), newest first.
+
+**Response `data` item:**
+```json
+{
+  "id": "cuid",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "emailVerified": false,
+  "image": null,
+  "role": "viewer",
+  "isActive": true,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+#### `GET /users/:id`
+Get a single user by ID (includes deactivated users when queried by id).
+
+#### `POST /users`
+Create a new user with email/password credentials.
+
+**Request body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securepassword",
+  "role": "admin",
+  "image": null,
+  "emailVerified": false
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | string | Yes | min 1 char |
+| `email` | string | Yes | Must be unique |
+| `password` | string | Yes | min 8 chars |
+| `role` | See [User Role](#user-role) | No | Defaults to `viewer` |
+| `image` | string \| null | No | Profile image URL |
+| `emailVerified` | boolean | No | Defaults to `false` |
+
+#### `PUT /users/:id`
+Update a user's profile (does not change password). All fields optional.
+
+**Request body example:**
+```json
+{
+  "name": "John Updated",
+  "email": "john.updated@example.com",
+  "role": "admin",
+  "image": null,
+  "emailVerified": true
+}
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | min 1 char |
+| `email` | string | Must be unique if changed |
+| `role` | See [User Role](#user-role) | Admin/superadmin only when updating other users |
+| `image` | string \| null | Profile image URL |
+| `emailVerified` | boolean | |
+| `isActive` | boolean | Admin/superadmin only; set `true` to reactivate |
+
+#### `PUT /users/:id/password`
+Change a user's password. Requires the current password to match before updating.
+
+**Request body:**
+```json
+{
+  "currentPassword": "oldsecurepassword",
+  "newPassword": "newsecurepassword"
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `currentPassword` | string | Yes | Must match the user's existing password |
+| `newPassword` | string | Yes | min 8 chars |
+
+**Response `data`:** Updated user object (password is never included).
+
+#### `POST /users/:id/reset-password`
+Generate a new random 8-character password (letters and numbers), update the user's credential account, and return the temporary password once in the response. Use when a user forgets their password.
+
+No request body.
+
+**Response `data`:**
+```json
+{
+  "user": {
+    "id": "cuid",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "emailVerified": false,
+    "image": null,
+    "role": "user",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  },
+  "temporaryPassword": "aB3xY9zK"
+}
+```
+
+> Share `temporaryPassword` with the user securely. It is not stored in plain text and cannot be retrieved again.
+
+#### `DELETE /users/:id`
+Deactivate a user (soft delete). Sets `isActive` to `false` and deletes all `Session` records so the user can no longer sign in. Does **not** delete business data created by the user.
+
+**Response `data`:** User object with `"isActive": false`.
+
+**Errors:**
+
+| Code | HTTP | When |
+|---|---|---|
+| `USER_NOT_FOUND` | 404 | User ID does not exist |
+| `USER_INACTIVE` | 403 | User is already deactivated, or account is inactive |
+| `USER_ALREADY_EXISTS` | 409 | Email is already registered |
+| `FORBIDDEN` | 403 | Role lacks permission for the requested action |
+| `INVALID_CURRENT_PASSWORD` | 400 | `currentPassword` does not match the stored password |
+| `USER_CREDENTIAL_NOT_FOUND` | 404 | User has no credential account to change password |
+
+---
+
 ### Dashboard
 
 Aggregated analytics for the admin dashboard. All metrics are filtered by a date range using each record's `createdAt`.
@@ -1030,12 +1269,12 @@ GET /dashboard?startDate=2025-04-01&endDate=2025-05-01
       "shipmentCount": 15
     }
   ],
-  "topCustomersByChargeAmount": [
+  "topCustomersBySellingAmount": [
     {
       "customerId": "uuid",
       "customerName": "PT Maju Bersama",
       "customerCode": "CUST-001",
-      "totalChargeAmount": 50000000
+      "totalSellingAmount": "50000000.00"
     }
   ],
   "topVendorsByCostingCount": [
@@ -1077,7 +1316,7 @@ net   = gross - vat - pph23
 |---|---|---|---|
 | `shipmentTypeCounts` | `ShipmentOperational` | `createdAt` | Counts active operationals grouped by `EXPORT`, `IMPORT`, `DOMESTIC` |
 | `topCustomersByShipments` | `Shipment` | `createdAt` | Top 10 customers by number of active shipments |
-| `topCustomersByChargeAmount` | `ShipmentOperational.customerChargeAmount` | `createdAt` | Top 10 customers by sum of charge amounts (via shipment → customer) |
+| `topCustomersBySellingAmount` | `Selling.amount` | `createdAt` | Top 10 customers by sum of selling amounts (via shipment → customer) |
 | `topVendorsByCostingCount` | `Costing` | `createdAt` | Top 10 vendors by number of active costings |
 | `topVendorsByTotalAmount` | `Costing.price * Costing.currency` | `createdAt` | Top 10 vendors by total gross spend (`price` × `currency` per row, summed) |
 | `totalNetSelling` | `Selling` | `createdAt` | Sum of net selling amounts across all active sellings in range |
@@ -1126,9 +1365,10 @@ const response = await fetch("/shipments/:id/attachments", {
 ## Data Model Overview
 
 ```
-User
-├── sessions (Session[])
-└── accounts (Account[])
+User (managed via /users and /auth)
+├── isActive (Boolean, default true) — soft delete flag
+├── sessions (Session[]) — removed on deactivation
+└── accounts (Account[]) — credential provider stores hashed password; retained on deactivation
 
 Customer
 ├── customerShippers (CustomerShipper[])

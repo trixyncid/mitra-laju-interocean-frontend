@@ -16,6 +16,8 @@ import LinkSellingCostingForm from "@/components/forms/link-selling-costing-form
 import SellingLoading from "@/components/loading/selling-loading"
 import { toast } from "sonner"
 import { DashboardPage } from "@/components/layout/dashboard-page"
+import { SellingWriteGate } from "@/components/write-gates"
+import ErrorPage from "@/components/error-page"
 
 type LinkedCosting = {
     id: string
@@ -37,16 +39,17 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
     const queryClient = useQueryClient()
 
     if (isLoading) return <SellingLoading />
-    if (error) return <DashboardPage><div className="text-destructive">Error: {error.message}</div></DashboardPage>
+    if (error) return <ErrorPage message={error.message} />
+    if (!selling) return <ErrorPage title="Selling not found" message="Unable to load this selling." />
 
     const totalFromCostings =
-        selling?.costings?.reduce(
+        selling.costings?.reduce(
             (acc: number, c: LinkedCosting) =>
                 acc + amountCalculation(c.price, c.currency, c.vatPercentage, c.pph23Percentage),
             0
         ) ?? 0
 
-    const net = sellingNetAmount(selling?.amount ?? 0, selling?.vatPercentage ?? 0, selling?.pph23Percentage ?? 0)
+    const net = sellingNetAmount(selling.amount ?? 0, selling.vatPercentage ?? 0, selling.pph23Percentage ?? 0)
 
     return (
         <DashboardPage>
@@ -64,32 +67,34 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                         Last modified on {localDate(selling?.updatedAt)} by {selling?.updatedBy?.name}
                     </p>
                 </div>
-                <div className="flex items-center gap-x-2">
-                    <Button
-                        size="sm"
-                        onClick={() => {
-                            updateSelling.mutate({
-                                id: sellingId,
-                                selling: { status: selling?.status === "unpaid" ? "paid" : "unpaid" }
-                            }, {
-                                onSuccess: () => toast.success("Status updated"),
-                                onError: (err: Error) => toast.error(err.message)
-                            })
-                        }}
-                        disabled={updateSelling.isPending}
-                    >
-                        {updateSelling.isPending ? "Updating..." : selling?.status === "unpaid" ? "Mark as Paid" : "Mark as Unpaid"}
-                    </Button>
-                    <SellingForm
-                        mode="edit"
-                        id={sellingId}
-                        sellingNumber={selling?.sellingNumber}
-                        description={selling?.description}
-                        amount={selling?.amount}
-                        vatPercentage={selling?.vatPercentage}
-                        pph23Percentage={selling?.pph23Percentage}
-                    />
-                </div>
+                <SellingWriteGate>
+                    <div className="flex items-center gap-x-2">
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                updateSelling.mutate({
+                                    id: sellingId,
+                                    selling: { status: selling?.status === "unpaid" ? "paid" : "unpaid" }
+                                }, {
+                                    onSuccess: () => toast.success("Status updated"),
+                                    onError: (err: Error) => toast.error(err.message)
+                                })
+                            }}
+                            disabled={updateSelling.isPending}
+                        >
+                            {updateSelling.isPending ? "Updating..." : selling?.status === "unpaid" ? "Mark as Paid" : "Mark as Unpaid"}
+                        </Button>
+                        <SellingForm
+                            mode="edit"
+                            id={sellingId}
+                            sellingNumber={selling.sellingNumber}
+                            description={selling.description}
+                            amount={selling.amount}
+                            vatPercentage={selling.vatPercentage}
+                            pph23Percentage={selling.pph23Percentage}
+                        />
+                    </div>
+                </SellingWriteGate>
             </div>
 
             <div className="flex items-start gap-x-4">

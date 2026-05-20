@@ -1,34 +1,71 @@
-export async function apiFetch(url: string, options: RequestInit = {}) {
-    const isFormData = options.body instanceof FormData;
+import { getBackendBaseUrl } from "@/lib/backend-url"
 
-    const headers: HeadersInit = isFormData
-        ? { ...options.headers as Record<string, string> }
-        : { "Content-Type": "application/json", ...options.headers as Record<string, string> };
+function getErrorMessage(result: unknown, status: number) {
+  const err = result as { error?: { code?: string; message?: string } } | null
+  const code = err?.error?.code
+  const message = err?.error?.message
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}${url}`, {
-        ...options,
-        headers,
-        credentials: "include"
-    });
-    const result = await response.json().catch(() => ({}));
+  if (message) return message
 
-    if (!response.ok) {
-        console.log("Error: ", result);
-        throw new Error(result.error.message);
+  if (status === 401) return "Unauthorized. Please sign in again."
+  if (status === 403) return "You do not have permission to access this resource."
+  if (status === 409) {
+    if (code === "USER_ALREADY_EXISTS") {
+      return "This email is already registered to another account."
     }
+    if (code === "FOREIGN_KEY_CONSTRAINT") {
+      return "Cannot complete this action because related records still exist."
+    }
+    if (code?.endsWith("_ALREADY_EXISTS")) {
+      return "A record with this value already exists. Please use a different value."
+    }
+    return "This action conflicts with existing data. Please check for duplicates."
+  }
+  if (status >= 500) return "Server error. Please try again later."
+  return `Request failed (${status})`
+}
 
-    return result.data;
+export async function apiFetch(url: string, options: RequestInit = {}) {
+  const isFormData = options.body instanceof FormData
+
+  const headers: HeadersInit = isFormData
+    ? { ...(options.headers as Record<string, string>) }
+    : { "Content-Type": "application/json", ...(options.headers as Record<string, string>) }
+
+  let response: Response
+  try {
+    response = await fetch(`${getBackendBaseUrl()}${url}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    })
+  } catch {
+    throw new Error(
+      "Cannot reach the API. Ensure the backend is running and NEXT_PUBLIC_BACKEND_URL is correct."
+    )
+  }
+
+  const result = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    console.error("API error:", response.status, result)
+    throw new Error(getErrorMessage(result, response.status))
+  }
+
+  return result.data
 }
 
 export const apiClient = {
-    get: (endpoint: string) => apiFetch(endpoint),
-    post: (endpoint: string, body: unknown) => apiFetch(endpoint, {
-        method: "POST",
-        body: body instanceof FormData ? body : JSON.stringify(body),
+  get: (endpoint: string) => apiFetch(endpoint),
+  post: (endpoint: string, body: unknown) =>
+    apiFetch(endpoint, {
+      method: "POST",
+      body: body instanceof FormData ? body : JSON.stringify(body),
     }),
-    put: (endpoint: string, body: unknown) => apiFetch(endpoint, {
-        method: "PUT",
-        body: body instanceof FormData ? body : JSON.stringify(body),
+  put: (endpoint: string, body: unknown) =>
+    apiFetch(endpoint, {
+      method: "PUT",
+      body: body instanceof FormData ? body : JSON.stringify(body),
     }),
-    delete: (endpoint: string) => apiFetch(endpoint, { method: "DELETE" }),
+  delete: (endpoint: string) => apiFetch(endpoint, { method: "DELETE" }),
 }

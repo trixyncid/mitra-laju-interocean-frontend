@@ -18,6 +18,7 @@ import VendorLocationForm from "@/components/forms/vendor-location-form"
 import VendorContactForm from "@/components/forms/vendor-contact-form"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import CostingHistoryPage from "./(costings)/costing-history-page"
+import { MasterDataWriteGate } from "@/components/write-gates"
 import { Costing } from "../../costings/columns"
 import { LinkedShipment } from "./(shipments)/shipment-columns"
 import { DashboardPage } from "@/components/layout/dashboard-page"
@@ -84,15 +85,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
 
     const vendorShipments: LinkedShipment[] = data.costings
         .filter((costing: Costing) => costing.shipment != null)
-        .map((costing: Costing) => ({
-            id: costing.shipment.id,
-            eta: costing.shipment.shipmentOperational?.eta ?? "",
-            orderNumber: costing.shipment.orderNumber,
-            customerCode: costing.shipment.customerCode?.customerCode ?? "",
-            customerShipper: costing.shipment.customerShipper?.name ?? "",
-            departureCountry: costing.shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
-            arrivalCountry: costing.shipment.shipmentOperational?.portDestination?.portCountry ?? "",
-        }))
+        .map((costing: Costing) => {
+            const shipment = costing.shipment!
+            return {
+                id: shipment.id ?? "",
+                eta: shipment.shipmentOperational?.eta ?? "",
+                orderNumber: shipment.orderNumber ?? "",
+                customerCode: shipment.customerCode?.customerCode ?? "",
+                customerShipper: shipment.customerShipper?.name ?? "",
+                departureCountry: shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
+                arrivalCountry: shipment.shipmentOperational?.portDestination?.portCountry ?? "",
+            }
+        })
         .filter((shipment: LinkedShipment, index: number, self: LinkedShipment[]) =>
             self.findIndex((s: LinkedShipment) => s.id === shipment.id) === index
         )
@@ -192,7 +196,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                 <TabsContent value="offices-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
                         <p className="text-sm text-muted-foreground my-2 flex flex-row">{ data.vendorLocations.length } offices <Dot /> { data.vendorLocations.map((loc: VendorLocation) => loc.vendorContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
-                        <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} vendorId={vendorId} />
+                        <MasterDataWriteGate>
+                            <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} vendorId={vendorId} />
+                        </MasterDataWriteGate>
                     </div>
 
                     <Input
@@ -222,8 +228,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                             </div>
                                         </div>
                                         <div className="flex flex-row items-start gap-x-2">
-                                            <VendorLocationForm mode="edit" id={location.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} vendorId={vendorId} />
-                                            <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} vendorId={vendorId} locationId={location.id} />
+                                            <MasterDataWriteGate>
+                                                <VendorLocationForm mode="edit" id={location.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} vendorId={vendorId} />
+                                                <VendorContactForm mode="create" contactName={undefined} phoneNumber={undefined} email={undefined} isActive={undefined} vendorId={vendorId} locationId={location.id} />
+                                            </MasterDataWriteGate>
                                         </div>
                                     </div>
 
@@ -246,7 +254,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                                     <div className="flex flex-row items-center gap-x-2">
                                                         <p className="text-sm text-muted-foreground">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
                                                         <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
-                                                        <VendorContactForm mode="edit" id={contact.id} contactName={contact.contactName} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} vendorId={vendorId} locationId={location.id} />
+                                                        <MasterDataWriteGate>
+                                                            <VendorContactForm mode="edit" id={contact.id} contactName={contact.contactName} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} vendorId={vendorId} locationId={location.id} />
+                                                        </MasterDataWriteGate>
                                                     </div>
                                                 </div>
 

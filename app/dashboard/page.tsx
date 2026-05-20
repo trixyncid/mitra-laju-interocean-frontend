@@ -57,7 +57,7 @@ export default function DashboardHomePage() {
     <DashboardPage>
       <DashboardPageHeader
         title="Dashboard"
-        description={`Financial overview for ${periodLabel}. Selling, costing, and revenue totals use net amounts (after VAT & PPH23) for records created in the period.`}
+        description={`Overview for ${periodLabel}. KPI totals use net selling and costing amounts (after VAT & PPH23); customer selling rankings use gross selling amounts per the API.`}
         action={
           <DashboardDateRange
             preset={preset}

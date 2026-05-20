@@ -9,6 +9,7 @@ import { useUpdateCosting, useDeleteCosting } from "@/hooks/use-costings"
 import { useState } from "react"
 import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
+import { usePermissions } from "@/hooks/use-permissions"
 import {
     Combobox,
     ComboboxContent,
@@ -29,8 +30,11 @@ export default function LinkCostingForm({
 }) {
     const [open, setOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const { canReadShipmentsForCosting } = usePermissions()
 
-    const { data: shipments, isLoading, error: errorShipments } = useShipments()
+    const { data: shipments, isLoading, error: errorShipments } = useShipments(
+        open && canReadShipmentsForCosting()
+    )
 
     const deleteCosting = useDeleteCosting()
     const updateCosting = useUpdateCosting()

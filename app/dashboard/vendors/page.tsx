@@ -11,6 +11,7 @@ import {
     DashboardPageCard,
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page";
+import { PermissionGate } from "@/components/permission-gate";
 
 export default function VendorMasterDataPage() {
     const { data, isLoading, error } = useVendors();
@@ -23,7 +24,9 @@ export default function VendorMasterDataPage() {
                 title="Vendor Management"
                 description="View and manage vendors based on vendor code, name, NPWP, and status."
                 action={
-                    <VendorForm mode="create" id={undefined} vendorName={undefined} vendorCode={undefined} npwp={undefined} isActive={true} />
+                    <PermissionGate resource="masterData" write>
+                        <VendorForm mode="create" id={undefined} vendorName={undefined} vendorCode={undefined} npwp={undefined} isActive={true} />
+                    </PermissionGate>
                 }
             />
             <DashboardPageCard>

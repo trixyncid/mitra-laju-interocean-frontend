@@ -6,10 +6,14 @@ import { Button } from "../ui/button";
 import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { useDeleteCustomer } from "@/hooks/use-customers";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export default function CustomerActionCell({ row }: { row: Row<Customer> }) {
+    const { canWrite } = usePermissions()
     const deleteCustomer = useDeleteCustomer()
     const [open, setOpen] = useState(false)
+
+    if (!canWrite("masterData")) return null
 
     return (
         <div className="flex items-center gap-x-2">

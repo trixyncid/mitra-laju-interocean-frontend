@@ -1,15 +1,21 @@
+"use client"
+
 import PortForm from "../forms/port-form";
 import { Row } from "@tanstack/react-table";
 import { Port } from "@/app/dashboard/ports/columns";
 import { useDeletePort } from "@/hooks/use-ports";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogDescription, DialogFooter, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 
 export default function PortActionCell({ row }: { row: Row<Port> }) {
+    const { canWrite } = usePermissions()
     const deletePort = useDeletePort()
     const [open, setOpen] = useState(false)
+
+    if (!canWrite("masterData")) return null
 
     return (
         <div className="flex items-center gap-x-2">

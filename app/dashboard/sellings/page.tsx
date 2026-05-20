@@ -11,11 +11,12 @@ import {
     DashboardPageCard,
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
+import { PermissionGate } from "@/components/permission-gate"
 
 export default function SellingPage() {
     const { data: sellings, isLoading, error } = useSellings()
 
-    if (error) return <ErrorPage />
+    if (error) return <ErrorPage message={error.message} />
 
     return (
         <DashboardPage>
@@ -23,6 +24,7 @@ export default function SellingPage() {
                 title="Selling Entries"
                 description="Manage all selling entries and link them to shipments."
                 action={
+                    <PermissionGate resource="sellings" write>
                     <SellingForm
                         mode="create"
                         id={undefined}
@@ -32,10 +34,11 @@ export default function SellingPage() {
                         vatPercentage={undefined}
                         pph23Percentage={undefined}
                     />
+                    </PermissionGate>
                 }
             />
             <DashboardPageCard>
-                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={sellings} />}
+                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={sellings ?? []} />}
             </DashboardPageCard>
         </DashboardPage>
     )

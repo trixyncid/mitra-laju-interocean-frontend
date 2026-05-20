@@ -6,10 +6,14 @@ import { Button } from "../ui/button";
 import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { useDeleteVendor } from "@/hooks/use-vendors";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export default function VendorActionCell({ row }: { row: Row<Vendor> }) {
+    const { canWrite } = usePermissions()
     const [open, setOpen] = useState(false)
     const deleteVendor = useDeleteVendor()
+
+    if (!canWrite("masterData")) return null
 
     return (
         <div className="flex gap-x-2">

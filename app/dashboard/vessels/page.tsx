@@ -11,6 +11,7 @@ import {
     DashboardPageCard,
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page";
+import { PermissionGate } from "@/components/permission-gate";
 
 export default function VesselMasterDataPage() {
     const { data, isLoading, error } = useVessels()
@@ -23,15 +24,17 @@ export default function VesselMasterDataPage() {
                 title="Vessel Management"
                 description="View and manage vessels based on name, voyage, ETD, and closing reefer."
                 action={
-                    <VesselForm
-                        mode="create"
-                        id={undefined}
-                        vesselName={undefined}
-                        voyageNumber={undefined}
-                        etd={undefined}
-                        closingReefer={undefined}
-                        isActive={true}
-                    />
+                    <PermissionGate resource="masterData" write>
+                        <VesselForm
+                            mode="create"
+                            id={undefined}
+                            vesselName={undefined}
+                            voyageNumber={undefined}
+                            etd={undefined}
+                            closingReefer={undefined}
+                            isActive={true}
+                        />
+                    </PermissionGate>
                 }
             />
             <DashboardPageCard>

@@ -11,6 +11,7 @@ import {
     DashboardPageCard,
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page";
+import { PermissionGate } from "@/components/permission-gate";
 
 export default function CustomerMasterDataPage() {
     const { data, isLoading, error } = useCustomers()
@@ -23,7 +24,9 @@ export default function CustomerMasterDataPage() {
                 title="Customer Management"
                 description="View and manage your client database, view profiles, and update contact information."
                 action={
-                    <CustomerForm mode="create" id={undefined} customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
+                    <PermissionGate resource="masterData" write>
+                        <CustomerForm mode="create" id={undefined} customerCode={undefined} customerName={undefined} npwp={undefined} isActive={true} />
+                    </PermissionGate>
                 }
             />
             <DashboardPageCard>

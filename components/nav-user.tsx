@@ -3,6 +3,7 @@
 import {
   IconDotsVertical,
   IconLogout,
+  IconUser,
 } from "@tabler/icons-react"
 
 import {
@@ -14,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -67,6 +69,14 @@ export function NavUser({
             align="end"
             sideOffset={4}
           >
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => router.push("/dashboard/profile")}
+            >
+              <IconUser />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer text-[var(--mli-on-error-container)] hover:text-[var(--mli-on-error-container)]" onClick={() => authClient.signOut({
               fetchOptions: {
                 onSuccess: () => {

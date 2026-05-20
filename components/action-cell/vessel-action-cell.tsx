@@ -6,10 +6,14 @@ import { Button } from "../ui/button";
 import { IconTrash } from "@tabler/icons-react";
 import { useDeleteVessel } from "@/hooks/use-vessels";
 import { useState } from "react";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export default function VesselActionCell({ row }: { row: Row<Vessel> }) {
+    const { canWrite } = usePermissions()
     const deleteVessel = useDeleteVessel()
     const [open, setOpen] = useState(false)
+
+    if (!canWrite("masterData")) return null
 
     return (
         <div className="flex items-center gap-x-2">

@@ -7,11 +7,19 @@ import { Button } from "../ui/button";
 import { IconTrash } from "@tabler/icons-react";
 import { useDeleteShipment } from "@/hooks/use-shipments";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
 
-// Create action cell page
 export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
+    const { canWrite, canWriteShipmentType } = usePermissions()
     const [open, setOpen] = useState(false)
     const deleteShipment = useDeleteShipment()
+
+    const shipmentType = row.original.shipmentOperational?.shipmentType
+    const canEdit = shipmentType
+        ? canWriteShipmentType(shipmentType)
+        : canWrite("shipments")
+
+    if (!canEdit) return null
 
     return (
         <div className="flex items-center gap-x-2">

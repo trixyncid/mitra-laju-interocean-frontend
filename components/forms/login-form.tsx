@@ -11,6 +11,7 @@ import { useForm } from "@tanstack/react-form"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
+import { getRoleHomePath } from "@/lib/role-home"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -43,7 +44,8 @@ export function LoginForm({
             }
 
             toast.success("Login successful")
-            router.replace("/dashboard")
+            const { data: session } = await authClient.getSession()
+            router.replace(getRoleHomePath(session?.user))
         },
     })
 

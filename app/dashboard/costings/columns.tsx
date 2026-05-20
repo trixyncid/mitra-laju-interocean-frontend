@@ -1,7 +1,6 @@
 "use client"
 
-import LinkCostingForm from "@/components/forms/link-costing-form"
-import CostingForm from "@/components/forms/costing-form"
+import CostingActionCell from "@/components/action-cell/costing-action-cell"
 import { amountCalculation, localDate } from "@/lib/utils"
 import { IconLinkOff } from "@tabler/icons-react"
 import { ColumnDef } from "@tanstack/react-table"
@@ -19,12 +18,19 @@ export type Costing = {
     currency: number
     vatPercentage: number
     pph23Percentage: number
-    vendor: { vendorName: string }
-    shipment: { orderNumber: string | null, id: string | null, isActive: boolean, shipmentOperational?: { eta: string | null, portDeparture?: { portName: string, portCountry: string }, portDestination?: { portName: string, portCountry: string } }, customerCode?: { 
-        customerCode?: string, customerName?: string
-    }, customerShipper?: {
-        name?: string
-    } }
+    vendor?: { vendorName: string } | null
+    shipment?: {
+        orderNumber: string | null
+        id: string | null
+        isActive: boolean
+        shipmentOperational?: {
+            eta: string | null
+            portDeparture?: { portName: string; portCountry: string }
+            portDestination?: { portName: string; portCountry: string }
+        }
+        customerCode?: { customerCode?: string; customerName?: string }
+        customerShipper?: { name?: string }
+    } | null
     status: string
     containerId: string
     vendorInvoiceNumber: string
@@ -54,7 +60,9 @@ export const columns: ColumnDef<Costing>[] = [
     {
         accessorKey: "vendor",
         header: "Vendor Name",
-        cell: ({ row }) => <span className={secondaryText}>{ row.original.vendor.vendorName }</span>
+        cell: ({ row }) => (
+            <span className={secondaryText}>{row.original.vendor?.vendorName ?? "—"}</span>
+        )
     },
     {
         accessorKey: "",
@@ -69,7 +77,7 @@ export const columns: ColumnDef<Costing>[] = [
         accessorKey: "shipment",
         header: "Shipment Order #",
         cell: ({ row }) => (
-            row.original.shipment === null ? (
+            !row.original.shipment ? (
                 <span className="inline-flex items-center gap-x-2">
                     <UnlinkedChip />
                     <IconLinkOff className="size-3 text-muted-foreground" />
@@ -94,16 +102,15 @@ export const columns: ColumnDef<Costing>[] = [
     {
         accessorKey: "updatedAt",
         header: "Modified At",
-        cell: ({ row }) => <span className={secondaryText}>{ localDate(row.original.updatedAt as string) }</span>
+        cell: ({ row }) => (
+            <span className={secondaryText}>
+                {row.original.updatedAt ? localDate(row.original.updatedAt) : "—"}
+            </span>
+        )
     },
     {
         accessorKey: "",
         header: "Action",
-        cell: ({ row }) => (
-            <div className="flex items-center gap-x-2">
-                <CostingForm mode="edit" id={row.original.id} costingNumber={row.original.costingNumber} description={row.original.description} price={row.original.price} currency={row.original.currency} containerId={row.original.containerId} vatPercentage={row.original.vatPercentage} pph23Percentage={row.original.pph23Percentage} vendorInvoiceNumber={row.original.vendorInvoiceNumber} vendorId={row.original.vendorId} shipmentId={row.original.shipment?.id ?? null} />
-                <LinkCostingForm id={row.original.id} shipmentId={row.original.shipment?.id ?? undefined} />
-            </div>
-        )
+        cell: ({ row }) => <CostingActionCell row={row} />
     },
 ]

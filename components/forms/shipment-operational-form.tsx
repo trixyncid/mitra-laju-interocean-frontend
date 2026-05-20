@@ -16,6 +16,8 @@ import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
 import { ISOFormat } from "@/lib/utils"
 import { toast } from "sonner"
+import { usePermissions } from "@/hooks/use-permissions"
+import type { ShipmentType } from "@/lib/permissions"
 import {
     Combobox,
     ComboboxContent,
@@ -34,6 +36,12 @@ export type Location = {
     country: string
     customerShipperId: string
 }
+
+const SHIPMENT_TYPE_OPTIONS: { value: ShipmentType; label: string }[] = [
+    { value: "IMPORT", label: "Import" },
+    { value: "EXPORT", label: "Export" },
+    { value: "DOMESTIC", label: "Domestic" },
+]
 
 export default function ShipmentOperationalForm({
     id,
@@ -71,20 +79,14 @@ export default function ShipmentOperationalForm({
     status: string | undefined
 }) {
     const [open, setOpen] = useState(false)
-    
-    const { data: ports, isLoading: portsLoading, error: portsError } = usePorts()
-    const { data: locations, isLoading: locationsLoading, error: locationsError } = useGetLocationsByCustomerId(customerCodeId ?? "")
-    const { data: vessels, isLoading: vesselsLoading, error: vesselsError } = useVessels()
+    const { canWrite, canWriteShipmentType, allowedShipmentTypes } = usePermissions()
+
+    const { data: ports } = usePorts()
+    const { data: locations } = useGetLocationsByCustomerId(customerCodeId ?? "")
+    const { data: vessels } = useVessels()
 
     const createShipmentOperational = useCreateShipmentOperational(shipmentId ?? "")
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId ?? "")
-
-    type ComboItem = { value: string; label: string }
-    const portItems: ComboItem[] = ports?.map((p: Port) => ({ value: p.id ?? "", label: `${p.portName}, ${p.portCountry}` })) ?? []
-    const filteredLocations = customerShipperId
-        ? locations?.filter((l: Location) => l.customerShipperId === customerShipperId).map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
-        : locations ?? []
-    const locationItems: ComboItem[] = locations?.map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
 
     const form = useForm({
         defaultValues: {
@@ -131,6 +133,23 @@ export default function ShipmentOperationalForm({
         }
     })
 
+    const shipmentTypeOptions =
+        allowedShipmentTypes === "all"
+            ? SHIPMENT_TYPE_OPTIONS
+            : SHIPMENT_TYPE_OPTIONS.filter((o) => allowedShipmentTypes.includes(o.value))
+
+    const canEdit =
+        mode === "create" ? canWrite("shipments") : canWriteShipmentType(shipmentType)
+
+    type ComboItem = { value: string; label: string }
+    const portItems: ComboItem[] = ports?.map((p: Port) => ({ value: p.id ?? "", label: `${p.portName}, ${p.portCountry}` })) ?? []
+    const filteredLocations = customerShipperId
+        ? locations?.filter((l: Location) => l.customerShipperId === customerShipperId).map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
+        : locations ?? []
+    const locationItems: ComboItem[] = locations?.map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
+
+    if (!canEdit) return null
+
     return (
         <div className="flex items-center gap-x-2">
             <Dialog open={open} onOpenChange={setOpen} modal={false}>
@@ -164,9 +183,11 @@ export default function ShipmentOperationalForm({
                                                     <SelectValue placeholder="Select a shipment type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="IMPORT">Import</SelectItem>
-                                                    <SelectItem value="EXPORT">Export</SelectItem>
-                                                    <SelectItem value="DOMESTIC">Domestic</SelectItem>
+                                                    {shipmentTypeOptions.map((option) => (
+                                                        <SelectItem key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             { field.state.meta.errors ? (
@@ -390,7 +411,22 @@ export default function ShipmentOperationalForm({
                             </form.Field>
                         </div>
                         <DialogFooter>
-                            <Button type="submit" disabled={ mode === "create" ? createShipmentOperational.isPending : false || mode === "edit" ? updateShipmentOperational.isPending : false}>{ mode === "edit" ? (updateShipmentOperational.isPending ? "Updating..." : "Save Changes") : (createShipmentOperational.isPending ? "Creating..." : "Create")}</Button>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    mode === "create"
+                                        ? createShipmentOperational.isPending
+                                        : updateShipmentOperational.isPending
+                                }
+                            >
+                                {mode === "edit"
+                                    ? updateShipmentOperational.isPending
+                                        ? "Updating..."
+                                        : "Save Changes"
+                                    : createShipmentOperational.isPending
+                                      ? "Creating..."
+                                      : "Create"}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

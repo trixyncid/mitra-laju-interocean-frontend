@@ -23,6 +23,7 @@ import CostingHistoryPage from "./(costings)/costing-history-page"
 import { Costing as CustomerCosting } from "./(costings)/costing-column"
 import { Costing } from "@/app/dashboard/costings/columns"
 import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
+import { MasterDataWriteGate } from "@/components/write-gates"
 import { DashboardPage } from "@/components/layout/dashboard-page"
 
 type CustomerContact = {
@@ -233,7 +234,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 <TabsContent value="locations-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
                         <p className="text-sm text-muted-foreground my-2 flex flex-row">{ data.customerShippers.length } shippers <Dot /> { totalCustomerLocations } locations <Dot /> { totalCustomerContacts } contacts</p>
-                        <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
+                        <MasterDataWriteGate>
+                            <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
+                        </MasterDataWriteGate>
                     </div>
 
                     <Input
@@ -265,8 +268,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                             <p className="text-sm text-muted-foreground flex flex-row">{ shipper.customerLocations.length } locations <Dot /> { shipper.customerLocations.map((location: CustomerLocation) => location.customerContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
                                             
                                             <div className="flex items-center gap-x-2">
-                                                <CustomerShipperForm mode="edit" id={shipper.id} name={shipper.name} phoneNumber={shipper.phoneNumber} country={shipper.country} isActive={shipper.isActive} customerId={data.id} />
-                                                <CustomerLocationForm mode="create" id={undefined} customerId={data.id} shipperId={shipper.id} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                                                <MasterDataWriteGate>
+                                                    <CustomerShipperForm mode="edit" id={shipper.id} name={shipper.name} phoneNumber={shipper.phoneNumber} country={shipper.country} isActive={shipper.isActive} customerId={data.id} />
+                                                    <CustomerLocationForm mode="create" id={undefined} customerId={data.id} shipperId={shipper.id} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
+                                                </MasterDataWriteGate>
                                             </div>
                                         </div>
                                         {
@@ -287,8 +292,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-row items-center gap-x-2">
-                                                                <CustomerLocationForm mode="edit" id={location.id} customerId={data.id} shipperId={shipper.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} />
-                                                                <CustomerContactForm mode="create" contactName={undefined} customerId={data.id} shipperId={shipper.id} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
+                                                                <MasterDataWriteGate>
+                                                                    <CustomerLocationForm mode="edit" id={location.id} customerId={data.id} shipperId={shipper.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} />
+                                                                    <CustomerContactForm mode="create" contactName={undefined} customerId={data.id} shipperId={shipper.id} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
+                                                                </MasterDataWriteGate>
                                                             </div>
                                                         </div>
 
@@ -313,7 +320,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                                             <div className="flex flex-row items-center gap-x-2">
                                                                                 <p className="text-sm text-muted-foreground">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
                                                                                 <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
-                                                                                <CustomerContactForm mode="edit" id={contact.id} contactName={contact.contactName} customerId={data.id} shipperId={shipper.id} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} locationId={location.id} />
+                                                                                <MasterDataWriteGate>
+                                                                                    <CustomerContactForm mode="edit" id={contact.id} contactName={contact.contactName} customerId={data.id} shipperId={shipper.id} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} locationId={location.id} />
+                                                                                </MasterDataWriteGate>
                                                                             </div>
                                                                         </div>
                                                                         

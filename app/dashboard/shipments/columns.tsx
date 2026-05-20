@@ -16,7 +16,11 @@ export type Shipment = {
     orderNumber: string
     customerCode?: { customerName: string, customerCode: string }
     customerShipper?: { name: string }
-    shipmentOperational?: { portDeparture: { portCountry: string }, portDestination: { portCountry: string }}
+    shipmentOperational?: {
+        shipmentType?: string
+        portDeparture: { portCountry: string }
+        portDestination: { portCountry: string }
+    }
     isActive: boolean
     updatedBy?: string
     updatedAt?: string

@@ -11,6 +11,7 @@ import {
     DashboardPageCard,
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page";
+import { PermissionGate } from "@/components/permission-gate";
 
 export default function PortMasterDataPage() {
     const { data, isLoading, error } = usePorts()
@@ -23,7 +24,9 @@ export default function PortMasterDataPage() {
                 title="Port Management"
                 description="View and manage global port destinations based on country and port name."
                 action={
-                    <PortForm mode="create" portName={undefined} portCountry={undefined} isActive={true} id={undefined} />
+                    <PermissionGate resource="masterData" write>
+                        <PortForm mode="create" portName={undefined} portCountry={undefined} isActive={true} id={undefined} />
+                    </PermissionGate>
                 }
             />
             <DashboardPageCard>

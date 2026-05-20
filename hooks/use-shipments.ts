@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Shipment } from "@/app/dashboard/shipments/columns";
 
-export const useShipments = () => {
+export const useShipments = (enabled = true) => {
     return useQuery({
         queryKey: ["shipments"],
         queryFn: shipmentsService.getAll,
+        enabled,
     });
 }
 
@@ -69,6 +70,9 @@ export const useCreateShipmentOperational = (shipmentId: string) => {
             queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
             toast.success("Shipment operational created successfully");
         },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
     });
 }
 
@@ -80,6 +84,9 @@ export const useUpdateShipmentOperational = (shipmentId: string) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
             toast.success("Shipment operational updated successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message);
         },
     });
 }
@@ -96,10 +103,11 @@ export const useDeleteShipmentOperational = (shipmentId: string) => {
     });
 }
 
-export const useGetShipmentOperationalContainers = () => {
+export const useGetShipmentOperationalContainers = (enabled = true) => {
     return useQuery({
         queryKey: ["shipmentOperationalContainers"],
         queryFn: shipmentsService.getShipmentOperationalContainers,
+        enabled,
     });
 }
 

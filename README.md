@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mitra Laju Interocean — Frontend
 
-## Getting Started
+Next.js dashboard for freight forwarding operations. Authentication uses [Better Auth](https://www.better-auth.com/) against the backend API (proxied from the browser). Business rules and API contracts are documented in [README-Backend.md](./README-Backend.md).
 
-First, run the development server:
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Set `NEXT_PUBLIC_BACKEND_URL` in `.env` to your API origin (see [README-Backend.md](./README-Backend.md)).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts: `bun run build`, `bun run lint`, `bun test lib/permissions.test.ts`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project layout
 
-## Learn More
+| Area | Path |
+|------|------|
+| App routes | `app/dashboard/*` |
+| Permission logic | `lib/permissions.ts`, `lib/role-home.ts` |
+| Route guard | `components/dashboard-route-guard.tsx` |
+| Sidebar filtering | `components/app-sidebar.tsx` |
+| Write UI gates | `components/permission-gate.tsx`, `components/write-gates.tsx` |
+| Session / login | `lib/auth-client.ts`, `components/forms/login-form.tsx` |
+| API client | `lib/api-client.ts` |
 
-To learn more about Next.js, take a look at the following resources:
+## Roles
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The session user carries a `role` string. Legacy `"user"` is treated as `viewer`. Missing role defaults to `viewer`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Role | Description |
+|------|-------------|
+| `viewer` | Read-only on shipments, costings, and sellings |
+| `costing_admin` | Full CRUD on costings only |
+| `domestic_admin` | Shipments (DOMESTIC) + costings read/write |
+| `export_admin` | Shipments (EXPORT) + costings read/write |
+| `operational_admin` | Shipments (all types) + costings read/write |
+| `admin` | Full access |
+| `superadmin` | Full access |
 
-## Deploy on Vercel
+## Screen access (sidebar & routes)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Access is enforced in two places:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Sidebar** — nav items hidden when `canRead(role, resource)` is false (`components/app-sidebar.tsx`).
+2. **Route guard** — direct URL visits redirect to the role home path when `canAccessRoute` fails (`components/dashboard-route-guard.tsx`).
+
+**Profile** (`/dashboard/profile`) is available to every signed-in user.
+
+### Navigation visibility
+
+| Screen / route | viewer | costing_admin | domestic_admin | export_admin | operational_admin | admin / superadmin |
+|----------------|:------:|:-------------:|:--------------:|:------------:|:-----------------:|:------------------:|
+| **Dashboard** (`/dashboard`) — analytics KPIs & charts | — | — | — | — | — | ✓ |
+| **Customers** (`/dashboard/customers`) | — | — | — | — | — | ✓ |
+| **Vendors** (`/dashboard/vendors`) | — | — | — | — | — | ✓ |
+| **Ports** (`/dashboard/ports`) | — | — | — | — | — | ✓ |
+| **Vessels** (`/dashboard/vessels`) | — | — | — | — | — | ✓ |
+| **Shipments** (`/dashboard/shipments`) | ✓ read | — | ✓ | ✓ | ✓ | ✓ |
+| **Costings** (`/dashboard/costings`) | ✓ read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Sellings** (`/dashboard/sellings`) | ✓ read | — | — | — | — | ✓ |
+| **Users** (`/dashboard/users`) — Admin Panel | — | — | — | — | — | ✓ |
+| **Profile** (`/dashboard/profile`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+✓ = visible in sidebar and routable. — = hidden; visiting the URL redirects to the role home page.
+
+Detail routes (e.g. `/dashboard/shipments/[id]`, `/dashboard/costings/[id]`) inherit the parent resource permission.
+
+### Login landing page
+
+After sign-in, users are sent to their role home (`lib/role-home.ts`):
+
+| Role | Landing path |
+|------|----------------|
+| `admin`, `superadmin` | `/dashboard` |
+| `viewer` | `/dashboard/shipments` |
+| `costing_admin` | `/dashboard/costings` |
+| `domestic_admin`, `export_admin`, `operational_admin` | `/dashboard/shipments` |
+
+## Write access (buttons & forms)
+
+Read access controls pages; **write** access controls create/edit/delete actions via `PermissionGate`, `*WriteGate` components, and action cells.
+
+| Resource | viewer | costing_admin | domestic_admin | export_admin | operational_admin | admin / superadmin |
+|----------|:------:|:-------------:|:--------------:|:------------:|:-----------------:|:------------------:|
+| Master data (customers, vendors, ports, vessels) | — | — | — | — | — | ✓ |
+| Shipments (booking record) | — | — | ✓* | ✓* | ✓ | ✓ |
+| Shipment operational, containers, attachments | — | — | ✓* | ✓* | ✓ | ✓ |
+| Costings | — | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Sellings | — | — | — | — | — | ✓ |
+| Users | — | — | — | — | — | ✓ |
+
+\*Shipment operational **write** is limited by `shipmentType` on the operational record (see below).
+
+### Shipment type limits (operational write)
+
+When editing shipment operationals, containers, or attachments, write UI is gated by `canWriteShipmentType(role, shipmentType)`:
+
+| Role | Allowed `shipmentType` values |
+|------|------------------------------|
+| `domestic_admin` | `DOMESTIC` only |
+| `export_admin` | `EXPORT` only |
+| `operational_admin` | `EXPORT`, `IMPORT`, `DOMESTIC` |
+| `admin`, `superadmin` | All types |
+| `viewer`, `costing_admin` | No shipment write |
+
+Creating a new operational on a shipment without a type yet is allowed when the role has general shipment write (`canWrite("shipments")`).
+
+### Costing form dependencies
+
+Roles that can write costings may load vendor/shipment/container lists for dropdowns even without master-data page access (`canReadVendorsForCosting`, `canReadShipmentsForCosting`, `canReadContainers` in `lib/permissions.ts`). API calls still require matching backend permissions.
+
+## User accounts (`isActive`)
+
+User management is admin-only. Users can be **deactivated** (`isActive: false`); the list shows active users only. Deactivation is a soft delete (sessions revoked on the backend). See [README-Backend.md — Users](./README-Backend.md#users).
+
+## How to change permissions
+
+1. Update matrices in `lib/permissions.ts` (`canRead`, `canWrite`, `canWriteShipmentType`, `allowedShipmentTypes`).
+2. Adjust `lib/role-home.ts` if the post-login landing path should change.
+3. Run `bun test lib/permissions.test.ts`.
+4. Keep this README and [README-Backend.md](./README-Backend.md) in sync.
+
+## Related docs
+
+- [README-Backend.md](./README-Backend.md) — API endpoints, auth, backend role matrix, `isActive` behavior
+- [DESIGN.md](./DESIGN.md) — UI tokens and layout conventions

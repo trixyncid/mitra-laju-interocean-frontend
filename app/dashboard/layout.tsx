@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "../providers";
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
+import { DashboardRouteGuard } from "@/components/dashboard-route-guard";
 
 export default function DashboardLayout({
   children,
@@ -46,7 +47,7 @@ export default function DashboardLayout({
               <div className="flex flex-1 flex-col">
                 <div className="@container/main flex flex-1 flex-col gap-2">
                   <div className="flex flex-col">
-                    {children}
+                    <DashboardRouteGuard>{children}</DashboardRouteGuard>
                     <Toaster 
                         richColors
                         position="top-center"

@@ -4,17 +4,19 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 import { authClient } from "@/lib/auth-client"
+import { getRoleHomePath } from "@/lib/role-home"
 
 /** Redirect authenticated users away from the login page. */
-export function useGuestOnly(redirectTo = "/dashboard") {
+export function useGuestOnly(redirectTo?: string) {
   const router = useRouter()
   const { data: session, isPending, error } = authClient.useSession()
+  const targetPath = redirectTo ?? getRoleHomePath(session?.user)
 
   useEffect(() => {
     if (!isPending && session) {
-      router.replace(redirectTo)
+      router.replace(targetPath)
     }
-  }, [isPending, session, redirectTo, router])
+  }, [isPending, session, targetPath, router])
 
   const isRedirecting = !isPending && !!session
 

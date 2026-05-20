@@ -11,12 +11,13 @@ import {
     DashboardPageCard,
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
+import { PermissionGate } from "@/components/permission-gate"
 
 export default function ShipmentPage() {
     const { data, isLoading, error } = useShipments()
     const activeCount = data?.filter((shipment: Shipment) => shipment.isActive).length ?? 0
 
-    if (error) return <ErrorPage />
+    if (error) return <ErrorPage message={error.message} />
 
     return (
         <DashboardPage>
@@ -24,18 +25,20 @@ export default function ShipmentPage() {
                 title="Shipment Management"
                 description={`${activeCount} active shipments. View and manage shipments, operational data, and linked transactions.`}
                 action={
-                    <ShipmentForm
-                        mode="create"
-                        id={undefined}
-                        orderNumber={undefined}
-                        customerCodeId={undefined}
-                        customerShipperId={undefined}
-                        isActive={undefined}
-                    />
+                    <PermissionGate resource="shipments" write>
+                        <ShipmentForm
+                            mode="create"
+                            id={undefined}
+                            orderNumber={undefined}
+                            customerCodeId={undefined}
+                            customerShipperId={undefined}
+                            isActive={undefined}
+                        />
+                    </PermissionGate>
                 }
             />
             <DashboardPageCard>
-                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data} />}
+                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data ?? []} />}
             </DashboardPageCard>
         </DashboardPage>
     )

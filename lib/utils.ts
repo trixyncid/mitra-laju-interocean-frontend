@@ -47,8 +47,18 @@ export const getInitialContactName = (contactNames: string) => {
  * @param pph23Percentage - The PPH 23 percentage of the costing
  * @returns The net amount of the costing
  */
-export const amountCalculation = (price: number, currency: number, vatPercentage: number, pph23Percentage: number) => {
-  return (price * currency) - (price * currency * vatPercentage / 100) - (price * currency * pph23Percentage / 100)
+export const amountCalculation = (
+  price: number | string,
+  currency: number | string,
+  vatPercentage: number | string,
+  pph23Percentage: number | string
+) => {
+  const p = Number(price) || 0
+  const c = Number(currency) || 0
+  const vat = Number(vatPercentage) || 0
+  const pph = Number(pph23Percentage) || 0
+  const subtotal = p * c
+  return subtotal - (subtotal * vat) / 100 - (subtotal * pph) / 100
 }
 
 /**

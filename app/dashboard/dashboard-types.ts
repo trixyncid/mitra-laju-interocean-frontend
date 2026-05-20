@@ -18,11 +18,11 @@ export interface DashboardCustomerByShipments {
   shipmentCount: number
 }
 
-export interface DashboardCustomerByCharge {
+export interface DashboardCustomerBySellingAmount {
   customerId: string
   customerName: string
   customerCode: string
-  totalChargeAmount: number
+  totalSellingAmount: string
 }
 
 export interface DashboardVendorByCosting {
@@ -43,7 +43,7 @@ export interface DashboardData {
   dateRange: DashboardDateRange
   shipmentTypeCounts: Record<ShipmentType, number>
   topCustomersByShipments: DashboardCustomerByShipments[]
-  topCustomersByChargeAmount: DashboardCustomerByCharge[]
+  topCustomersBySellingAmount: DashboardCustomerBySellingAmount[]
   topVendorsByCostingCount: DashboardVendorByCosting[]
   topVendorsByTotalAmount: DashboardVendorByAmount[]
   totalNetSelling: string

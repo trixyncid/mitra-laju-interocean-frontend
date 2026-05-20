@@ -2,10 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { vendorsService } from "@/services/vendors.service"
 import { toast } from "sonner"
 
-export const useVendors = () => {
+export const useVendors = (enabled = true) => {
     return useQuery({
     queryKey: ["vendors"],
     queryFn: vendorsService.getAll,
+    enabled,
 })
 }
 

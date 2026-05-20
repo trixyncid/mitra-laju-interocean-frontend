@@ -13,13 +13,12 @@ import { amountCalculation, formatDate, sellingNetAmount } from "@/lib/utils"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
 import DocumentUploadForm from "@/components/forms/document-upload-form"
 import { Costing } from "../../costings/columns"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useForm } from "@tanstack/react-form"
-import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useState } from "react"
 import { shipmentsService } from "@/services/shipments.service"
 import ShipmentLoading from "@/components/loading/shipment-loading"
+import { PermissionGate } from "@/components/permission-gate"
 import clsx from "clsx"
 import { DashboardPage } from "@/components/layout/dashboard-page"
 
@@ -202,7 +201,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                             <Card className="my-6">
                                 <CardHeader className="flex items-center justify-between">
                                     <CardTitle>DOCUMENT UPLOADS</CardTitle>
-                                    <DocumentUploadForm mode="create" module="shipment" shipmentId={data.id} costingId={undefined} id={undefined} attachmentName={undefined} document={undefined} />
+                                    <PermissionGate resource="shipments" write shipmentType={data.shipmentOperational.shipmentType}>
+                                        <DocumentUploadForm mode="create" module="shipment" shipmentId={data.id} costingId={undefined} id={undefined} attachmentName={undefined} document={undefined} />
+                                    </PermissionGate>
                                 </CardHeader>
                                 <CardContent>
                                     {
@@ -229,7 +230,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                     >
                                                         <IconEye className="text-muted-foreground size-4" />
                                                     </Button>
-                                                    <DocumentUploadForm mode="edit" module="shipment" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
+                                                    <PermissionGate resource="shipments" write shipmentType={data.shipmentOperational.shipmentType}>
+                                                        <DocumentUploadForm mode="edit" module="shipment" shipmentId={data.id} costingId={undefined} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
+                                                    </PermissionGate>
                                                 </div>
                                             </div>
                                         ))
@@ -242,7 +245,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     <div className="flex items-center justify-between">
                                         <CardTitle>CONTAINER DETAILS</CardTitle>
                                         <div>
-                                            <ShipmentContainerForm mode="create" containerNumber={undefined} sealNumber={undefined} size={undefined} shipmentOperationalId={data.shipmentOperational.id} shipmentId={data.id} id={undefined} />
+                                            <PermissionGate resource="shipments" write shipmentType={data.shipmentOperational.shipmentType}>
+                                                <ShipmentContainerForm mode="create" containerNumber={undefined} sealNumber={undefined} size={undefined} shipmentOperationalId={data.shipmentOperational.id} shipmentId={data.id} id={undefined} />
+                                            </PermissionGate>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -275,7 +280,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                                     <td className="py-2 px-4">{ container.updatedBy.name as string }</td>
                                                                     <td className="py-2 px-4">{ formatDate(container.updatedAt.split("T")[0]) }</td>
                                                                     <td className="py-2 px-4">
-                                                                        <ShipmentContainerForm mode="edit" containerNumber={container.containerNumber} sealNumber={container.sealNumber} size={container.size} shipmentOperationalId={data.shipmentOperational.id} shipmentId={data.id} id={container.id} />
+                                                                        <PermissionGate resource="shipments" write shipmentType={data.shipmentOperational.shipmentType}>
+                                                                            <ShipmentContainerForm mode="edit" containerNumber={container.containerNumber} sealNumber={container.sealNumber} size={container.size} shipmentOperationalId={data.shipmentOperational.id} shipmentId={data.id} id={container.id} />
+                                                                        </PermissionGate>
                                                                     </td>
                                                                 </tr>
                                                             ))
@@ -314,7 +321,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                                 data.costings.map((costing: Costing) => (
                                                                     <tr key={costing.id}>
                                                                         <td className="py-2 px-4">{ costing.description }</td>
-                                                                        <td className="py-2 px-4">{ costing.vendor.vendorName }</td>
+                                                                        <td className="py-2 px-4">{ costing.vendor?.vendorName ?? "—" }</td>
                                                                         <td className="py-2 px-4">{ amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</td>
                                                                     </tr>
                                                                 ))
