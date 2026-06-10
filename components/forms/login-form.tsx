@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
+  Field,
+  FieldContent,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
@@ -14,6 +16,17 @@ import { authClient } from "@/lib/auth-client"
 import { getRoleHomePath } from "@/lib/role-home"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+
+function validateEmail(value: string) {
+    if (!value) return "Email is required"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email address"
+    return undefined
+}
+
+function validatePassword(value: string) {
+    if (!value) return "Password is required"
+    return undefined
+}
 
 export function LoginForm({
   className,
@@ -28,37 +41,53 @@ export function LoginForm({
             email: "",
             password: "",
         },
+        canSubmitWhenInvalid: true,
         onSubmit: async ({ value }) => {
             setIsSubmitting(true)
 
-            const { error } = await authClient.signIn.email({
-                email: value.email,
-                password: value.password,
-            })
+            try {
+                const { error } = await authClient.signIn.email({
+                    email: value.email,
+                    password: value.password,
+                })
 
-            setIsSubmitting(false)
+                if (error) {
+                    toast.error(error.message ?? "Login failed")
+                    return
+                }
 
-            if (error) {
-                toast.error(error.message ?? "Login failed")
-                return
+                toast.success("Login successful")
+                const { data: session } = await authClient.getSession()
+                router.replace(getRoleHomePath(session?.user))
+            } finally {
+                setIsSubmitting(false)
             }
-
-            toast.success("Login successful")
-            const { data: session } = await authClient.getSession()
-            router.replace(getRoleHomePath(session?.user))
         },
     })
+
+    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        e.stopPropagation()
+        void form.handleSubmit()
+    }
 
     const togglePasswordVisibility = () => {
         setPasswordType(passwordType === "password" ? "text" : "password")
     }
 
     return (
-        <form onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
-        }} className={cn("flex flex-col gap-6", className)} {...props}>
+        <form
+            noValidate
+            onSubmit={handleFormSubmit}
+            onKeyDown={(e) => {
+                if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return
+                if (!(e.target instanceof HTMLInputElement)) return
+                e.preventDefault()
+                e.currentTarget.requestSubmit()
+            }}
+            className={cn("flex flex-col gap-6", className)}
+            {...props}
+        >
         <FieldGroup>
             <div className="flex flex-col items-center gap-1 text-center">
             <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -67,44 +96,74 @@ export function LoginForm({
             </p>
             </div>
             <form.Field name="email" validators={{
-            onChange: ({ value }) =>
-                !value ? "Email is required" :
-                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? "Invalid email address" : undefined
+            onChange: ({ value }) => validateEmail(value),
+            onSubmit: ({ value }) => validateEmail(value),
             }}>
             {
                 ( field ) => (
-                <div>
-                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-                    <Input id={field.name} type="email" placeholder="m@example.com" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                    {field.state.meta.errors ? (
-                    <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                    ) : null}
-                </div>
+                <Field>
+                    <FieldLabel htmlFor={field.name} className="cursor-pointer">Email</FieldLabel>
+                    <FieldContent>
+                        <Input
+                            id={field.name}
+                            name={field.name}
+                            type="email"
+                            autoComplete="email"
+                            placeholder="m@example.com"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            aria-invalid={field.state.meta.errors.length > 0}
+                            className="cursor-pointer"
+                        />
+                        {field.state.meta.errors.length ? (
+                            <em className="text-xs text-[var(--mli-on-error-container)]">{String(field.state.meta.errors[0])}</em>
+                        ) : null}
+                    </FieldContent>
+                </Field>
                 )
             }
             </form.Field>
             <form.Field name="password" validators={{
-            onChange: ({ value }) =>
-                !value ? "Password is required" : undefined
+            onChange: ({ value }) => validatePassword(value),
+            onSubmit: ({ value }) => validatePassword(value),
             }}>
             {
                 ( field ) => (
-                <div>
-                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                    <div className="flex items-center">
+                <Field>
+                    <FieldLabel htmlFor={field.name} className="cursor-pointer">Password</FieldLabel>
+                    <FieldContent>
                         <div className="relative w-full">
-                            <Input id={field.name} type={passwordType} placeholder="Password" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} className="pr-8" />
-                            {passwordType === "password" ? (
-                                <EyeIcon className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2" onClick={togglePasswordVisibility} />
-                            ) : (
-                                <EyeOffIcon className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2" onClick={togglePasswordVisibility} />
-                            )}
+                            <Input
+                                id={field.name}
+                                name={field.name}
+                                type={passwordType}
+                                autoComplete="current-password"
+                                placeholder="Password"
+                                value={field.state.value}
+                                onBlur={field.handleBlur}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                aria-invalid={field.state.meta.errors.length > 0}
+                                className="cursor-pointer pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={togglePasswordVisibility}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                                aria-label={passwordType === "password" ? "Show password" : "Hide password"}
+                            >
+                                {passwordType === "password" ? (
+                                    <EyeIcon className="size-4" />
+                                ) : (
+                                    <EyeOffIcon className="size-4" />
+                                )}
+                            </button>
                         </div>
-                    </div>
-                    {field.state.meta.errors ? (
-                    <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                    ) : null}
-                </div>
+                        {field.state.meta.errors.length ? (
+                            <em className="text-xs text-[var(--mli-on-error-container)]">{String(field.state.meta.errors[0])}</em>
+                        ) : null}
+                    </FieldContent>
+                </Field>
                 )
             }
             </form.Field>
