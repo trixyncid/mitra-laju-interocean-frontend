@@ -1,23 +1,14 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import { useForm } from "@tanstack/react-form"
-import { IconPlus } from "@tabler/icons-react"
-import { Pencil } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import type { User } from "@/app/dashboard/users/columns"
-import { USER_ROLES, type UserRole } from "@/lib/permissions"
+import { USER_ROLES, formatRoleLabel, type UserRole } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { TextField } from "@/components/ui/text-field"
 import {
   Select,
   SelectContent,
@@ -28,6 +19,13 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { useCreateUser, useUpdateUser } from "@/hooks/use-users"
 import { buildUserUpdatePayload } from "@/lib/user-update"
+import { fieldError } from "@/lib/form-field"
+import { userEmailSchema, userNameSchema } from "@/lib/schemas/user"
+import {
+  matchPasswordField,
+  passwordWithConfirmRevalidate,
+  zodOnChange,
+} from "@/lib/zod-form"
 import { toast } from "sonner"
 
 const roles = USER_ROLES
@@ -42,10 +40,8 @@ function FormField({
   children: ReactNode
 }) {
   return (
-    <div className="my-3">
-      <Label htmlFor={field.name} className="my-2">
-        {label}
-      </Label>
+    <div className="space-y-2">
+      <Label htmlFor={field.name}>{label}</Label>
       {children}
       {field.state.meta.errors.length ? (
         <em className="text-xs text-[var(--mli-on-error-container)]">
@@ -63,7 +59,7 @@ export default function UserForm({
   mode: "edit" | "create"
   user?: User
 }) {
-  const [open, setOpen] = useState(false)
+  const router = useRouter()
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
 
@@ -73,8 +69,8 @@ export default function UserForm({
       name: user?.name ?? "",
       email: user?.email ?? "",
       password: "",
+      confirmPassword: "",
       role: (user?.role ?? "viewer") as UserRole,
-      emailVerified: user?.emailVerified ?? false,
       isActive: user?.isActive ?? true,
     },
     onSubmit: async ({ value }) => {
@@ -85,12 +81,10 @@ export default function UserForm({
             email: value.email,
             password: value.password,
             role: value.role,
-            emailVerified: value.emailVerified,
           },
           {
-            onSuccess: () => {
-              setOpen(false)
-              form.reset()
+            onSuccess: (data) => {
+              router.push(`/dashboard/users/${data.id}`)
             },
           }
         )
@@ -99,22 +93,13 @@ export default function UserForm({
           name: value.name,
           email: value.email,
           role: value.role,
-          emailVerified: value.emailVerified,
           isActive: value.isActive,
         })
         if (!payload) {
           toast.info("No changes to save")
           return
         }
-        updateUser.mutate(
-          { id: value.id, user: payload },
-          {
-            onSuccess: () => {
-              setOpen(false)
-              form.reset()
-            },
-          }
-        )
+        updateUser.mutate({ id: value.id, user: payload })
       }
     },
   })
@@ -122,162 +107,165 @@ export default function UserForm({
   const isPending = mode === "create" ? createUser.isPending : updateUser.isPending
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {mode === "edit" ? (
-          <Button variant="outline" size="icon">
-            <Pencil />
-          </Button>
-        ) : (
-          <Button>
-            <IconPlus /> Add User
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit User" : "Create New User"}</DialogTitle>
-        </DialogHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-headline-md font-semibold">
+          {mode === "create" ? "Staff details" : "Edit staff details"}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {mode === "create"
+            ? "Set up a new staff account with name, email, role, and initial password."
+            : "Update account information, role, and active status."}
+        </p>
+      </div>
+
+      <form
+        className="max-w-md space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          form.handleSubmit()
+        }}
+      >
+        <form.Field
+          name="name"
+          validators={{
+            onChange: zodOnChange(userNameSchema),
           }}
         >
-          <form.Field
-            name="name"
-            validators={{
-              onChange: ({ value }) => (!value.trim() ? "Name is required" : undefined),
-            }}
-          >
-            {(field) => (
-              <FormField label="Name" field={field}>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
-            )}
-          </form.Field>
+          {(field) => (
+            <TextField
+              label="Name"
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
 
-          <form.Field
-            name="email"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value.trim()) return "Email is required"
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email address"
-                return undefined
-              },
-            }}
-          >
-            {(field) => (
-              <FormField label="Email" field={field}>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
-            )}
-          </form.Field>
+        <form.Field
+          name="email"
+          validators={{
+            onChange: zodOnChange(userEmailSchema),
+          }}
+        >
+          {(field) => (
+            <TextField
+              label="Email"
+              id={field.name}
+              name={field.name}
+              type="email"
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
 
-          {mode === "create" ? (
+        {mode === "create" ? (
+          <>
             <form.Field
               name="password"
               validators={{
-                onChange: ({ value }) => {
-                  if (!value) return "Password is required"
-                  if (value.length < 8) return "Password must be at least 8 characters"
-                  return undefined
-                },
+                onChange: passwordWithConfirmRevalidate("confirmPassword"),
               }}
             >
               {(field) => (
-                <FormField label="Password" field={field}>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    type="password"
-                    autoComplete="new-password"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                </FormField>
+                <TextField
+                  label="Initial password"
+                  id={field.name}
+                  name={field.name}
+                  type="password"
+                  autoComplete="new-password"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  error={fieldError(field.state.meta.errors)}
+                />
               )}
             </form.Field>
-          ) : null}
-
-          <form.Field name="role">
-            {(field) => (
-              <div className="my-3">
-                <Label htmlFor={field.name} className="my-2">
-                  Role
-                </Label>
-                <Select
+            <form.Field
+              name="confirmPassword"
+              validators={{
+                onChange: matchPasswordField("password", {
+                  emptyMessage: "Please confirm the password",
+                  mismatchMessage: "Passwords do not match",
+                }),
+              }}
+            >
+              {(field) => (
+                <TextField
+                  label="Confirm password"
+                  id={field.name}
+                  name={field.name}
+                  type="password"
+                  autoComplete="new-password"
                   value={field.state.value}
-                  onValueChange={(value) => field.handleChange(value as UserRole)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </form.Field>
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  error={fieldError(field.state.meta.errors)}
+                />
+              )}
+            </form.Field>
+          </>
+        ) : null}
 
-          <form.Field name="emailVerified">
+        <form.Field name="role">
+          {(field) => (
+            <FormField label="Role" field={field}>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) => field.handleChange(value as UserRole)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {formatRoleLabel(role)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
+        </form.Field>
+
+        {mode === "edit" ? (
+          <form.Field name="isActive">
             {(field) => (
-              <div className="my-3 flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <Switch
                   id={field.name}
                   checked={field.state.value}
                   onCheckedChange={(checked) => field.handleChange(checked)}
                 />
-                <Label htmlFor={field.name}>Email verified</Label>
+                <Label htmlFor={field.name}>Active account</Label>
               </div>
             )}
           </form.Field>
+        ) : null}
 
-          {mode === "edit" ? (
-            <form.Field name="isActive">
-              {(field) => (
-                <div className="my-3 flex items-center gap-3">
-                  <Switch
-                    id={field.name}
-                    checked={field.state.value}
-                    onCheckedChange={(checked) => field.handleChange(checked)}
-                  />
-                  <Label htmlFor={field.name}>Active account</Label>
-                </div>
-              )}
-            </form.Field>
-          ) : null}
-
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
-              {mode === "edit"
-                ? isPending
-                  ? "Updating..."
-                  : "Save Changes"
-                : isPending
-                  ? "Creating..."
-                  : "Create"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button type="submit" disabled={isPending}>
+            {mode === "edit"
+              ? isPending
+                ? "Saving..."
+                : "Save changes"
+              : isPending
+                ? "Creating..."
+                : "Create staff"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/dashboard/users")}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

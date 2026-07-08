@@ -1,6 +1,7 @@
 "use client"
 
-import { columns, type Shipment } from "./columns"
+import { useMemo, useState } from "react"
+import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import ShipmentForm from "@/components/forms/shipment-form"
 import { useShipments } from "@/hooks/use-shipments"
@@ -12,10 +13,42 @@ import {
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
+import { type AppliedTableFilters } from "@/components/data-table-toolbar"
 
 export default function ShipmentPage() {
-    const { data, isLoading, error } = useShipments()
-    const activeCount = data?.filter((shipment: Shipment) => shipment.isActive).length ?? 0
+    const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(20)
+    const [applied, setApplied] = useState<AppliedTableFilters>({
+        search: "",
+        status: "all",
+        dateRange: {},
+    })
+
+    const params = useMemo(
+        () => ({
+            page,
+            pageSize,
+            search: applied.search || undefined,
+            status: applied.status as "all" | "true" | "false",
+            from: applied.dateRange.from,
+            to: applied.dateRange.to,
+        }),
+        [page, pageSize, applied]
+    )
+
+    const { data, isLoading, error } = useShipments(params)
+    const shipments = data?.items ?? []
+    const pagination = data?.pagination ?? {
+        page,
+        pageSize,
+        total: 0,
+        totalPages: 1,
+    }
+
+    const handleApply = (next: AppliedTableFilters) => {
+        setApplied(next)
+        setPage(1)
+    }
 
     if (error) return <ErrorPage message={error.message} />
 
@@ -23,7 +56,7 @@ export default function ShipmentPage() {
         <DashboardPage>
             <DashboardPageHeader
                 title="Shipment Management"
-                description={`${activeCount} active shipments. View and manage shipments, operational data, and linked transactions.`}
+                description={`${pagination.total} shipments. View and manage shipments, operational data, and linked transactions.`}
                 action={
                     <PermissionGate resource="shipments" write>
                         <ShipmentForm
@@ -38,7 +71,25 @@ export default function ShipmentPage() {
                 }
             />
             <DashboardPageCard>
-                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data ?? []} />}
+                {isLoading ? (
+                    <TableSkeleton />
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={shipments}
+                        page={pagination.page}
+                        pageSize={pagination.pageSize}
+                        totalPages={pagination.totalPages}
+                        totalRows={pagination.total}
+                        applied={applied}
+                        onApply={handleApply}
+                        onPageChange={setPage}
+                        onPageSizeChange={(next) => {
+                            setPageSize(next)
+                            setPage(1)
+                        }}
+                    />
+                )}
             </DashboardPageCard>
         </DashboardPage>
     )

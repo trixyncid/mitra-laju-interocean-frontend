@@ -10,6 +10,8 @@ import { useState } from "react"
 import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
 import { usePermissions } from "@/hooks/use-permissions"
+import { shipmentSelectionSchema } from "@/lib/schemas/link"
+import { zodOnChange } from "@/lib/zod-form"
 import {
     Combobox,
     ComboboxContent,
@@ -32,7 +34,12 @@ export default function LinkCostingForm({
     const [deleteOpen, setDeleteOpen] = useState(false)
     const { canReadShipmentsForCosting } = usePermissions()
 
-    const { data: shipments, isLoading, error: errorShipments } = useShipments(
+    const { data: shipmentsPage, isLoading, error: errorShipments } = useShipments(
+        {
+            page: 1,
+            pageSize: 100,
+            status: "all",
+        },
         open && canReadShipmentsForCosting()
     )
 
@@ -41,7 +48,7 @@ export default function LinkCostingForm({
 
     type ComboItem = { value: string; label: string }
     const shipmentItems: ComboItem[] =
-        shipments?.map((s: Shipment) => ({
+        shipmentsPage?.items.map((s: Shipment) => ({
             value: s.id ?? "",
             label: s.orderNumber,
         })) ?? []
@@ -92,7 +99,7 @@ export default function LinkCostingForm({
                         <div>
                             <form.Field
                                 name="shipmentId"
-                                validators={{ onChange: ({ value }) => !value ? "Please select a shipment" : undefined }}
+                                validators={{ onChange: zodOnChange(shipmentSelectionSchema) }}
                             >
                                 {(field) => (
                                     <div className="my-5">

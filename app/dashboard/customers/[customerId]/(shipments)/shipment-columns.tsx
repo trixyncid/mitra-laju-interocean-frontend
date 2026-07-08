@@ -1,13 +1,16 @@
 "use client"
 
+import Link from "next/link"
 import { formatDate } from "@/lib/utils"
 import { IconArrowRight } from "@tabler/icons-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
-import Link from "next/link"
+import {
+  dateSort,
+  sortHeader,
+  textSort,
+} from "@/lib/data-table"
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
 export type LinkedShipment = {
   id: string
   eta: string
@@ -21,7 +24,8 @@ export type LinkedShipment = {
 export const columns: ColumnDef<LinkedShipment>[] = [
   {
     accessorKey: "orderNumber",
-    header: "Shipment Order Number",
+    header: ({ column }) => sortHeader(column, "Shipment Order Number"),
+    ...textSort,
     cell: ({ row }) => {
       return <div className="font-bold flex items-center gap-x-1">
         <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
@@ -30,17 +34,22 @@ export const columns: ColumnDef<LinkedShipment>[] = [
   },
   {
     accessorKey: "customerCode",
-    header: "Customer",
+    header: ({ column }) => sortHeader(column, "Customer"),
+    ...textSort,
   },
   {
     accessorKey: "customerShipper",
-    header: "Shipper",
+    header: ({ column }) => sortHeader(column, "Shipper"),
+    ...textSort,
   },
   {
-    header: "Route",
+    id: "route",
+    accessorFn: (row) => `${row.departureCountry} ${row.arrivalCountry}`,
+    header: ({ column }) => sortHeader(column, "Route"),
+    ...textSort,
     cell: ({ row }) => {
       return (
-        row.original.departureCountry !== undefined && row.original.arrivalCountry !== undefined ? (
+        row.original.departureCountry !== "" && row.original.arrivalCountry !== "" ? (
           <div className="flex flex-row items-center gap-x-2">
             <p className="text-sm text-muted-foreground">{ row.original.departureCountry }</p>
             <IconArrowRight className="w-4 h-4" />
@@ -53,11 +62,19 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     },
   },
   {
-    header: "ETA",
+    accessorKey: "eta",
+    header: ({ column }) => sortHeader(column, "ETA"),
+    ...dateSort,
     cell: ({ row }) => {
-      return <div className="flex flex-row items-center gap-x-2">
-        <p className={ row.original.eta ? "text-sm text-muted-foreground" : "text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-full w-fit" }>{ row.original.eta ? formatDate(row.original.eta) : 'Unavailable' }</p>
-      </div>
+      return (
+        row.original.eta !== "" ? (
+          <div className="flex flex-row items-center gap-x-2">
+            <p className="text-sm text-muted-foreground">{ formatDate(row.original.eta) }</p>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-full w-fit">Unavailable</p>
+        )
+      )
     }
   },
 ]

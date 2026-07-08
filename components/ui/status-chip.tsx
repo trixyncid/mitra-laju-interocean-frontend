@@ -14,7 +14,9 @@ export function StatusChip({
       <Dot
         className={cn(
           "-ml-1 size-4",
-          active ? "text-ring" : "text-destructive"
+          active
+            ? "text-[var(--mli-on-success-container)]"
+            : "text-[var(--mli-on-error-container)]"
         )}
       />
       {active ? "Active" : "Inactive"}
@@ -44,8 +46,15 @@ export function PaymentStatusChip({
   className?: string
 }) {
   return (
-    <span className={cn(paid ? chipActive() : chipWarning(), className)}>
-      <Dot className={cn("-ml-1 size-4", paid ? "text-ring" : "text-[var(--mli-on-warning-container)]")} />
+    <span className={cn(paid ? chipActive() : chipInactive(), className)}>
+      <Dot
+        className={cn(
+          "-ml-1 size-4",
+          paid
+            ? "text-[var(--mli-on-success-container)]"
+            : "text-[var(--mli-on-error-container)]"
+        )}
+      />
       {paid ? "Paid" : "Unpaid"}
     </span>
   )

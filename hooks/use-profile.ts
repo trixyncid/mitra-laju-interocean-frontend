@@ -45,3 +45,37 @@ export function useChangePassword() {
     onError: (error: Error) => toast.error(error.message),
   })
 }
+
+export function useUploadAvatar() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, avatar }: { id: string; avatar: FormData }) =>
+      usersService.uploadAvatar(id, avatar),
+    onSuccess: async (data, { id }) => {
+      queryClient.setQueryData(["user", id], data)
+      await queryClient.refetchQueries({ queryKey: ["user-avatar", id] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+      await authClient.getSession()
+      toast.success("Profile photo updated")
+    },
+    onError: (error: Error) => toast.error(error.message),
+  })
+}
+
+export function useRemoveAvatar() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      usersService.update(id, { image: null }),
+    onSuccess: async (data, { id }) => {
+      queryClient.setQueryData(["user", id], data)
+      queryClient.removeQueries({ queryKey: ["user-avatar", id] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+      await authClient.getSession()
+      toast.success("Profile photo removed")
+    },
+    onError: (error: Error) => toast.error(error.message),
+  })
+}

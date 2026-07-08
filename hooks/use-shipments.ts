@@ -1,12 +1,12 @@
-import { shipmentsService } from "@/services/shipments.service";
+import { shipmentsService, type ShipmentListParams } from "@/services/shipments.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Shipment } from "@/app/dashboard/shipments/columns";
 
-export const useShipments = (enabled = true) => {
+export const useShipments = (params: ShipmentListParams, enabled = true) => {
     return useQuery({
-        queryKey: ["shipments"],
-        queryFn: shipmentsService.getAll,
+        queryKey: ["shipments", params],
+        queryFn: () => shipmentsService.getAll(params),
         enabled,
     });
 }
@@ -16,6 +16,31 @@ export const useShipmentById = (id: string) => {
         queryKey: ["shipments", id],
         queryFn: () => shipmentsService.getById(id),
         enabled: !!id,
+    });
+}
+
+export const useNextOrderNumber = (
+    month: number,
+    year: number,
+    options?: { enabled?: boolean; excludeOrderNumber?: string }
+) => {
+    const enabled = options?.enabled ?? true;
+
+    return useQuery({
+        queryKey: [
+            "shipments",
+            "next-order-number",
+            month,
+            year,
+            options?.excludeOrderNumber,
+        ],
+        queryFn: () =>
+            shipmentsService.getNextOrderNumber(
+                month,
+                year,
+                options?.excludeOrderNumber
+            ),
+        enabled,
     });
 }
 

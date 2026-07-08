@@ -5,6 +5,13 @@ import { localDate, formatDate } from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusChip, TbdChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
+import {
+  actionColumn,
+  dateSort,
+  sortDescFirst,
+  sortHeader,
+  textSort,
+} from "@/lib/data-table"
 
 export type Vessel = {
     id?: string
@@ -20,21 +27,24 @@ export type Vessel = {
 export const columns: ColumnDef<Vessel>[] = [
     {
         accessorKey: "vesselName",
-        header: "Vessel Name",
+        header: ({ column }) => sortHeader(column, "Vessel Name"),
+        ...textSort,
         cell: ({ row }) => {
             return <span className={primaryText}>{ row.original.vesselName }</span>
         }
     },
     {
         accessorKey: "voyageNumber",
-        header: "Voyage Number",
+        header: ({ column }) => sortHeader(column, "Voyage Number"),
+        ...textSort,
         cell: ({ row }) => (
             <span className={secondaryText}>{row.original.voyageNumber}</span>
         ),
     },
     {
         accessorKey: "etd",
-        header: "ETD",
+        header: ({ column }) => sortHeader(column, "ETD"),
+        ...dateSort,
         cell: ({ row }) => {
             return row.original.etd === null || row.original.etd === undefined ? (
                 <TbdChip />
@@ -45,7 +55,8 @@ export const columns: ColumnDef<Vessel>[] = [
     },
     {
         accessorKey: "closingReefer",
-        header: "Closing Reefer",
+        header: ({ column }) => sortHeader(column, "Closing Reefer"),
+        ...dateSort,
         cell: ({ row }) => {
             return row.original.closingReefer === null || row.original.closingReefer === undefined ? (
                 <TbdChip />
@@ -55,26 +66,30 @@ export const columns: ColumnDef<Vessel>[] = [
         }
     },
     {
-        accessorKey: "updatedBy",
-        header: "Modified By",
+        id: "updatedBy",
+        accessorFn: (row) => (row.updatedBy as { name?: string } | undefined)?.name ?? "",
+        header: ({ column }) => sortHeader(column, "Modified By"),
+        ...textSort,
         cell: ({ row }) => {
             return <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
         }
     },
     {
         accessorKey: "updatedAt",
-        header: "Modified At",
+        header: ({ column }) => sortHeader(column, "Modified At"),
+        ...dateSort,
         cell: ({ row }) => {
             return <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>
         }
     },
     {
         accessorKey: "isActive",
-        header: "Status",
+        header: ({ column }) => sortHeader(column, "Status"),
+        ...sortDescFirst,
         cell: ({ row }) => <StatusChip active={row.original.isActive} />
     },
     {
-        accessorKey: "",
+        ...actionColumn,
         header: "Action",
         cell: ({ row }) => <VesselActionCell row={row} />
     },

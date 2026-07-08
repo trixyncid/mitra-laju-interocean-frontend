@@ -1,12 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Row } from "@tanstack/react-table"
-import { IconTrash } from "@tabler/icons-react"
+import { IconPencil, IconUserOff } from "@tabler/icons-react"
 
 import type { User } from "@/app/dashboard/users/columns"
-import UserForm from "@/components/forms/user-form"
-import UserResetPasswordDialog from "@/components/user-reset-password-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -29,12 +28,15 @@ export default function UserActionCell({ row }: { row: Row<User> }) {
 
   return (
     <div className="flex items-center gap-x-2">
-      <UserForm mode="edit" user={row.original} />
-      <UserResetPasswordDialog user={row.original} />
+      <Button variant="outline" size="icon" asChild>
+        <Link href={`/dashboard/users/${row.original.id}`}>
+          <IconPencil />
+        </Link>
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon" disabled={isSelf}>
-            <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
+            <IconUserOff className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
           </Button>
         </DialogTrigger>
         <DialogContent>

@@ -87,6 +87,8 @@
   --mli-primary-container: #1b365d;
   --mli-error-container: #ffdad6;
   --mli-on-error-container: #93000a;
+  --mli-success-container: #d1f7d9;
+  --mli-on-success-container: #0d5c2e;
   --mli-warning-container: #fff3e0;
   --mli-on-warning-container: #e65100;
 }
@@ -119,6 +121,12 @@
   --sidebar-accent-foreground: #eff1f3;
   --sidebar-border: #2e476f;
   --sidebar-ring: #6e9ef7;
+  --mli-error-container: #93000a;
+  --mli-on-error-container: #ffdad6;
+  --mli-success-container: #0d5c2e;
+  --mli-on-success-container: #d1f7d9;
+  --mli-warning-container: #e65100;
+  --mli-on-warning-container: #fff3e0;
 }
 
 @layer base {

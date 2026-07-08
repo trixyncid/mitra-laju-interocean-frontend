@@ -19,7 +19,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useResetPassword } from "@/hooks/use-users"
 
-export default function UserResetPasswordDialog({ user }: { user: User }) {
+export default function UserResetPasswordDialog({
+  user,
+  triggerLabel,
+}: {
+  user: User
+  triggerLabel?: string
+}) {
   const resetPassword = useResetPassword()
   const [open, setOpen] = useState(false)
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null)
@@ -54,8 +60,9 @@ export default function UserResetPasswordDialog({ user }: { user: User }) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" title="Reset password">
+        <Button variant="outline" size={triggerLabel ? "default" : "icon"} title="Reset password">
           <IconKey />
+          {triggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent>

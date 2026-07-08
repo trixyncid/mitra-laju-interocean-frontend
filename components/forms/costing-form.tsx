@@ -4,16 +4,28 @@ import { useForm } from "@tanstack/react-form"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { IconPencil, IconPlus } from "@tabler/icons-react"
-import { Input } from "../ui/input"
+import { TextField } from "../ui/text-field"
 import { Label } from "../ui/label"
+import { fieldError } from "@/lib/form-field"
+import {
+  costingContainerSchema,
+  costingCurrencySchema,
+  costingDescriptionSchema,
+  costingNumberSchema,
+  costingPph23Schema,
+  costingPriceSchema,
+  costingVendorInvoiceSchema,
+  costingVendorSchema,
+  costingVatSchema,
+} from "@/lib/schemas/costing"
+import { zodOnChange } from "@/lib/zod-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useEffect, useState } from "react"
 import { useShipmentById } from "@/hooks/use-shipments"
 import { useVendors } from "@/hooks/use-vendors"
 import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
 import { Vendor } from "@/app/dashboard/vendors/columns"
-import { useCreateCosting, useCostings, useUpdateCosting } from "@/hooks/use-costings"
-import { Costing } from "@/app/dashboard/costings/columns"
+import { useCreateCosting, useNextCostingNumber, useUpdateCosting } from "@/hooks/use-costings"
 import { usePermissions } from "@/hooks/use-permissions"
 
 const MONTH_IN_ROMANS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
@@ -27,17 +39,6 @@ const parseCostingNumberDate = (costingNumber: string | undefined): { monthIndex
     const year = parseInt(parts[2], 10)
     if (monthIndex === 0 || isNaN(year)) return null
     return { monthIndex, year }
-}
-
-const computeCostingNumber = (allCostings: Costing[], monthIndex: number, year: number, excludeCostingNumber?: string): string => {
-    const romanMonth = MONTH_IN_ROMANS[monthIndex - 1]
-    const count = (allCostings ?? []).filter((costing: Costing) => {
-        if (excludeCostingNumber && costing.costingNumber === excludeCostingNumber) return false
-        const parts = costing.costingNumber?.split("/")
-        if (!parts || parts.length !== 3) return false
-        return parts[1] === romanMonth && parts[2] === year.toString()
-    }).length
-    return `${count + 1}/${romanMonth}/${year}`
 }
 
 const currentYear = new Date().getFullYear()
@@ -75,7 +76,6 @@ export default function CostingForm({
 
     const createCosting = useCreateCosting()
     const updateCosting = useUpdateCosting()
-    const { data: allCostings } = useCostings()
 
     const parsedDate = parseCostingNumberDate(costingNumber)
     const defaultMonth = parsedDate?.monthIndex ?? (new Date().getMonth() + 1)
@@ -84,13 +84,32 @@ export default function CostingForm({
     const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
     const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
 
+    const excludeCostingNumber =
+        mode === "edit" &&
+        selectedMonth === defaultMonth &&
+        selectedYear === defaultYear
+            ? costingNumber
+            : undefined
+
+    const { data: nextCostingNumberData } = useNextCostingNumber(selectedMonth, selectedYear, {
+        enabled: open,
+        excludeCostingNumber,
+    })
+
     const fetchDependencies = open && canReadVendorsForCosting()
     const { data: shipmentData, isLoading: isLoadingContainers } = useShipmentById(
         fetchDependencies && shipmentId ? shipmentId : ""
     )
     const shipmentContainers: ShipmentOperationalContainer[] =
         shipmentData?.shipmentOperational?.shipmentOperationalContainers ?? []
-    const { data: vendors, isLoading: isLoadingVendors, error: errorVendors } = useVendors(fetchDependencies)
+    const { data: vendorsPage, isLoading: isLoadingVendors, error: errorVendors } = useVendors(
+        {
+            page: 1,
+            pageSize: 100,
+        },
+        fetchDependencies
+    )
+    const vendors = vendorsPage?.items ?? []
 
     const form = useForm({
         defaultValues: {
@@ -107,7 +126,8 @@ export default function CostingForm({
         onSubmit: async ({ value }) => {
             if (mode === "create") {
                 createCosting.mutate({
-                    costingNumber: value.costingNumber,
+                    month: selectedMonth,
+                    year: selectedYear,
                     description: value.description,
                     price: Number(value.price),
                     currency: Number(value.currency),
@@ -147,18 +167,32 @@ export default function CostingForm({
     })
 
     useEffect(() => {
-        if (!allCostings) return
+        if (!open) return
 
-        if (mode === "edit" && selectedMonth === defaultMonth && selectedYear === defaultYear && costingNumber) {
+        if (
+            mode === "edit" &&
+            selectedMonth === defaultMonth &&
+            selectedYear === defaultYear &&
+            costingNumber
+        ) {
             form.setFieldValue("costingNumber", costingNumber)
             return
         }
 
-        const excludeCosting = mode === "edit" ? costingNumber : undefined
-        const computed = computeCostingNumber(allCostings, selectedMonth, selectedYear, excludeCosting)
-        form.setFieldValue("costingNumber", computed)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedMonth, selectedYear, allCostings, mode, costingNumber, defaultMonth, defaultYear])
+        if (nextCostingNumberData?.costingNumber) {
+            form.setFieldValue("costingNumber", nextCostingNumberData.costingNumber)
+        }
+    }, [
+        open,
+        selectedMonth,
+        selectedYear,
+        nextCostingNumberData?.costingNumber,
+        mode,
+        costingNumber,
+        defaultMonth,
+        defaultYear,
+        form,
+    ])
 
     return (
         <div>
@@ -215,58 +249,70 @@ export default function CostingForm({
                             <form.Field
                                 name="costingNumber"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Costing Number is required" : undefined,
+                                    onChange: zodOnChange(costingNumberSchema),
                                 }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Costing Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} disabled={true} />
+                                        <TextField
+                                            label="Costing Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            disabled
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="description" validators={{ onChange: ({ value }) => !value ? "Description is required" : undefined }}>
+                            <form.Field name="description" validators={{ onChange: zodOnChange(costingDescriptionSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Description</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Description"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="price" validators={{ onChange: ({ value }) => !value ? "Price is required" : undefined }}>
+                            <form.Field name="price" validators={{ onChange: zodOnChange(costingPriceSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Price</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Price"
+                                            id={field.name}
+                                            name={field.name}
+                                            type="number"
+                                            step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="currency" validators={{ onChange: ({ value }) => !value ? "Currency is required" : undefined }}>
+                            <form.Field name="currency" validators={{ onChange: zodOnChange(costingCurrencySchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Currency</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Currency"
+                                            id={field.name}
+                                            name={field.name}
+                                            type="number"
+                                            step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
                             {shipmentId && (
-                                <form.Field name="containerId" validators={{ onChange: ({ value }) => value === "-" ? "Container is required" : undefined }}>
+                                <form.Field name="containerId" validators={{ onChange: zodOnChange(costingContainerSchema) }}>
                                     {(field) => (
                                         <div className="my-3">
                                             <Label htmlFor={field.name} className="my-2">Container Number</Label>
@@ -300,50 +346,57 @@ export default function CostingForm({
                             )}
                             <form.Field 
                                 name="vatPercentage"
-                                validators={{ onChange: ({ value }) => value === "" ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be less than or equal to 100" : undefined }}
+                                validators={{ onChange: zodOnChange(costingVatSchema) }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">VAT (%)</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="VAT (%)"
+                                            id={field.name}
+                                            name={field.name}
+                                            type="number"
+                                            step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field 
                                 name="pph23Percentage"
-                                validators={{ onChange: ({ value }) => value === "" ? "PPH 23 is required. Input zero if not applicable" : Number(value) > 100 ? "PPH 23 must be less than or equal to 100" : undefined }}
+                                validators={{ onChange: zodOnChange(costingPph23Schema) }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">PPH 23 (%)</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} type="number" step="0.01" />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="PPH 23 (%)"
+                                            id={field.name}
+                                            name={field.name}
+                                            type="number"
+                                            step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="vendorInvoiceNumber" validators={{ onChange: ({ value }) => !value ? "Vendor Invoice Number is required" : undefined }}>
+                            <form.Field name="vendorInvoiceNumber" validators={{ onChange: zodOnChange(costingVendorInvoiceSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Vendor Invoice Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Vendor Invoice Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="vendorId" validators={{ onChange: ({ value }) => value === "-" ? "Vendor is required" : undefined }}>
+                            <form.Field name="vendorId" validators={{ onChange: zodOnChange(costingVendorSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Vendor</Label>

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
-import { chipActive, chipBase, chipWarning } from "@/lib/design"
-import { formatRoleLabel, parseUserRole, type UserRole } from "@/lib/permissions"
+import { chipBase, chipInfo, chipWarning } from "@/lib/design"
+import { formatRoleLabel, parseUserRole } from "@/lib/permissions"
 
 export function RoleChip({ role, className }: { role: string; className?: string }) {
   const parsed = parseUserRole(role)
@@ -8,7 +8,7 @@ export function RoleChip({ role, className }: { role: string; className?: string
     parsed === "superadmin"
       ? chipWarning(className)
       : parsed === "admin"
-        ? chipActive(className)
+        ? chipInfo(className)
         : parsed === "viewer"
           ? cn(chipBase, "bg-muted text-muted-foreground", className)
           : cn(chipBase, "bg-secondary/80 text-secondary-foreground", className)

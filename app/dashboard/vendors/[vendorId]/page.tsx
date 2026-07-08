@@ -9,6 +9,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
+import { toWhatsAppUrl } from "@/lib/whatsapp"
 import { Dot } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import clsx from "clsx"
@@ -21,7 +22,11 @@ import CostingHistoryPage from "./(costings)/costing-history-page"
 import { MasterDataWriteGate } from "@/components/write-gates"
 import { Costing } from "../../costings/columns"
 import { LinkedShipment } from "./(shipments)/shipment-columns"
-import { DashboardPage } from "@/components/layout/dashboard-page"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
+import { StatusChip } from "@/components/ui/status-chip"
+import VendorForm from "@/components/forms/vendor-form"
+import { VendorMetadataCard } from "@/components/vendor-metadata-card"
+import ErrorPage from "@/components/error-page"
 
 type VendorContact = {
     id: string
@@ -45,7 +50,7 @@ type VendorLocation = {
     updatedBy: { name: string }
 }
 
-export default function CustomerDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
+export default function VendorDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
     const { vendorId } = use(params)
     const { data, isLoading, error } = useVendorById(vendorId)
 
@@ -72,8 +77,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
     }, [data?.vendorLocations, locationSearch])
 
     if (isLoading) return <CustomerVendorDetailLoading />
-
-    if (error) return <div>Error: {error.message}</div>
+    if (error) return <ErrorPage title="Vendor not found" message={error.message} />
+    if (!data) return <ErrorPage title="Vendor not found" message="Unable to load this vendor." />
 
     const vendorCostings = data.costings.map((costing: Costing) => ({
         id: costing.id,
@@ -155,7 +160,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                         <div>
                             <h1 className="text-headline-lg">{data.vendorName}</h1>
                             <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: {data.vendorCode}</p>
-                            <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", data?.isActive ? "text-secondary-foreground bg-secondary/50" : "bg-[var(--mli-error-container)]/50 text-[var(--mli-on-error-container)]")}><Dot className="animate-pulse"/> {data?.isActive ? "Active" : "Inactive"}</p>
+                            <div className="mt-2">
+                                <StatusChip active={Boolean(data?.isActive)} />
+                            </div>
                         </div>
                     </div>
 
@@ -187,12 +194,34 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
             </Card>
 
             {/* Tabs */}
-            <Tabs defaultValue="offices-and-contacts" className="mt-6">
+            <Tabs defaultValue="details" className="mt-6">
                 <TabsList>
+                    <TabsTrigger value="details">Details</TabsTrigger>
                     <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.vendorLocations.length }</span></TabsTrigger>
                     <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ vendorShipments.length }</span></TabsTrigger>
                     <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
                 </TabsList>
+                <TabsContent value="details" className="mt-6">
+                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
+                        <aside className="lg:sticky lg:top-6">
+                            <VendorMetadataCard vendor={data} />
+                        </aside>
+                        <DashboardPageCard>
+                            <MasterDataWriteGate
+                                fallback={
+                                    <div className="space-y-2">
+                                        <h2 className="text-headline-md font-semibold">Vendor details</h2>
+                                        <p className="text-sm text-muted-foreground">
+                                            You can view this vendor profile, but you do not have permission to edit it.
+                                        </p>
+                                    </div>
+                                }
+                            >
+                                <VendorForm mode="edit" vendor={data} />
+                            </MasterDataWriteGate>
+                        </DashboardPageCard>
+                    </div>
+                </TabsContent>
                 <TabsContent value="offices-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
                         <p className="text-sm text-muted-foreground my-2 flex flex-row">{ data.vendorLocations.length } offices <Dot /> { data.vendorLocations.map((loc: VendorLocation) => loc.vendorContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
@@ -220,7 +249,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                         <div>
                                             <div className="flex flex-row items-start gap-x-2">
                                                 <h2 className="text-lg font-bold">{ location.addressLine1 }</h2>
-                                                <p className={clsx("text-xs font-medium rounded-full pl-1 pr-3 flex items-center w-fit mt-2", true ? "text-secondary-foreground bg-secondary/50" : "bg-[var(--mli-error-container)]/50 text-[var(--mli-on-error-container)]")}><Dot className="animate-pulse"/> {true ? "Active" : "Inactive"}</p>
+                                                <div className="mt-2">
+                                                    <StatusChip active />
+                                                </div>
                                             </div>
                                             <div className="text-xs text-muted-foreground">
                                                 <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
@@ -253,7 +284,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ vendo
                                                     </div>
                                                     <div className="flex flex-row items-center gap-x-2">
                                                         <p className="text-sm text-muted-foreground">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
-                                                        <Button variant="outline" size="icon" asChild><Link href={`https://wa.me/62${contact.phoneNumber.slice(1)}`} target="_blank"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
+                                                        {toWhatsAppUrl(contact.phoneNumber) ? (
+                                                        <Button variant="outline" size="icon" asChild><Link href={toWhatsAppUrl(contact.phoneNumber)!} target="_blank" rel="noopener noreferrer"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
+                                                        ) : null}
                                                         <MasterDataWriteGate>
                                                             <VendorContactForm mode="edit" id={contact.id} contactName={contact.contactName} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} vendorId={vendorId} locationId={location.id} />
                                                         </MasterDataWriteGate>

@@ -1,14 +1,20 @@
 "use client"
 
 import { Customer } from "@/app/dashboard/customers/columns";
-import { Shipment } from "@/app/dashboard/shipments/columns";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TextField } from "@/components/ui/text-field";
 import { Label } from "@/components/ui/label";
+import { fieldError } from "@/lib/form-field";
+import {
+  customerCodeIdSchema,
+  customerShipperIdSchema,
+  orderNumberSchema,
+} from "@/lib/schemas/shipment";
+import { zodOnChange } from "@/lib/zod-form";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useCustomers, useGetShippersByCustomerCodeId } from "@/hooks/use-customers";
-import { useCreateShipment, useShipments, useUpdateShipment } from "@/hooks/use-shipments";
+import { useCreateShipment, useNextOrderNumber, useUpdateShipment } from "@/hooks/use-shipments";
 import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -34,17 +40,6 @@ const parseOrderNumberDate = (orderNumber: string | undefined): { monthIndex: nu
     return { monthIndex, year }
 }
 
-const computeOrderNumber = (allShipments: Shipment[], monthIndex: number, year: number, excludeOrderNumber?: string): string => {
-    const romanMonth = MONTH_IN_ROMANS[monthIndex - 1]
-    const count = (allShipments ?? []).filter((shipment: Shipment) => {
-        if (excludeOrderNumber && shipment.orderNumber === excludeOrderNumber) return false
-        const parts = shipment.orderNumber?.split("/")
-        if (!parts || parts.length !== 3) return false
-        return parts[1] === romanMonth && parts[2] === year.toString()
-    }).length
-    return `${count + 1}/${romanMonth}/${year}`
-}
-
 const currentYear = new Date().getFullYear()
 const YEAR_OPTIONS = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i)
 
@@ -65,14 +60,27 @@ export default function ShipmentForm({
 }) {
     const createShipment = useCreateShipment()
     const updateShipment = useUpdateShipment()
-    const { data: allShipments } = useShipments()
 
     const parsedDate = parseOrderNumberDate(orderNumber)
     const defaultMonth = parsedDate?.monthIndex ?? (new Date().getMonth() + 1)
     const defaultYear = parsedDate?.year ?? new Date().getFullYear()
 
+    const [open, setOpen] = useState(false)
     const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
     const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
+    const [selectedCustomerCode, setSelectedCustomerCode] = useState<string | undefined>(customerCodeId ?? "")
+
+    const excludeOrderNumber =
+        mode === "edit" &&
+        selectedMonth === defaultMonth &&
+        selectedYear === defaultYear
+            ? orderNumber
+            : undefined
+
+    const { data: nextOrderNumberData } = useNextOrderNumber(selectedMonth, selectedYear, {
+        enabled: open,
+        excludeOrderNumber,
+    })
 
     const form = useForm({
         defaultValues: {
@@ -85,10 +93,10 @@ export default function ShipmentForm({
         onSubmit: async ({ value }) => {
             if (mode === "create") {
                 createShipment.mutate({
-                    orderNumber: value.orderNumber,
+                    month: selectedMonth,
+                    year: selectedYear,
                     customerCodeId: value.customerCodeId,
                     customerShipperId: value.customerShipperId,
-                    isActive: value.isActive,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -120,26 +128,39 @@ export default function ShipmentForm({
         }
     })
 
-    const [open, setOpen] = useState(false)
-    const [selectedCustomerCode, setSelectedCustomerCode] = useState<string | undefined>(customerCodeId ?? "")
-
     useEffect(() => {
-        if (!allShipments) return
+        if (!open) return
 
-        if (mode === "edit" && selectedMonth === defaultMonth && selectedYear === defaultYear && orderNumber) {
+        if (
+            mode === "edit" &&
+            selectedMonth === defaultMonth &&
+            selectedYear === defaultYear &&
+            orderNumber
+        ) {
             form.setFieldValue("orderNumber", orderNumber)
             return
         }
 
-        // In edit mode, exclude the current shipment from the count so it doesn't
-        // inflate the sequence when the same data is still in allShipments.
-        const excludeOrder = mode === "edit" ? orderNumber : undefined
-        const computed = computeOrderNumber(allShipments, selectedMonth, selectedYear, excludeOrder)
-        form.setFieldValue("orderNumber", computed)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedMonth, selectedYear, allShipments, mode, orderNumber, defaultMonth, defaultYear])
+        if (nextOrderNumberData?.orderNumber) {
+            form.setFieldValue("orderNumber", nextOrderNumberData.orderNumber)
+        }
+    }, [
+        open,
+        selectedMonth,
+        selectedYear,
+        nextOrderNumberData?.orderNumber,
+        mode,
+        orderNumber,
+        defaultMonth,
+        defaultYear,
+        form,
+    ])
 
-    const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers()
+    const { data: customersPage, isLoading: customersLoading, error: customersError } = useCustomers({
+        page: 1,
+        pageSize: 100,
+    })
+    const customers = customersPage?.items ?? []
     const { data: shippers, isLoading: shippersLoading, error: shippersError } = useGetShippersByCustomerCodeId(selectedCustomerCode ?? "")
 
     return (
@@ -199,22 +220,27 @@ export default function ShipmentForm({
                             <form.Field
                                 name="orderNumber"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Order Number is required" : undefined,
+                                    onChange: zodOnChange(orderNumberSchema),
                                 }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Order Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} disabled={true} />
+                                        <TextField
+                                            label="Order Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            disabled
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
                                 name="customerCodeId"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Customer Code is required" : undefined,
+                                    onChange: zodOnChange(customerCodeIdSchema),
                                 }}
                             >
                                 {(field) => (
@@ -256,8 +282,7 @@ export default function ShipmentForm({
                             <form.Field
                                 name="customerShipperId"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        value === "-" ? "Customer Shipper is required" : undefined,
+                                    onChange: zodOnChange(customerShipperIdSchema),
                                 }}
                             >
                                 {(field) => (

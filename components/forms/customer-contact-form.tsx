@@ -2,8 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { TextField } from "@/components/ui/text-field"
+import { fieldError } from "@/lib/form-field"
+import { contactNameSchema, phoneNumberSchema } from "@/lib/schemas/contact"
+import { zodOnChange } from "@/lib/zod-form"
 import { Switch } from "@/components/ui/switch"
 import { useCreateCustomerContact, useUpdateCustomerContact, useDeleteCustomerContact } from "@/hooks/use-customers"
 import { IconPlus, IconTrash, IconPencil } from "@tabler/icons-react"
@@ -85,44 +88,38 @@ export default function CustomerContactForm({
                             <form.Field
                                 name="contactName"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Contact Name is required" : undefined
+                                    onChange: zodOnChange(contactNameSchema),
                                 }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Contact Name</Label>
-                                        <Input 
+                                        <TextField
+                                            label="Contact Name"
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
                                 name="phoneNumber"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Phone Number is required" : undefined
+                                    onChange: zodOnChange(phoneNumberSchema),
                                 }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Phone Number</Label>
-                                        <Input 
+                                        <TextField
+                                            label="Phone Number"
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>
@@ -131,16 +128,14 @@ export default function CustomerContactForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Email</Label>
-                                        <Input 
+                                        <TextField
+                                            label="Email"
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>

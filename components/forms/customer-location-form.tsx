@@ -2,8 +2,15 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { TextField } from "@/components/ui/text-field"
+import { fieldError } from "@/lib/form-field"
+import {
+  addressLine1Schema,
+  citySchema,
+  locationCountrySchema,
+  provinceSchema,
+} from "@/lib/schemas/location"
+import { zodOnChange } from "@/lib/zod-form"
 import { useCreateCustomerLocation, useUpdateCustomerLocation, useDeleteCustomerLocation } from "@/hooks/use-customers"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
@@ -117,22 +124,19 @@ export default function CustomerLocationForm({
                         <form.Field
                             name="addressLine1"
                             validators={{
-                                onChange: ({ value }) =>
-                                    !value ? "Address Line 1 is required" : undefined
+                                onChange: zodOnChange(addressLine1Schema),
                             }}
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">Address Line 1</Label>
-                                    <Input 
+                                    <TextField
+                                        label="Address Line 1"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
+                                        error={fieldError(field.state.meta.errors)}
                                     />
-                                    {field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                    ) : null}
                                 </div>
                             )}
                         </form.Field>
@@ -141,8 +145,8 @@ export default function CustomerLocationForm({
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">Address Line 2</Label>
-                                    <Input 
+                                    <TextField
+                                        label="Address Line 2"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -156,8 +160,8 @@ export default function CustomerLocationForm({
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">Address Line 3</Label>
-                                    <Input 
+                                    <TextField
+                                        label="Address Line 3"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -169,66 +173,57 @@ export default function CustomerLocationForm({
                         <form.Field
                             name="city"
                             validators={{
-                                onChange: ({ value }) =>
-                                    !value ? "City is required" : undefined
+                                onChange: zodOnChange(citySchema),
                             }}
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">City</Label>
-                                    <Input 
+                                    <TextField
+                                        label="City"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
+                                        error={fieldError(field.state.meta.errors)}
                                     />
-                                    {field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                    ) : null}
                                 </div>
                             )}
                         </form.Field>
                         <form.Field
                             name="province"
                             validators={{
-                                onChange: ({ value }) =>
-                                    !value ? "Province is required" : undefined
+                                onChange: zodOnChange(provinceSchema),
                             }}
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">Province / State</Label>
-                                    <Input 
+                                    <TextField
+                                        label="Province / State"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
+                                        error={fieldError(field.state.meta.errors)}
                                     />
-                                    {field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                    ) : null}
                                 </div>
                             )}
                         </form.Field>
                         <form.Field
                             name="country"
                             validators={{
-                                onChange: ({ value }) =>
-                                    !value ? "Country is required" : undefined
+                                onChange: zodOnChange(locationCountrySchema),
                             }}
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">Country</Label>
-                                    <Input 
+                                    <TextField
+                                        label="Country"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
+                                        error={fieldError(field.state.meta.errors)}
                                     />
-                                    {field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                    ) : null}
                                 </div>
                             )}
                         </form.Field>
@@ -237,8 +232,8 @@ export default function CustomerLocationForm({
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <Label htmlFor={field.name} className="my-2">Postal Code</Label>
-                                    <Input 
+                                    <TextField
+                                        label="Postal Code"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}

@@ -1,19 +1,94 @@
 import { apiClient } from "@/lib/api-client"
+import type { Costing, CostingDetail } from "@/app/dashboard/costings/columns"
+
+export type CreateCostingInput = {
+    costingNumber?: string
+    month?: number
+    year?: number
+    description: string
+    price: number
+    currency: number
+    containerId: string
+    vatPercentage: number
+    pph23Percentage: number
+    vendorInvoiceNumber: string
+    vendorId: string
+    shipmentId?: string
+    sellingId?: string
+}
+
+export type UpdateCostingInput = Omit<Partial<CreateCostingInput>, "sellingId" | "shipmentId"> & {
+    sellingId?: string | null
+    shipmentId?: string | null
+    status?: string
+}
+
+export type CostingListParams = {
+    page: number
+    pageSize: number
+    search?: string
+    status?: "all" | "paid" | "unpaid"
+    from?: string
+    to?: string
+}
+
+export type PaginatedCostings = {
+    items: Costing[]
+    pagination: {
+        page: number
+        pageSize: number
+        total: number
+        totalPages: number
+    }
+}
 
 export const costingService = {
-    getAll: async () => {
-        const response = await apiClient.get("/costings")
-        return response
+    getAll: async (params: CostingListParams): Promise<PaginatedCostings> => {
+        const query = new URLSearchParams({
+            page: String(params.page),
+            pageSize: String(params.pageSize),
+            status: params.status ?? "all",
+        })
+        if (params.search) query.set("search", params.search)
+        if (params.from) query.set("from", params.from)
+        if (params.to) query.set("to", params.to)
+        const response = await apiClient.getEnvelope(`/costings?${query.toString()}`)
+        const pagination = response.meta?.pagination ?? {
+            page: params.page,
+            pageSize: params.pageSize,
+            total: 0,
+            totalPages: 1,
+        }
+        return {
+            items: (response.data ?? []) as Costing[],
+            pagination,
+        }
     },
-    getById: async (id: string) => {
-        const response = await apiClient.get(`/costings/${id}`)
-        return response
+    getNextCostingNumber: async (
+        month: number,
+        year: number,
+        excludeCostingNumber?: string
+    ) => {
+        const params = new URLSearchParams({
+            month: String(month),
+            year: String(year),
+        })
+        if (excludeCostingNumber) {
+            params.set("excludeCostingNumber", excludeCostingNumber)
+        }
+        const response = await apiClient.get(
+            `/costings/next-costing-number?${params.toString()}`
+        )
+        return response as { costingNumber: string }
     },
-    create: async (costing: unknown) => {
+    getById: async (id: string): Promise<CostingDetail> => {
+        return apiClient.get<CostingDetail>(`/costings/${id}`)
+    },
+    create: async (costing: CreateCostingInput) => {
         const response = await apiClient.post("/costings", costing)
         return response
     },
-    update: async (id: string, costing: unknown) => {
+    update: async (id: string, costing: UpdateCostingInput) => {
         const response = await apiClient.put(`/costings/${id}`, costing)
         return response
     },
@@ -34,7 +109,7 @@ export const costingService = {
         return response
     },
     viewCostingAttachment: async (costingId: string, id: string) => {
-        const response = await apiClient.get(`/costings/${costingId}/attachments/${id}`)
+        const response = await apiClient.get<{ url: string }>(`/costings/${costingId}/attachments/${id}`)
         
         window.open(response.url, "_blank");
     }

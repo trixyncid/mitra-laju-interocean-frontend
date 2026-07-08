@@ -2,30 +2,26 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-  Field,
-  FieldContent,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+import { FieldGroup } from "@/components/ui/field"
+import { TextField } from "@/components/ui/text-field"
 import { useForm } from "@tanstack/react-form"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 import { getRoleHomePath } from "@/lib/role-home"
+import { loginEmailSchema, loginPasswordSchema } from "@/lib/schemas/login"
+import { zodOnChange } from "@/lib/zod-form"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-function validateEmail(value: string) {
-    if (!value) return "Email is required"
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email address"
-    return undefined
-}
+const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password"
+const DEACTIVATED_ACCOUNT_MESSAGE = "This account has been deactivated."
 
-function validatePassword(value: string) {
-    if (!value) return "Password is required"
-    return undefined
+function getAuthErrorMessage(message?: string | null) {
+    if (message === DEACTIVATED_ACCOUNT_MESSAGE) {
+        return DEACTIVATED_ACCOUNT_MESSAGE
+    }
+    return INVALID_CREDENTIALS_MESSAGE
 }
 
 export function LoginForm({
@@ -33,8 +29,14 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"form">) {
     const router = useRouter()
+    const emailInputRef = useRef<HTMLInputElement>(null)
+    const passwordInputRef = useRef<HTMLInputElement>(null)
     const [passwordType, setPasswordType] = useState("password")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [authError, setAuthError] = useState<{
+        message: string
+        field: "email" | "password"
+    } | null>(null)
     
     const form = useForm({
         defaultValues: {
@@ -44,6 +46,7 @@ export function LoginForm({
         canSubmitWhenInvalid: true,
         onSubmit: async ({ value }) => {
             setIsSubmitting(true)
+            setAuthError(null)
 
             try {
                 const { error } = await authClient.signIn.email({
@@ -52,7 +55,27 @@ export function LoginForm({
                 })
 
                 if (error) {
-                    toast.error(error.message ?? "Login failed")
+                    const message = getAuthErrorMessage(error.message)
+                    const isDeactivated = message === DEACTIVATED_ACCOUNT_MESSAGE
+
+                    if (!isDeactivated) {
+                        form.setFieldValue("password", "")
+                        setPasswordType("password")
+                    }
+
+                    setAuthError({
+                        message,
+                        field: isDeactivated ? "email" : "password",
+                    })
+                    toast.error(message)
+
+                    requestAnimationFrame(() => {
+                        if (isDeactivated) {
+                            emailInputRef.current?.focus()
+                            return
+                        }
+                        passwordInputRef.current?.focus()
+                    })
                     return
                 }
 
@@ -73,6 +96,10 @@ export function LoginForm({
 
     const togglePasswordVisibility = () => {
         setPasswordType(passwordType === "password" ? "text" : "password")
+    }
+
+    const clearAuthError = () => {
+        setAuthError(null)
     }
 
     return (
@@ -96,74 +123,78 @@ export function LoginForm({
             </p>
             </div>
             <form.Field name="email" validators={{
-            onChange: ({ value }) => validateEmail(value),
-            onSubmit: ({ value }) => validateEmail(value),
+            onChange: zodOnChange(loginEmailSchema),
+            onSubmit: zodOnChange(loginEmailSchema),
             }}>
             {
                 ( field ) => (
-                <Field>
-                    <FieldLabel htmlFor={field.name} className="cursor-pointer">Email</FieldLabel>
-                    <FieldContent>
-                        <Input
-                            id={field.name}
-                            name={field.name}
-                            type="email"
-                            autoComplete="email"
-                            placeholder="m@example.com"
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.value)}
-                            aria-invalid={field.state.meta.errors.length > 0}
-                            className="cursor-pointer"
-                        />
-                        {field.state.meta.errors.length ? (
-                            <em className="text-xs text-[var(--mli-on-error-container)]">{String(field.state.meta.errors[0])}</em>
-                        ) : null}
-                    </FieldContent>
-                </Field>
+                <TextField
+                    ref={emailInputRef}
+                    label="Email"
+                    id={field.name}
+                    name={field.name}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="m@example.com"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => {
+                        clearAuthError()
+                        field.handleChange(e.target.value)
+                    }}
+                    error={
+                        field.state.meta.errors[0]
+                            ? String(field.state.meta.errors[0])
+                            : authError?.field === "email"
+                              ? authError.message
+                              : undefined
+                    }
+                />
                 )
             }
             </form.Field>
             <form.Field name="password" validators={{
-            onChange: ({ value }) => validatePassword(value),
-            onSubmit: ({ value }) => validatePassword(value),
+            onChange: zodOnChange(loginPasswordSchema),
+            onSubmit: zodOnChange(loginPasswordSchema),
             }}>
             {
                 ( field ) => (
-                <Field>
-                    <FieldLabel htmlFor={field.name} className="cursor-pointer">Password</FieldLabel>
-                    <FieldContent>
-                        <div className="relative w-full">
-                            <Input
-                                id={field.name}
-                                name={field.name}
-                                type={passwordType}
-                                autoComplete="current-password"
-                                placeholder="Password"
-                                value={field.state.value}
-                                onBlur={field.handleBlur}
-                                onChange={(e) => field.handleChange(e.target.value)}
-                                aria-invalid={field.state.meta.errors.length > 0}
-                                className="cursor-pointer pr-10"
-                            />
-                            <button
-                                type="button"
-                                onClick={togglePasswordVisibility}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
-                                aria-label={passwordType === "password" ? "Show password" : "Hide password"}
-                            >
-                                {passwordType === "password" ? (
-                                    <EyeIcon className="size-4" />
-                                ) : (
-                                    <EyeOffIcon className="size-4" />
-                                )}
-                            </button>
-                        </div>
-                        {field.state.meta.errors.length ? (
-                            <em className="text-xs text-[var(--mli-on-error-container)]">{String(field.state.meta.errors[0])}</em>
-                        ) : null}
-                    </FieldContent>
-                </Field>
+                <TextField
+                    ref={passwordInputRef}
+                    label="Password"
+                    id={field.name}
+                    name={field.name}
+                    type={passwordType}
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => {
+                        clearAuthError()
+                        field.handleChange(e.target.value)
+                    }}
+                    error={
+                        field.state.meta.errors[0]
+                            ? String(field.state.meta.errors[0])
+                            : authError?.field === "password"
+                              ? authError.message
+                              : undefined
+                    }
+                    trailing={
+                        <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            aria-label={passwordType === "password" ? "Show password" : "Hide password"}
+                        >
+                            {passwordType === "password" ? (
+                                <EyeIcon className="size-4" />
+                            ) : (
+                                <EyeOffIcon className="size-4" />
+                            )}
+                        </button>
+                    }
+                />
                 )
             }
             </form.Field>

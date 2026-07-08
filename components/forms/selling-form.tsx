@@ -4,8 +4,15 @@ import { useForm } from "@tanstack/react-form"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { IconPencil, IconPlus } from "@tabler/icons-react"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
+import { TextField } from "../ui/text-field"
+import { fieldError } from "@/lib/form-field"
+import {
+  sellingAmountSchema,
+  sellingDescriptionSchema,
+  sellingPph23Schema,
+  sellingVatSchema,
+} from "@/lib/schemas/selling"
+import { zodOnChange } from "@/lib/zod-form"
 import { useState } from "react"
 import { useCreateSelling, useUpdateSelling } from "@/hooks/use-sellings"
 import { toast } from "sonner"
@@ -119,8 +126,8 @@ export default function SellingForm({
                             <form.Field name="sellingNumber">
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Selling Number</Label>
-                                        <Input
+                                        <TextField
+                                            label="Selling Number"
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -132,83 +139,75 @@ export default function SellingForm({
                             </form.Field>
                             <form.Field
                                 name="description"
-                                validators={{ onChange: ({ value }) => !value ? "Description is required" : undefined }}
+                                validators={{ onChange: zodOnChange(sellingDescriptionSchema) }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Description</Label>
-                                        <Input
+                                        <TextField
+                                            label="Description"
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
                                 name="amount"
-                                validators={{ onChange: ({ value }) => value === "" ? "Amount is required" : undefined }}
+                                validators={{ onChange: zodOnChange(sellingAmountSchema) }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Amount (Rp)</Label>
-                                        <Input
+                                        <TextField
+                                            label="Amount (Rp)"
                                             id={field.name}
                                             name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
                                             type="number"
                                             step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
                                 name="vatPercentage"
-                                validators={{ onChange: ({ value }) => value === "" ? "VAT is required. Input zero if not applicable" : Number(value) > 100 ? "VAT must be ≤ 100" : undefined }}
+                                validators={{ onChange: zodOnChange(sellingVatSchema) }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">VAT (%)</Label>
-                                        <Input
+                                        <TextField
+                                            label="VAT (%)"
                                             id={field.name}
                                             name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
                                             type="number"
                                             step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
                                 name="pph23Percentage"
-                                validators={{ onChange: ({ value }) => value === "" ? "PPH 23 is required. Input zero if not applicable" : Number(value) > 100 ? "PPH 23 must be ≤ 100" : undefined }}
+                                validators={{ onChange: zodOnChange(sellingPph23Schema) }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">PPH 23 (%)</Label>
-                                        <Input
+                                        <TextField
+                                            label="PPH 23 (%)"
                                             id={field.name}
                                             name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
                                             type="number"
                                             step="0.01"
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
                                     </div>
                                 )}
                             </form.Field>

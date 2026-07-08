@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import CostingForm from "@/components/forms/costing-form"
@@ -12,9 +13,30 @@ import {
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
+import { type AppliedTableFilters } from "@/components/data-table-toolbar"
 
 export default function CostingPage() {
-    const { data, isLoading, error } = useCostings()
+    const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(20)
+    const [applied, setApplied] = useState<AppliedTableFilters>({
+        search: "",
+        status: "all",
+        dateRange: {},
+    })
+    const params = useMemo(
+        () => ({
+            page,
+            pageSize,
+            search: applied.search || undefined,
+            status: applied.status as "all" | "paid" | "unpaid",
+            from: applied.dateRange.from,
+            to: applied.dateRange.to,
+        }),
+        [page, pageSize, applied]
+    )
+    const { data, isLoading, error } = useCostings(params)
+    const costings = data?.items ?? []
+    const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
 
     if (error) return <ErrorPage message={error.message} />
 
@@ -43,7 +65,28 @@ export default function CostingPage() {
                 }
             />
             <DashboardPageCard>
-                {isLoading ? <TableSkeleton /> : <DataTable columns={columns} data={data ?? []} />}
+                {isLoading ? (
+                    <TableSkeleton />
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={costings}
+                        page={pagination.page}
+                        pageSize={pagination.pageSize}
+                        totalPages={pagination.totalPages}
+                        totalRows={pagination.total}
+                        applied={applied}
+                        onApply={(next) => {
+                            setApplied(next)
+                            setPage(1)
+                        }}
+                        onPageChange={setPage}
+                        onPageSizeChange={(next) => {
+                            setPageSize(next)
+                            setPage(1)
+                        }}
+                    />
+                )}
             </DashboardPageCard>
         </DashboardPage>
     )

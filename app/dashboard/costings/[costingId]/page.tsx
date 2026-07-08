@@ -5,6 +5,7 @@ import { IconEye, IconFile } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { use } from "react";
 import { useCostingById, useUpdateCosting } from "@/hooks/use-costings";
+import type { CostingAttachment } from "@/app/dashboard/costings/columns";
 import { amountCalculation, formatDate } from "@/lib/utils";
 import DocumentUploadForm from "@/components/forms/document-upload-form";
 import { costingService } from "@/services/costing.service";
@@ -14,17 +15,7 @@ import clsx from "clsx";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { CostingWriteGate } from "@/components/write-gates";
 import ErrorPage from "@/components/error-page";
-
-export type CostingAttachment = {
-    id: string
-    attachmentName: string
-    fileName: string
-    filePath: string
-    createdAt: string
-    createdBy: string
-    updatedAt: string
-    updatedBy: { name: string }
-}
+import { PaymentStatusChip } from "@/components/ui/status-chip";
 
 export default function CostingDetailPage({ params }: { params: Promise<{ costingId: string }> }) {
     const { costingId } = use(params)
@@ -83,7 +74,10 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
                 <div className="w-9/12">
                     <Card>
                         <CardContent>
-                            <h1 className="font-bold mb-4">COSTING DETAILS <span className={clsx("text-xs mx-2 font-normal", costing?.status === "paid" ? "text-secondary-foreground bg-secondary rounded-md px-2 py-1" : "text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] rounded-md px-2 py-1")}>{ costing?.status === "paid" ? "Paid" : "Unpaid" }</span></h1>
+                            <h1 className="mb-4 flex items-center gap-x-2 font-bold">
+                                COSTING DETAILS
+                                <PaymentStatusChip paid={costing?.status === "paid"} />
+                            </h1>
                             
                             <div className="grid grid-cols-2 gap-x-4">
                                 <div>

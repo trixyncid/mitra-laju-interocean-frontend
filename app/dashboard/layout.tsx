@@ -3,12 +3,11 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { Toaster } from "@/components/ui/sonner";
 
-import { Providers } from "../providers";
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 import { DashboardRouteGuard } from "@/components/dashboard-route-guard";
+import ErrorPage from "@/components/error-page";
 
 export default function DashboardLayout({
   children,
@@ -26,13 +25,12 @@ export default function DashboardLayout({
     )
   }
 
-  if (error) return <div>Error: {error.message}</div>
+  if (error) return <ErrorPage message={error.message} />
 
   if (!session) return null
 
   return (
     <>
-      <Providers>
         <SidebarProvider
           style={
             {
@@ -48,17 +46,11 @@ export default function DashboardLayout({
                 <div className="@container/main flex flex-1 flex-col gap-2">
                   <div className="flex flex-col">
                     <DashboardRouteGuard>{children}</DashboardRouteGuard>
-                    <Toaster 
-                        richColors
-                        position="top-center"
-                        theme="light"
-                    />
                   </div>
                 </div>
               </div>
             </SidebarInset>
         </SidebarProvider>
-      </Providers>
     </>
   );
 }

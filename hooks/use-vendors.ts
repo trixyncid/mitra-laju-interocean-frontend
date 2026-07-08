@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { vendorsService } from "@/services/vendors.service"
+import type { Vendor } from "@/app/dashboard/vendors/columns"
+import { vendorsService, type VendorListParams } from "@/services/vendors.service"
 import { toast } from "sonner"
 
-export const useVendors = (enabled = true) => {
+export const useVendors = (params: VendorListParams, enabled = true) => {
     return useQuery({
-    queryKey: ["vendors"],
-    queryFn: vendorsService.getAll,
+    queryKey: ["vendors", params],
+    queryFn: () => vendorsService.getAll(params),
     enabled,
 })
 }
@@ -14,6 +15,7 @@ export const useVendorById = (id: string) => {
     return useQuery({
         queryKey: ["vendors", id],
         queryFn: () => vendorsService.getById(id),
+        enabled: !!id,
     })
 }
 
@@ -21,8 +23,13 @@ export const useCreateVendor = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (vendor: unknown) => vendorsService.create(vendor),
-        onSuccess: () => {
+        mutationFn: vendorsService.create as (
+            vendor: Partial<Vendor>
+        ) => Promise<Vendor>,
+        onSuccess: (data) => {
+            if (data?.id) {
+                queryClient.setQueryData(["vendors", data.id], data)
+            }
             queryClient.invalidateQueries({ queryKey: ["vendors"] })
             toast.success("Vendor created successfully")
         },
@@ -36,8 +43,10 @@ export const useUpdateVendor = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: ({ id, vendor }: { id: string, vendor: unknown }) => vendorsService.update(id, vendor),
-        onSuccess: () => {
+        mutationFn: ({ id, vendor }: { id: string, vendor: Partial<Vendor> }) =>
+            vendorsService.update(id, vendor),
+        onSuccess: (data, { id }) => {
+            queryClient.setQueryData(["vendors", id], data)
             queryClient.invalidateQueries({ queryKey: ["vendors"] })
             toast.success("Vendor updated successfully")
         },

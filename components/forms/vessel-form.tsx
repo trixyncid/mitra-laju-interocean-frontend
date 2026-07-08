@@ -2,8 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TextField } from "@/components/ui/text-field";
+import { fieldError } from "@/lib/form-field"
+import { vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
+import { zodOnChange } from "@/lib/zod-form";
 import { ISOFormat } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
@@ -101,46 +104,40 @@ export default function VesselForm({
                             <form.Field
                                 name="vesselName"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Vessel Name is required" : undefined,
+                                    onChange: zodOnChange(vesselNameSchema),
                                 }}
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Vessel Name</Label>
-                                        <Input
+                                        <TextField
+                                            label="Vessel Name"
                                             id={field.name}
                                             name={field.name}
+                                            type="text"
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
-                                            type="text"
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        { field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
-                                        ) : null }
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field
                                 name="voyageNumber"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Voyage Number is required" : undefined,
+                                    onChange: zodOnChange(voyageNumberSchema),
                                 }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Voyage</Label>
-                                        <Input
+                                        <TextField
+                                            label="Voyage"
                                             id={field.name}
                                             name={field.name}
+                                            type="text"
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
-                                            type="text"
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        { field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
-                                        ) : null }
                                     </div>
                                 )}
                             </form.Field>
@@ -149,17 +146,15 @@ export default function VesselForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">ETD</Label>
-                                        <Input
+                                        <TextField
+                                            label="ETD"
                                             id={field.name}
                                             name={field.name}
+                                            type="date"
                                             value={field.state.value ? field.state.value.split('T')[0] : ''}
                                             onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
-                                            type="date"
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        { field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
-                                        ) : null }
                                     </div>
                                 )}
                             </form.Field>
@@ -168,17 +163,15 @@ export default function VesselForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Closing Reefer</Label>
-                                        <Input
+                                        <TextField
+                                            label="Closing Reefer"
                                             id={field.name}
                                             name={field.name}
+                                            type="date"
                                             value={field.state.value ? field.state.value.split('T')[0] : ''}
                                             onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
-                                            type="date"
+                                            error={fieldError(field.state.meta.errors)}
                                         />
-                                        { field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
-                                        ) : null }
                                     </div>
                                 )}
                             </form.Field>

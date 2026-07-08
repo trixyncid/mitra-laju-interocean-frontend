@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { DashboardPage } from "@/components/layout/dashboard-page"
 import { SellingWriteGate } from "@/components/write-gates"
 import ErrorPage from "@/components/error-page"
+import { PaymentStatusChip } from "@/components/ui/status-chip"
 
 type LinkedCosting = {
     id: string
@@ -106,13 +107,7 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
                         <CardHeader>
                             <CardTitle className="flex items-center gap-x-2">
                                 SELLING DETAILS
-                                <span className={clsx("text-xs font-normal rounded-md px-2 py-1",
-                                    selling?.status === "paid"
-                                        ? "text-secondary-foreground bg-secondary"
-                                        : "text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)]"
-                                )}>
-                                    {selling?.status === "paid" ? "Paid" : "Unpaid"}
-                                </span>
+                                <PaymentStatusChip paid={selling?.status === "paid"} />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>

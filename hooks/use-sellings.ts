@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { sellingService } from "@/services/selling.service"
+import { sellingService, type SellingListParams } from "@/services/selling.service"
 import { toast } from "sonner"
 
-export const useSellings = () => {
+export const useSellings = (params: SellingListParams, enabled = true) => {
     return useQuery({
-        queryKey: ["sellings"],
-        queryFn: sellingService.getAll,
+        queryKey: ["sellings", params],
+        queryFn: () => sellingService.getAll(params),
+        enabled,
     })
 }
 
@@ -13,6 +14,7 @@ export const useSellingById = (id: string) => {
     return useQuery({
         queryKey: ["sellings", id],
         queryFn: () => sellingService.getById(id),
+        enabled: !!id,
     })
 }
 

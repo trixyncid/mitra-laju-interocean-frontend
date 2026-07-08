@@ -2,8 +2,15 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "@tanstack/react-form";
-import { Input } from "../ui/input";
+import { TextField } from "../ui/text-field";
 import { Label } from "../ui/label";
+import { fieldError } from "@/lib/form-field";
+import {
+  containerNumberSchema,
+  containerSizeSchema,
+  sealNumberSchema,
+} from "@/lib/schemas/shipment-container";
+import { zodOnChange } from "@/lib/zod-form";
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "../ui/select";
 import { useState } from "react";
 import { useCreateShipmentOperationalContainer, useDeleteShipmentOperationalContainer, useUpdateShipmentOperationalContainer } from "@/hooks/use-shipments";
@@ -92,42 +99,42 @@ export default function ShipmentContainerForm({
                             <form.Field 
                                 name="containerNumber"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Container Number is required" : undefined,
+                                    onChange: zodOnChange(containerNumberSchema),
                                 }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Container Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Container Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
                             <form.Field 
                                 name="sealNumber"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Seal Number is required" : undefined,
+                                    onChange: zodOnChange(sealNumberSchema),
                                 }}
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Seal Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Seal Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="size" validators={{ onChange: ({ value }) => !value ? "Container Size is required" : undefined }}>
+                            <form.Field name="size" validators={{ onChange: zodOnChange(containerSizeSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <Label htmlFor={field.name} className="my-2">Container Size</Label>

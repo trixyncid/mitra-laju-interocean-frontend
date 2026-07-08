@@ -1,13 +1,50 @@
 import { apiClient } from "@/lib/api-client"
+import type { Vendor } from "@/app/dashboard/vendors/columns"
+import type { VendorDetail } from "@/lib/types/entity-details"
+
+export type VendorListParams = {
+    page: number
+    pageSize: number
+    search?: string
+    status?: "all" | "true" | "false"
+    from?: string
+    to?: string
+}
+
+export type PaginatedVendors = {
+    items: Vendor[]
+    pagination: {
+        page: number
+        pageSize: number
+        total: number
+        totalPages: number
+    }
+}
 
 export const vendorsService = {
-    getAll: async () => {
-        const response = await apiClient.get("/vendors")
-        return response
+    getAll: async (params: VendorListParams): Promise<PaginatedVendors> => {
+        const query = new URLSearchParams({
+            page: String(params.page),
+            pageSize: String(params.pageSize),
+            status: params.status ?? "all",
+        })
+        if (params.search) query.set("search", params.search)
+        if (params.from) query.set("from", params.from)
+        if (params.to) query.set("to", params.to)
+        const response = await apiClient.getEnvelope<Vendor[]>(`/vendors?${query.toString()}`)
+        const pagination = response.meta?.pagination ?? {
+            page: params.page,
+            pageSize: params.pageSize,
+            total: 0,
+            totalPages: 1,
+        }
+        return {
+            items: response.data ?? [],
+            pagination,
+        }
     },
-    getById: async (id: string) => {
-        const response = await apiClient.get(`/vendors/${id}`)
-        return response
+    getById: async (id: string): Promise<VendorDetail> => {
+        return apiClient.get<VendorDetail>(`/vendors/${id}`)
     },
     create: async (vendor: unknown) => {
         const response = await apiClient.post("/vendors", vendor)

@@ -6,11 +6,22 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Button } from "../ui/button"
 import { IconPlus } from "@tabler/icons-react"
 import { Label } from "../ui/label"
+import { TextField } from "../ui/text-field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { usePorts } from "@/hooks/use-ports"
 import { Port } from "@/app/dashboard/ports/columns"
-import { Input } from "../ui/input"
+import { fieldError } from "@/lib/form-field"
+import {
+  loadingLocationIdSchema,
+  portDepartureIdSchema,
+  portDestinationIdSchema,
+  shipmentTypeFieldSchema,
+  unloadingLocationIdSchema,
+  vesselIdSchema,
+} from "@/lib/schemas/shipment-operational"
+import { zodOnChange } from "@/lib/zod-form"
 import { useGetLocationsByCustomerId } from "@/hooks/use-customers"
+import type { CustomerLocationOption } from "@/services/customers.service"
 import { useCreateShipmentOperational, useUpdateShipmentOperational } from "@/hooks/use-shipments"
 import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
@@ -29,13 +40,7 @@ import {
     ComboboxValue,
   } from "@/components/ui/combobox"
 
-export type Location = {
-    id: string
-    addressLine1: string
-    city: string
-    country: string
-    customerShipperId: string
-}
+export type Location = CustomerLocationOption
 
 const SHIPMENT_TYPE_OPTIONS: { value: ShipmentType; label: string }[] = [
     { value: "IMPORT", label: "Import" },
@@ -81,9 +86,11 @@ export default function ShipmentOperationalForm({
     const [open, setOpen] = useState(false)
     const { canWrite, canWriteShipmentType, allowedShipmentTypes } = usePermissions()
 
-    const { data: ports } = usePorts()
+    const { data: portsData } = usePorts({ page: 1, pageSize: 100 })
     const { data: locations } = useGetLocationsByCustomerId(customerCodeId ?? "")
-    const { data: vessels } = useVessels()
+    const { data: vesselsData } = useVessels({ page: 1, pageSize: 100 })
+    const ports = portsData?.items
+    const vessels = vesselsData?.items
 
     const createShipmentOperational = useCreateShipmentOperational(shipmentId ?? "")
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId ?? "")
@@ -143,10 +150,14 @@ export default function ShipmentOperationalForm({
 
     type ComboItem = { value: string; label: string }
     const portItems: ComboItem[] = ports?.map((p: Port) => ({ value: p.id ?? "", label: `${p.portName}, ${p.portCountry}` })) ?? []
-    const filteredLocations = customerShipperId
-        ? locations?.filter((l: Location) => l.customerShipperId === customerShipperId).map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
-        : locations ?? []
-    const locationItems: ComboItem[] = locations?.map((l: Location) => ({ value: l.id, label: `${l.addressLine1}, ${l.city}, ${l.country}` })) ?? []
+    const toLocationItem = (l: CustomerLocationOption): ComboItem => ({
+        value: l.id,
+        label: `${l.addressLine1}, ${l.city}, ${l.country}`,
+    })
+    const locationItems: ComboItem[] = locations?.map(toLocationItem) ?? []
+    const filteredLocations: ComboItem[] = customerShipperId
+        ? locations?.filter((l) => l.customerShipperId === customerShipperId).map(toLocationItem) ?? []
+        : locationItems
 
     if (!canEdit) return null
 
@@ -173,7 +184,7 @@ export default function ShipmentOperationalForm({
                         form.handleSubmit()
                     }}>
                         <div>
-                            <form.Field name="shipmentType" validators={{ onChange: ({ value }) => !value ? "Shipment Type is required" : undefined }}>
+                            <form.Field name="shipmentType" validators={{ onChange: zodOnChange(shipmentTypeFieldSchema) }}>
                                 {
                                     ( field ) => (
                                         <div className="my-3">
@@ -199,7 +210,7 @@ export default function ShipmentOperationalForm({
                             </form.Field>
                         </div>
                         <div>
-                            <form.Field name="vesselId" validators={{ onChange: ({ value }) => !value ? "Vessel is required" : undefined }}>
+                            <form.Field name="vesselId" validators={{ onChange: zodOnChange(vesselIdSchema) }}>
                                 {
                                     ( field ) => (
                                         <div className="my-3">
@@ -227,7 +238,7 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="portDepartureId"
-                                validators={{ onChange: ({ value }) => !value ? "Port Departure is required" : undefined }}
+                                validators={{ onChange: zodOnChange(portDepartureIdSchema) }}
                             >
                                 {
                                     ( field ) => (
@@ -263,7 +274,7 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="portDestinationId"
-                                validators={{ onChange: ({ value }) => !value ? "Port Destination is required" : undefined }}
+                                validators={{ onChange: zodOnChange(portDestinationIdSchema) }}
                             >
                                 {
                                     ( field ) => (
@@ -299,7 +310,7 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="loadingLocationId"
-                                validators={{ onChange: ({ value }) => !value ? "Loading Location is required" : undefined }}
+                                validators={{ onChange: zodOnChange(loadingLocationIdSchema) }}
                             >
                                 {
                                     ( field ) => (
@@ -335,7 +346,7 @@ export default function ShipmentOperationalForm({
                         <div>
                             <form.Field
                                 name="unloadingLocationId"
-                                validators={{ onChange: ({ value }) => !value ? "Unloading Location is required" : undefined }}
+                                validators={{ onChange: zodOnChange(unloadingLocationIdSchema) }}
                             >
                                 {
                                     ( field ) => (
@@ -375,8 +386,15 @@ export default function ShipmentOperationalForm({
                                 {
                                     ( field ) => (
                                         <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">ETA</Label>
-                                            <Input value={field.state.value ? field.state.value.split('T')[0] : ''} onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")} type="date" />
+                                            <TextField
+                                                label="ETA"
+                                                id={field.name}
+                                                name={field.name}
+                                                type="date"
+                                                value={field.state.value ? field.state.value.split('T')[0] : ''}
+                                                onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
+                                                error={fieldError(field.state.meta.errors)}
+                                            />
                                         </div>
                                     )
                                 }
@@ -389,8 +407,14 @@ export default function ShipmentOperationalForm({
                                 {
                                     ( field ) => (
                                         <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">BL Number</Label>
-                                            <Input value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                            <TextField
+                                                label="BL Number"
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                error={fieldError(field.state.meta.errors)}
+                                            />
                                         </div>
                                     )
                                 }
@@ -403,8 +427,14 @@ export default function ShipmentOperationalForm({
                                 {
                                     ( field ) => (
                                         <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Booking Number</Label>
-                                            <Input value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                            <TextField
+                                                label="Booking Number"
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                error={fieldError(field.state.meta.errors)}
+                                            />
                                         </div>
                                     )
                                 }

@@ -9,6 +9,8 @@ import { useUpdateSelling } from "@/hooks/use-sellings"
 import { useState } from "react"
 import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
+import { shipmentSelectionSchema } from "@/lib/schemas/link"
+import { zodOnChange } from "@/lib/zod-form"
 import {
     Combobox,
     ComboboxContent,
@@ -29,12 +31,16 @@ export default function LinkSellingShipmentForm({
 }) {
     const [open, setOpen] = useState(false)
 
-    const { data: shipments, isLoading } = useShipments()
+    const { data: shipmentsPage, isLoading } = useShipments({
+        page: 1,
+        pageSize: 100,
+        status: "all",
+    })
     const updateSelling = useUpdateSelling()
 
     type ComboItem = { value: string; label: string }
     const shipmentItems: ComboItem[] =
-        shipments?.map((s: Shipment) => ({
+        shipmentsPage?.items.map((s: Shipment) => ({
             value: s.id ?? "",
             label: s.orderNumber,
         })) ?? []
@@ -85,7 +91,7 @@ export default function LinkSellingShipmentForm({
                         <form.Field
                             name="shipmentId"
                             validators={{
-                                onChange: ({ value }) => !value ? "Please select a shipment" : undefined,
+                                onChange: zodOnChange(shipmentSelectionSchema),
                             }}
                         >
                             {(field) => (

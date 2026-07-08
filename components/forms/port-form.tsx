@@ -2,8 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { TextField } from "@/components/ui/text-field"
+import { fieldError } from "@/lib/form-field"
+import { portCountrySchema, portNameSchema } from "@/lib/schemas/port"
+import { zodOnChange } from "@/lib/zod-form"
 import { Switch } from "@/components/ui/switch"
 import { IconPlus } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
@@ -90,23 +93,20 @@ export default function PortForm({
                             <form.Field
                                 name="portName"
                                 validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Port Name is required" : undefined,
+                                    onChange: zodOnChange(portNameSchema),
                                 }}
                             >
                                 {
                                     ( field ) => (
                                         <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Port Name</Label>
-                                            <Input
+                                            <TextField
+                                                label="Port Name"
                                                 id={field.name}
                                                 name={field.name}
                                                 value={field.state.value}
                                                 onChange={(e) => field.handleChange(e.target.value)}
+                                                error={fieldError(field.state.meta.errors)}
                                             />
-                                            {field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null}
                                         </div>
                                     )
                                 }
@@ -114,24 +114,20 @@ export default function PortForm({
                             <form.Field
                                 name="portCountry"
                                 validators={{
-                                    onChange: (({ value }) =>
-                                        !value ? "Country is required" : undefined
-                                    )
+                                    onChange: zodOnChange(portCountrySchema),
                                 }}
                             >
                                 {
                                     (field) => (
                                         <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Country</Label>
-                                            <Input
+                                            <TextField
+                                                label="Country"
                                                 id={field.name}
                                                 name={field.name}
                                                 value={field.state.value}
                                                 onChange={(e) => field.handleChange(e.target.value)}
+                                                error={fieldError(field.state.meta.errors)}
                                             />
-                                            {field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null}
                                         </div>
                                     )
                                 }

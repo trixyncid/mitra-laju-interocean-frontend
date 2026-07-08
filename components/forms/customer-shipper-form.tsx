@@ -4,9 +4,16 @@ import { useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
-import { Input } from "../ui/input"
+import { TextField } from "../ui/text-field"
 import { useForm } from "@tanstack/react-form"
 import { Label } from "../ui/label"
+import { fieldError } from "@/lib/form-field"
+import {
+  shipperCountrySchema,
+  shipperNameSchema,
+  shipperPhoneSchema,
+} from "@/lib/schemas/shipper"
+import { zodOnChange } from "@/lib/zod-form"
 import { Switch } from "../ui/switch"
 import { useCreateCustomerShipper, useDeleteCustomerShipper, useUpdateCustomerShipper } from "@/hooks/use-customers"
 
@@ -78,42 +85,45 @@ export default function CustomerShipperForm({
                         form.handleSubmit()
                     }}>
                         <div>
-                            <form.Field name="name" validators={{ onChange: ({ value }) => !value ? "Name is required" : undefined }}>
+                            <form.Field name="name" validators={{ onChange: zodOnChange(shipperNameSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Name</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value ?? ""} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Name"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value ?? ""}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="phoneNumber" validators={{ onChange: ({ value }) => !value ? "Phone Number is required" : undefined }}>
+                            <form.Field name="phoneNumber" validators={{ onChange: zodOnChange(shipperPhoneSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Phone Number</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value ?? ""} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Phone Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value ?? ""}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="country" validators={{ onChange: ({ value }) => !value ? "Country is required" : undefined }}>
+                            <form.Field name="country" validators={{ onChange: zodOnChange(shipperCountrySchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Country</Label>
-                                        <Input id={field.name} name={field.name} value={field.state.value ?? ""} onChange={(e) => field.handleChange(e.target.value)} />
-                                        {
-                                            field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null
-                                        }
+                                        <TextField
+                                            label="Country"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value ?? ""}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
                                     </div>
                                 )}
                             </form.Field>

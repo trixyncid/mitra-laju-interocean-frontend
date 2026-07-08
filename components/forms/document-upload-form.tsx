@@ -3,8 +3,10 @@ import { Button } from "../ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
-import { Label } from "../ui/label"
-import { Input } from "../ui/input"
+import { TextField } from "../ui/text-field"
+import { fieldError } from "@/lib/form-field"
+import { attachmentNameSchema, documentFileSchema } from "@/lib/schemas/document"
+import { zodOnChange } from "@/lib/zod-form"
 import { useCreateShipmentOperationalAttachment, useDeleteShipmentOperationalAttachment, useUpdateShipmentOperationalAttachment } from "@/hooks/use-shipments"
 import { toast } from "sonner"
 import { useCreateCostingAttachment, useDeleteCostingAttachment, useUpdateCostingAttachment } from "@/hooks/use-costings"
@@ -145,14 +147,17 @@ export default function DocumentUploadForm({
                         }
                     }>
                     <div className="my-3">
-                        <form.Field name="attachmentName" validators={{ onChange: ({ value }) => value == "" ? "Document Name is required" : undefined }}>
+                        <form.Field name="attachmentName" validators={{ onChange: zodOnChange(attachmentNameSchema) }}>
                             {(field) => (
                                 <div className="">
-                                    <Label htmlFor={field.name} className="mb-1">Document Name</Label>
-                                    <Input id={field.name} name={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                    { field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
-                                    ) : null }
+                                    <TextField
+                                        label="Document Name"
+                                        id={field.name}
+                                        name={field.name}
+                                        value={field.state.value}
+                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        error={fieldError(field.state.meta.errors)}
+                                    />
                                 </div>
                             )}
                         </form.Field>
@@ -161,14 +166,17 @@ export default function DocumentUploadForm({
                     {
                         mode === "create" ? (
                             <div className="my-3">
-                                <form.Field name="document" validators={{ onChange: ({ value }) => !value ? "Document File is required" : undefined }}>
+                                <form.Field name="document" validators={{ onChange: zodOnChange(documentFileSchema) }}>
                                     {(field) => (
                                         <div className="">
-                                            <Label htmlFor={field.name} className="mb-1">Document File</Label>
-                                            <Input type="file" id={field.name} name={field.name} onChange={(e) => field.handleChange(e.target.files?.[0] ?? null)} />
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{ field.state.meta.errors }</em>
-                                            ) : null }
+                                            <TextField
+                                                label="Document File"
+                                                id={field.name}
+                                                name={field.name}
+                                                type="file"
+                                                onChange={(e) => field.handleChange(e.target.files?.[0] ?? null)}
+                                                error={fieldError(field.state.meta.errors)}
+                                            />
                                         </div>
                                     )}
                                 </form.Field>

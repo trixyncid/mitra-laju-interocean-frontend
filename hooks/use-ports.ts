@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { portsService } from "@/services/ports.service";
+import { portsService, type PortListParams } from "@/services/ports.service";
 import { toast } from "sonner";
 import { Port } from "@/app/dashboard/ports/columns";
 
-export const usePorts = () => {
+export const usePorts = (params: PortListParams, enabled = true) => {
     return useQuery({
-        queryKey: ["ports"],
-        queryFn: portsService.getAll,
+        queryKey: ["ports", params],
+        queryFn: () => portsService.getAll(params),
+        enabled,
     });
 }
 

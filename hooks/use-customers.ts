@@ -1,12 +1,12 @@
 import { Customer } from "@/app/dashboard/customers/columns";
-import { customersService } from "@/services/customers.service";
+import { customersService, type CustomerListParams } from "@/services/customers.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export const useCustomers = () => {
+export const useCustomers = (params: CustomerListParams) => {
     return useQuery({
-        queryKey: ["customers"],
-        queryFn: customersService.getAll,
+        queryKey: ["customers", params],
+        queryFn: () => customersService.getAll(params),
     })
 }
 
@@ -14,6 +14,7 @@ export const useCustomerById = (id: string) => {
     return useQuery({
         queryKey: ["customers", id],
         queryFn: () => customersService.getById(id),
+        enabled: !!id,
     })
 }
 
@@ -21,13 +22,17 @@ export const useCreateCustomer = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: customersService.create,
-        onSuccess: () => {
+        mutationFn: customersService.create as (
+            customer: Partial<Customer>
+        ) => Promise<Customer>,
+        onSuccess: (data) => {
+            if (data?.id) {
+                queryClient.setQueryData(["customers", data.id], data)
+            }
             queryClient.invalidateQueries({ queryKey: ["customers"] });
             toast.success("Customer created successfully");
         },
         onError: (error: Error) => {
-            console.log("Error: ", error);
             toast.error(error.message);
         },
     })
@@ -38,7 +43,8 @@ export const useUpdateCustomer = () => {
 
     return useMutation({
         mutationFn: ({ id, customer }: { id: string, customer: Partial<Customer> }) => customersService.update(id, customer),
-        onSuccess: () => {
+        onSuccess: (data, { id }) => {
+            queryClient.setQueryData(["customers", id], data)
             queryClient.invalidateQueries({ queryKey: ["customers"] });
             toast.success("Customer updated successfully");
         },
@@ -148,6 +154,7 @@ export const useGetLocationsByCustomerId = (customerId: string) => {
     return useQuery({
         queryKey: ["customers", customerId, "locations"],
         queryFn: () => customersService.getLocationsByCustomerId(customerId),
+        enabled: !!customerId,
     })
 }
 

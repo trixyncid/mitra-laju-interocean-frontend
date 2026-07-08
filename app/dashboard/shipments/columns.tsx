@@ -8,6 +8,13 @@ import Link from "next/link"
 import { Info } from "lucide-react"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
+import {
+  actionColumn,
+  dateSort,
+  sortDescFirst,
+  sortHeader,
+  textSort,
+} from "@/lib/data-table"
 
 export type Shipment = {
     id?: string
@@ -29,7 +36,8 @@ export type Shipment = {
 export const columns: ColumnDef<Shipment>[] = [
     {
         accessorKey: "orderNumber",
-        header: "Order Number",
+        header: ({ column }) => sortHeader(column, "Order Number"),
+        ...textSort,
         cell: ({ row }) => (
             <div className={`${primaryText} flex items-center gap-x-1`}>
                 <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link>
@@ -38,8 +46,13 @@ export const columns: ColumnDef<Shipment>[] = [
         )
     },
     {
-        accessorKey: "customerCode",
-        header: "Customer Code",
+        id: "customerCode",
+        accessorFn: (row) =>
+            row.customerCode
+                ? `${row.customerCode.customerName} (${row.customerCode.customerCode})`
+                : "",
+        header: ({ column }) => sortHeader(column, "Customer Code"),
+        ...textSort,
         cell: ({ row }) => (
             <span className={secondaryText}>
                 {row.original.customerCode?.customerName} ({row.original.customerCode?.customerCode})
@@ -47,14 +60,21 @@ export const columns: ColumnDef<Shipment>[] = [
         )
     },
     {
-        accessorKey: "customerShipper",
-        header: "Customer Shipper",
+        id: "customerShipper",
+        accessorFn: (row) => row.customerShipper?.name ?? "",
+        header: ({ column }) => sortHeader(column, "Customer Shipper"),
+        ...textSort,
         enableGlobalFilter: false,
         cell: ({ row }) => <span className={secondaryText}>{row.original.customerShipper?.name}</span>
     },
     {
-        accessorKey: "shipmentOperational",
-        header: "Route",
+        id: "route",
+        accessorFn: (row) =>
+            row.shipmentOperational
+                ? `${row.shipmentOperational.portDeparture.portCountry} ${row.shipmentOperational.portDestination.portCountry}`
+                : "",
+        header: ({ column }) => sortHeader(column, "Route"),
+        ...textSort,
         cell: ({ row }) => {
             if (!row.original.shipmentOperational) {
                 return <WarningChip>Unavailable</WarningChip>
@@ -69,25 +89,29 @@ export const columns: ColumnDef<Shipment>[] = [
         }
     },
     {
-        accessorKey: "updatedBy",
-        header: "Modified By",
+        id: "updatedBy",
+        accessorFn: (row) => (row.updatedBy as { name?: string } | undefined)?.name ?? "",
+        header: ({ column }) => sortHeader(column, "Modified By"),
+        ...textSort,
         cell: ({ row }) => (
             <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
         )
     },
     {
         accessorKey: "updatedAt",
-        header: "Modified At",
+        header: ({ column }) => sortHeader(column, "Modified At"),
+        ...dateSort,
         cell: ({ row }) => <span className={secondaryText}>{formatDate(row.original.updatedAt as string)}</span>
     },
     {
         accessorKey: "isActive",
-        header: "Status",
+        header: ({ column }) => sortHeader(column, "Status"),
+        ...sortDescFirst,
         cell: ({ row }) => <StatusChip active={row.original.isActive} />,
         enableGlobalFilter: false,
     },
     {
-        accessorKey: "",
+        ...actionColumn,
         header: "Action",
         cell: ({ row }) => <ShipmentActionCell row={row} />,
     },

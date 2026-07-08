@@ -8,6 +8,14 @@ import { Info } from "lucide-react"
 import Link from "next/link"
 import { PaymentStatusChip, UnlinkedChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
+import {
+  actionColumn,
+  dateSort,
+  numberSort,
+  sortDescFirst,
+  sortHeader,
+  textSort,
+} from "@/lib/data-table"
 
 export type Costing = {
     id: string
@@ -40,10 +48,28 @@ export type Costing = {
     updatedAt?: string,
 }
 
+export type CostingAttachment = {
+    id: string
+    attachmentName: string
+    fileName: string
+    filePath: string
+    createdAt: string
+    createdBy: string
+    updatedAt: string
+    updatedBy: { name: string }
+}
+
+export type CostingDetail = Costing & {
+    costingsAttachments?: CostingAttachment[]
+    container?: { containerNumber: string } | null
+    updatedBy?: { name: string } | null
+}
+
 export const columns: ColumnDef<Costing>[] = [
     {
         accessorKey: "description",
-        header: "Description",
+        header: ({ column }) => sortHeader(column, "Description"),
+        ...textSort,
         cell: ({ row }) => (
             <div className={`${primaryText} flex items-center`}>
                 <Link href={`/dashboard/costings/${ row.original.id }`} className="hover:underline flex items-center gap-x-1">
@@ -54,19 +80,25 @@ export const columns: ColumnDef<Costing>[] = [
     },
     {
         accessorKey: "costingNumber",
-        header: "Costing #",
+        header: ({ column }) => sortHeader(column, "Costing #"),
+        ...textSort,
         cell: ({ row }) => <span className={secondaryText}>{ row.original.costingNumber }</span>
     },
     {
-        accessorKey: "vendor",
-        header: "Vendor Name",
+        id: "vendor",
+        accessorFn: (row) => row.vendor?.vendorName ?? "",
+        header: ({ column }) => sortHeader(column, "Vendor Name"),
+        ...textSort,
         cell: ({ row }) => (
             <span className={secondaryText}>{row.original.vendor?.vendorName ?? "—"}</span>
         )
     },
     {
-        accessorKey: "",
-        header: "Amount (Rupiah)",
+        id: "amount",
+        accessorFn: (row) =>
+            amountCalculation(row.price, row.currency, row.vatPercentage, row.pph23Percentage),
+        header: ({ column }) => sortHeader(column, "Amount (Rupiah)"),
+        ...numberSort,
         cell: ({ row }) => (
             <span className={secondaryText}>
                 { amountCalculation(row.original.price, row.original.currency, row.original.vatPercentage, row.original.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }
@@ -74,8 +106,10 @@ export const columns: ColumnDef<Costing>[] = [
         )
     },
     {
-        accessorKey: "shipment",
-        header: "Shipment Order #",
+        id: "shipment",
+        accessorFn: (row) => row.shipment?.orderNumber ?? "",
+        header: ({ column }) => sortHeader(column, "Shipment Order #"),
+        ...textSort,
         cell: ({ row }) => (
             !row.original.shipment ? (
                 <span className="inline-flex items-center gap-x-2">
@@ -89,19 +123,23 @@ export const columns: ColumnDef<Costing>[] = [
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: ({ column }) => sortHeader(column, "Status"),
+        ...textSort,
         cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "paid"} />
     },
     {
-        accessorKey: "updatedBy",
-        header: "Modified By",
+        id: "updatedBy",
+        accessorFn: (row) => (row.updatedBy as { name?: string } | undefined)?.name ?? "",
+        header: ({ column }) => sortHeader(column, "Modified By"),
+        ...textSort,
         cell: ({ row }) => (
             <span className={secondaryText}>{ (row.original.updatedBy as { name: string } | undefined)?.name }</span>
         )
     },
     {
         accessorKey: "updatedAt",
-        header: "Modified At",
+        header: ({ column }) => sortHeader(column, "Modified At"),
+        ...dateSort,
         cell: ({ row }) => (
             <span className={secondaryText}>
                 {row.original.updatedAt ? localDate(row.original.updatedAt) : "—"}
@@ -109,7 +147,7 @@ export const columns: ColumnDef<Costing>[] = [
         )
     },
     {
-        accessorKey: "",
+        ...actionColumn,
         header: "Action",
         cell: ({ row }) => <CostingActionCell row={row} />
     },

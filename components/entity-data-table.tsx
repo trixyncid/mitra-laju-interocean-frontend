@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -9,6 +9,8 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table"
 import {
@@ -19,74 +21,111 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
 import { DataTablePagination } from "@/components/data-table-pagination"
+import {
+  AppliedTableFilters,
+  DataTableToolbar,
+} from "@/components/data-table-toolbar"
+import {
+  applyTableFilters,
+  type TableFilterConfig,
+} from "@/lib/data-table-filters"
 import {
   tableCellClass,
   tableHeaderCell,
   tableHeaderRow,
   tableRowClass,
-  tableSearchInput,
 } from "@/lib/design"
 
 type EntityDataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  searchPlaceholder: string
+  searchPlaceholder?: string
   searchColumn?: string
   globalFilterFn?: FilterFn<TData>
+  showSearch?: boolean
+  filters?: TableFilterConfig<TData>
+}
+
+const initialFilters: AppliedTableFilters = {
+  search: "",
+  status: "all",
+  dateRange: {},
 }
 
 export function EntityDataTable<TData, TValue>({
   columns,
   data,
-  searchPlaceholder,
+  searchPlaceholder = "Search...",
   searchColumn,
   globalFilterFn,
+  showSearch = true,
+  filters,
 }: EntityDataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState("")
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [applied, setApplied] = useState<AppliedTableFilters>(initialFilters)
+  const dateRange = applied.dateRange ?? {}
+
+  const filteredData = useMemo(
+    () =>
+      applyTableFilters(
+        data,
+        filters,
+        applied.status ?? "all",
+        dateRange
+      ),
+    [data, filters, applied.status, dateRange]
+  )
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    ...(searchColumn
-      ? {
-          onColumnFiltersChange: setColumnFilters,
-          state: { columnFilters },
-        }
-      : {
-          onGlobalFilterChange: setGlobalFilter,
-          globalFilterFn,
-          state: { globalFilter },
-        }),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn,
+    state: {
+      sorting,
+      columnFilters,
+      ...(searchColumn ? {} : { globalFilter }),
+    },
   })
 
-  const searchValue = searchColumn
-    ? ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? "")
-    : (globalFilter ?? "")
+  const handleApply = (next: AppliedTableFilters) => {
+    setApplied(next)
 
-  const onSearchChange = (value: string) => {
     if (searchColumn) {
-      table.getColumn(searchColumn)?.setFilterValue(value)
-    } else {
-      setGlobalFilter(value)
+      const column = table.getColumn(searchColumn)
+      column?.setFilterValue(next.search ? next.search : undefined)
+      return
     }
+
+    setGlobalFilter(next.search)
   }
+
+  const showToolbar = showSearch || Boolean(filters)
 
   return (
     <div>
-      <div className="pb-6">
-        <Input
-          placeholder={searchPlaceholder}
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className={tableSearchInput}
+      {showToolbar ? (
+        <DataTableToolbar
+          searchPlaceholder={searchPlaceholder}
+          showSearch={showSearch}
+          filters={filters}
+          applied={{
+            search: applied.search ?? "",
+            status: applied.status ?? "all",
+            dateRange,
+          }}
+          onApply={handleApply}
         />
-      </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-md border border-border">
         <Table>

@@ -7,6 +7,13 @@ import { localDate } from "@/lib/utils"
 import CustomerActionCell from "@/components/action-cell/customer-action-cell"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
+import {
+  actionColumn,
+  dateSort,
+  sortDescFirst,
+  sortHeader,
+  textSort,
+} from "@/lib/data-table"
 
 export type Customer = {
     id?: string
@@ -14,14 +21,16 @@ export type Customer = {
     customerName: string
     npwp: string
     isActive: boolean
-    updatedBy?: string,
-    updatedAt?: string,
+    createdAt?: string
+    updatedBy?: { name?: string } | string | null
+    updatedAt?: string
 }
 
 export const columns: ColumnDef<Customer>[] = [
     {
         accessorKey: "customerName",
-        header: "Customer Name",
+        header: ({ column }) => sortHeader(column, "Customer Name"),
+        ...textSort,
         cell: ({ row }) => (
             <div className={`${primaryText} flex items-center gap-x-1`}>
                 <Link href={`/dashboard/customers/${row.original.id}`} className="hover:underline">{ row.original.customerName }</Link>
@@ -31,12 +40,14 @@ export const columns: ColumnDef<Customer>[] = [
     },
     {
         accessorKey: "customerCode",
-        header: "Customer Code",
+        header: ({ column }) => sortHeader(column, "Customer Code"),
+        ...textSort,
         cell: ({ row }) => <span className={secondaryText}>{row.original.customerCode}</span>
     },
     {
         accessorKey: "npwp",
-        header: "NPWP",
+        header: ({ column }) => sortHeader(column, "NPWP"),
+        ...textSort,
         cell: ({ row }) => {
             return row.original.npwp ? (
                 <span className={secondaryText}>{row.original.npwp}</span>
@@ -46,24 +57,35 @@ export const columns: ColumnDef<Customer>[] = [
         }
     },
     {
-        accessorKey: "updatedBy",
-        header: "Modified By",
+        id: "updatedBy",
+        accessorFn: (row) =>
+          typeof row.updatedBy === "string"
+            ? row.updatedBy
+            : row.updatedBy?.name ?? "",
+        header: ({ column }) => sortHeader(column, "Modified By"),
+        ...textSort,
         cell: ({ row }) => (
-            <span className={secondaryText}>{(row.original.updatedBy as { name: string } | undefined)?.name}</span>
+            <span className={secondaryText}>
+              {typeof row.original.updatedBy === "string"
+                ? row.original.updatedBy
+                : row.original.updatedBy?.name}
+            </span>
         )
     },
     {
         accessorKey: "updatedAt",
-        header: "Modified At",
+        header: ({ column }) => sortHeader(column, "Modified At"),
+        ...dateSort,
         cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>
     },
     {
         accessorKey: "isActive",
-        header: "Status",
+        header: ({ column }) => sortHeader(column, "Status"),
+        ...sortDescFirst,
         cell: ({ row }) => <StatusChip active={row.original.isActive} />
     },
     {
-        accessorKey: "",
+        ...actionColumn,
         header: "Action",
         cell: ({ row }) => <CustomerActionCell row={row} />
     },

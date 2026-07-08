@@ -1,38 +1,22 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { useForm } from "@tanstack/react-form"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { TextField } from "@/components/ui/text-field"
 import { Separator } from "@/components/ui/separator"
 import { useChangePassword, useUpdateProfile } from "@/hooks/use-profile"
 import type { User } from "@/app/dashboard/users/columns"
 import { buildUserUpdatePayload } from "@/lib/user-update"
+import { fieldError } from "@/lib/form-field"
+import { currentPasswordSchema } from "@/lib/schemas/common"
+import { profileEmailSchema, profileNameSchema } from "@/lib/schemas/user"
+import {
+  matchPasswordField,
+  newPasswordWithConfirmRevalidate,
+  zodOnChange,
+} from "@/lib/zod-form"
 import { toast } from "sonner"
-
-function FormField({
-  label,
-  field,
-  children,
-}: {
-  label: string
-  field: { name: string; state: { meta: { errors: unknown[] } } }
-  children: ReactNode
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={field.name}>{label}</Label>
-      {children}
-      {field.state.meta.errors.length ? (
-        <em className="text-xs text-[var(--mli-on-error-container)]">
-          {String(field.state.meta.errors[0])}
-        </em>
-      ) : null}
-    </div>
-  )
-}
 
 export default function ProfileForm({ user }: { user: User }) {
   const updateProfile = useUpdateProfile()
@@ -96,39 +80,37 @@ export default function ProfileForm({ user }: { user: User }) {
           <profileForm.Field
             name="name"
             validators={{
-              onChange: ({ value }) => (!value.trim() ? "Name is required" : undefined),
+              onChange: zodOnChange(profileNameSchema),
             }}
           >
             {(field) => (
-              <FormField label="Name" field={field}>
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
+              <TextField
+                label="Name"
+                id={field.name}
+                name={field.name}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                error={fieldError(field.state.meta.errors)}
+              />
             )}
           </profileForm.Field>
 
           <profileForm.Field
             name="email"
             validators={{
-              onChange: ({ value }) => {
-                if (!value.trim()) return "Email is required"
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email address"
-                return undefined
-              },
+              onChange: zodOnChange(profileEmailSchema),
             }}
           >
             {(field) => (
-              <FormField label="Email" field={field}>
-                <Input
-                  id={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
+              <TextField
+                label="Email"
+                id={field.name}
+                name={field.name}
+                type="email"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                error={fieldError(field.state.meta.errors)}
+              />
             )}
           </profileForm.Field>
 
@@ -159,66 +141,63 @@ export default function ProfileForm({ user }: { user: User }) {
           <passwordForm.Field
             name="currentPassword"
             validators={{
-              onChange: ({ value }) => (!value ? "Current password is required" : undefined),
+              onChange: zodOnChange(currentPasswordSchema),
             }}
           >
             {(field) => (
-              <FormField label="Current password" field={field}>
-                <Input
-                  id={field.name}
-                  type="password"
-                  autoComplete="current-password"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
+              <TextField
+                label="Current password"
+                id={field.name}
+                name={field.name}
+                type="password"
+                autoComplete="current-password"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                error={fieldError(field.state.meta.errors)}
+              />
             )}
           </passwordForm.Field>
 
           <passwordForm.Field
             name="newPassword"
             validators={{
-              onChange: ({ value }) => {
-                if (!value) return "New password is required"
-                if (value.length < 8) return "Password must be at least 8 characters"
-                return undefined
-              },
+              onChange: newPasswordWithConfirmRevalidate("confirmPassword"),
             }}
           >
             {(field) => (
-              <FormField label="New password" field={field}>
-                <Input
-                  id={field.name}
-                  type="password"
-                  autoComplete="new-password"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
+              <TextField
+                label="New password"
+                id={field.name}
+                name={field.name}
+                type="password"
+                autoComplete="new-password"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                error={fieldError(field.state.meta.errors)}
+              />
             )}
           </passwordForm.Field>
 
           <passwordForm.Field
             name="confirmPassword"
             validators={{
-              onChange: ({ value, fieldApi }) => {
-                if (!value) return "Please confirm your new password"
-                const newPassword = fieldApi.form.getFieldValue("newPassword")
-                if (value !== newPassword) return "Passwords do not match"
-                return undefined
-              },
+              onChange: matchPasswordField("newPassword", {
+                emptyMessage: "Please confirm your new password",
+                mismatchMessage: "Passwords do not match",
+              }),
             }}
           >
             {(field) => (
-              <FormField label="Confirm new password" field={field}>
-                <Input
-                  id={field.name}
-                  type="password"
-                  autoComplete="new-password"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
+              <TextField
+                label="Confirm new password"
+                id={field.name}
+                name={field.name}
+                type="password"
+                autoComplete="new-password"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                error={fieldError(field.state.meta.errors)}
+              />
             )}
           </passwordForm.Field>
 

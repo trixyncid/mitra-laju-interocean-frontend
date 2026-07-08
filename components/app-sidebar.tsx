@@ -93,6 +93,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session, isPending, error } = authClient.useSession()
+  const userId = session?.user?.id
   const role = getEffectiveRole(getUserRole(session?.user))
 
   const mainNavItems = canRead(role, "dashboard") ? data.navMain : []
@@ -135,9 +136,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavUser
           user={{
+            id: userId ?? "",
             name: session?.user?.name ?? "",
             email: session?.user?.email ?? "",
-            avatar: session?.user?.image ?? "",
           }}
         />
       </SidebarFooter>

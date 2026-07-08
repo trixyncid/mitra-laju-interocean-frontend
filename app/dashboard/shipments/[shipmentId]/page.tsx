@@ -21,6 +21,9 @@ import ShipmentLoading from "@/components/loading/shipment-loading"
 import { PermissionGate } from "@/components/permission-gate"
 import clsx from "clsx"
 import { DashboardPage } from "@/components/layout/dashboard-page"
+import { PaymentStatusChip } from "@/components/ui/status-chip"
+import ErrorPage from "@/components/error-page"
+import type { ShipmentLinkedSelling } from "@/lib/types/entity-details"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -43,16 +46,6 @@ export type ShipmentOperationalAttachment = {
     updatedBy: { name: string}
 }
 
-type ShipmentLinkedSelling = {
-    id: string
-    sellingNumber: string
-    description: string
-    amount: number
-    vatPercentage: number
-    pph23Percentage: number
-    status: string
-}
-
 
 export default function ShipmentDetailPage({ params }: { params: Promise<{ shipmentId: string }> }) {
     const { shipmentId } = use(params)
@@ -66,9 +59,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
 
     const [ open, setOpen ] = useState(false)
     
-    const { data, isLoading } = useShipmentById(shipmentId)
+    const { data, isLoading, error } = useShipmentById(shipmentId)
 
-    const sellings: ShipmentLinkedSelling[] = (data as { sellings?: ShipmentLinkedSelling[] })?.sellings ?? []
+    const sellings: ShipmentLinkedSelling[] = data?.sellings ?? []
 
     const updateShipmentOperational = useUpdateShipmentOperational(shipmentId)
 
@@ -97,6 +90,8 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
 
 
     if (isLoading) return <ShipmentLoading />
+    if (error) return <ErrorPage message={error.message} />
+    if (!data) return <ErrorPage title="Shipment not found" message="Unable to load this shipment." />
 
     const totalVendorCost = data.costings.reduce(
         (acc: number, costing: Costing) =>
@@ -131,9 +126,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                 <div>
                     {
                         data?.shipmentOperational === null ? (
-                            <ShipmentOperationalForm mode="create" id={undefined} shipmentId={data.id} shipmentType={undefined} portDepartureId={undefined} portDestinationId={undefined} loadingLocationId={undefined} unloadingLocationId={undefined} blNumber={undefined} bookingNumber={undefined} customerCodeId={data?.customerCodeId} customerShipperId={data?.customerShipperId} vesselId={undefined} eta={undefined} customerChargeAmount={undefined} status={undefined} />
+                            <ShipmentOperationalForm mode="create" id={undefined} shipmentId={data.id} shipmentType={undefined} portDepartureId={undefined} portDestinationId={undefined} loadingLocationId={undefined} unloadingLocationId={undefined} blNumber={undefined} bookingNumber={undefined} customerCodeId={data.customerCodeId} customerShipperId={data.customerShipperId} vesselId={undefined} eta={undefined} customerChargeAmount={undefined} status={undefined} />
                         ) : (
-                            <ShipmentOperationalForm mode="edit" id={data.shipmentOperational.id} shipmentId={data.id} shipmentType={data.shipmentOperational.shipmentType} portDepartureId={data.shipmentOperational.portDepartureId} portDestinationId={data.shipmentOperational.portDestinationId} loadingLocationId={data.shipmentOperational.loadingLocationId} unloadingLocationId={data.shipmentOperational.unloadingLocationId} blNumber={data.shipmentOperational.blNumber} bookingNumber={data.shipmentOperational.bookingNumber} customerCodeId={data?.customerCodeId} customerShipperId={data?.customerShipperId} vesselId={data.shipmentOperational.vesselId} eta={data.shipmentOperational.eta} customerChargeAmount={data.shipmentOperational.customerChargeAmount} status={data.shipmentOperational.status} />
+                            <ShipmentOperationalForm mode="edit" id={data.shipmentOperational.id} shipmentId={data.id} shipmentType={data.shipmentOperational.shipmentType} portDepartureId={data.shipmentOperational.portDepartureId} portDestinationId={data.shipmentOperational.portDestinationId} loadingLocationId={data.shipmentOperational.loadingLocationId} unloadingLocationId={data.shipmentOperational.unloadingLocationId} blNumber={data.shipmentOperational.blNumber ?? undefined} bookingNumber={data.shipmentOperational.bookingNumber ?? undefined} customerCodeId={data.customerCodeId} customerShipperId={data.customerShipperId} vesselId={data.shipmentOperational.vesselId} eta={data.shipmentOperational.eta ?? undefined} customerChargeAmount={data.shipmentOperational.customerChargeAmount ?? undefined} status={data.shipmentOperational.status} />
                         )
                     }
                 </div>
@@ -151,7 +146,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
                                         <h1>SHIPMENT OVERVIEW</h1>
-                                        <p className={clsx("text-xs mx-2 font-normal", data.shipmentOperational.status === "paid" ? "text-secondary-foreground bg-secondary rounded-md px-2 py-1" : "text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] rounded-md px-2 py-1")}>{ data.shipmentOperational.status === "paid" ? "Paid" : "Unpaid" }</p>
+                                        <span className="mx-2">
+                                            <PaymentStatusChip paid={data.shipmentOperational.status === "paid"} />
+                                        </span>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -370,9 +367,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                                                 {sellingNetAmount(selling.amount, selling.vatPercentage, selling.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
                                                             </td>
                                                             <td className="py-2 px-4">
-                                                                <div className={clsx("pr-3 w-fit rounded-full flex items-center text-xs", selling.status === "paid" ? "bg-secondary text-secondary-foreground" : "bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)]")}>
-                                                                    <Dot className="animate-pulse -mr-1" /> {selling.status === "paid" ? "Paid" : "Unpaid"}
-                                                                </div>
+                                                                <PaymentStatusChip paid={selling.status === "paid"} />
                                                             </td>
                                                         </tr>
                                                     ))}

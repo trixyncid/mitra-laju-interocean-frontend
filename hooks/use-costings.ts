@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { costingService } from "@/services/costing.service"
+import { costingService, type CostingListParams, type CreateCostingInput, type UpdateCostingInput } from "@/services/costing.service"
 import { toast } from "sonner"
 
-export const useCostings = () => {
+export const useCostings = (params: CostingListParams, enabled = true) => {
     return useQuery({
-        queryKey: ["costings"],
-        queryFn: costingService.getAll,
+        queryKey: ["costings", params],
+        queryFn: () => costingService.getAll(params),
+        enabled,
     })
 }
 
@@ -13,6 +14,32 @@ export const useCostingById = (id: string) => {
     return useQuery({
         queryKey: ["costings", id],
         queryFn: () => costingService.getById(id),
+        enabled: !!id,
+    })
+}
+
+export const useNextCostingNumber = (
+    month: number,
+    year: number,
+    options?: { enabled?: boolean; excludeCostingNumber?: string }
+) => {
+    const enabled = options?.enabled ?? true
+
+    return useQuery({
+        queryKey: [
+            "costings",
+            "next-costing-number",
+            month,
+            year,
+            options?.excludeCostingNumber,
+        ],
+        queryFn: () =>
+            costingService.getNextCostingNumber(
+                month,
+                year,
+                options?.excludeCostingNumber
+            ),
+        enabled,
     })
 }
 
@@ -20,7 +47,7 @@ export const useCreateCosting = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (costing: unknown) => costingService.create(costing),
+        mutationFn: (costing: CreateCostingInput) => costingService.create(costing),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["costings"] });
             toast.success("Costing created successfully");
@@ -35,7 +62,7 @@ export const useUpdateCosting = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, costing }: { id: string, costing: unknown }) => costingService.update(id, costing),
+        mutationFn: ({ id, costing }: { id: string, costing: UpdateCostingInput }) => costingService.update(id, costing),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["costings"] });
             toast.success("Costing updated successfully");

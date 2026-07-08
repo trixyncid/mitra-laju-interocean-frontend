@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { vesselsService } from "@/services/vessels.service";
+import { vesselsService, type VesselListParams } from "@/services/vessels.service";
 import { toast } from "sonner";
 import { Vessel } from "@/app/dashboard/vessels/columns";
 
-export const useVessels = () => {
+export const useVessels = (params: VesselListParams, enabled = true) => {
     return useQuery({
-        queryKey: ["vessels"],
-        queryFn: vesselsService.getAll,
+        queryKey: ["vessels", params],
+        queryFn: () => vesselsService.getAll(params),
+        enabled,
     });
 }
 

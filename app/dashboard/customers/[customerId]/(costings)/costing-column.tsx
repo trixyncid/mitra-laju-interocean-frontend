@@ -4,9 +4,13 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
 import Link from "next/link"
 import { localDate } from "@/lib/utils"
+import {
+  dateSort,
+  numberSort,
+  sortHeader,
+  textSort,
+} from "@/lib/data-table"
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
 export type Costing = {
   id: string
   invoiceNumber: string
@@ -18,7 +22,8 @@ export type Costing = {
 export const columns: ColumnDef<Costing>[] = [
   {
     accessorKey: "invoiceNumber",
-    header: "Invoice Number",
+    header: ({ column }) => sortHeader(column, "Invoice Number"),
+    ...textSort,
     cell: ({ row }) => {
       return <div className="font-bold flex items-center gap-x-1">
         <Link href={`/dashboard/costings/${row.original.id}`} className="hover:underline">{ row.original.invoiceNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
@@ -27,11 +32,13 @@ export const columns: ColumnDef<Costing>[] = [
   },
   {
     accessorKey: "shipmentOrderNumber",
-    header: "Shipment Order Number",
+    header: ({ column }) => sortHeader(column, "Shipment Order Number"),
+    ...textSort,
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: ({ column }) => sortHeader(column, "Amount"),
+    ...numberSort,
     cell: ({ row }) => {
       return <div className="flex items-center">
         <p>{ row.original.amount.toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }</p>
@@ -40,7 +47,8 @@ export const columns: ColumnDef<Costing>[] = [
   },
   {
     accessorKey: "updatedAt",
-    header: "Updated At",
+    header: ({ column }) => sortHeader(column, "Updated At"),
+    ...dateSort,
     cell: ({ row }) => {
       return <div className="flex items-center">
         <p>{ localDate(row.original.updatedAt.split("T")[0]) }</p>

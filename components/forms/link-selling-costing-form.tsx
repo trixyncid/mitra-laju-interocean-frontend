@@ -9,6 +9,8 @@ import { useCostings, useUpdateCosting } from "@/hooks/use-costings"
 import { useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { Costing } from "@/app/dashboard/costings/columns"
+import { costingSelectionSchema } from "@/lib/schemas/link"
+import { zodOnChange } from "@/lib/zod-form"
 import {
     Combobox,
     ComboboxContent,
@@ -27,7 +29,8 @@ export default function LinkSellingCostingForm({
 }) {
     const [open, setOpen] = useState(false)
 
-    const { data: costings, isLoading } = useCostings()
+    const { data: costingsData, isLoading } = useCostings({ page: 1, pageSize: 100 })
+    const costings = costingsData?.items
     const updateCosting = useUpdateCosting()
     const queryClient = useQueryClient()
 
@@ -91,7 +94,7 @@ export default function LinkSellingCostingForm({
                         <form.Field
                             name="costingId"
                             validators={{
-                                onChange: ({ value }) => !value ? "Please select a costing" : undefined,
+                                onChange: zodOnChange(costingSelectionSchema),
                             }}
                         >
                             {(field) => (

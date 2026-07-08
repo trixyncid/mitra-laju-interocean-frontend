@@ -3,6 +3,7 @@
 import ProfileForm from "@/components/forms/profile-form"
 import ErrorPage from "@/components/error-page"
 import TableSkeleton from "@/components/loading/table-skeleton"
+import { ProfileMetadataCard } from "@/components/profile-metadata-card"
 import {
   DashboardPage,
   DashboardPageCard,
@@ -39,11 +40,16 @@ export default function ProfilePage() {
     <DashboardPage>
       <DashboardPageHeader
         title="My Profile"
-        description="Manage your account details and password."
+        description="Manage your account details, profile photo, and password."
       />
-      <DashboardPageCard>
-        <ProfileForm user={user} />
-      </DashboardPageCard>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
+        <aside className="lg:sticky lg:top-6">
+          <ProfileMetadataCard user={user} />
+        </aside>
+        <DashboardPageCard>
+          <ProfileForm user={user} />
+        </DashboardPageCard>
+      </div>
     </DashboardPage>
   )
 }

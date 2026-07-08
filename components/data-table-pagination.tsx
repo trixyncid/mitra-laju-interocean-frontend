@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/select"
 interface DataTablePaginationProps<TData> {
   table: Table<TData>
+  totalRows?: number
 }
 export function DataTablePagination<TData>({
   table,
+  totalRows,
 }: DataTablePaginationProps<TData>) {
   return (
     <div className="flex items-center px-2">
@@ -46,7 +48,8 @@ export function DataTablePagination<TData>({
           </Select>
         </div>
         <div className="flex items-center">
-            <div className="flex w-[100px] items-center justify-center text-sm font-medium mr-3">
+            <div className="mr-3 flex w-[220px] items-center justify-center text-sm font-medium">
+            {typeof totalRows === "number" ? `${totalRows} total • ` : ""}
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
             </div>

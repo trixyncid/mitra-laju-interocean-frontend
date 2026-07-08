@@ -5,9 +5,15 @@ import type { ReactNode } from "react"
 import { PermissionGate } from "@/components/permission-gate"
 import type { ShipmentType } from "@/lib/permissions"
 
-export function MasterDataWriteGate({ children }: { children: ReactNode }) {
+export function MasterDataWriteGate({
+  children,
+  fallback,
+}: {
+  children: ReactNode
+  fallback?: ReactNode
+}) {
   return (
-    <PermissionGate resource="masterData" write>
+    <PermissionGate resource="masterData" write fallback={fallback}>
       {children}
     </PermissionGate>
   )

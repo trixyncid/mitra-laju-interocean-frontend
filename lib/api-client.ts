@@ -1,5 +1,19 @@
 import { getBackendBaseUrl } from "@/lib/backend-url"
 
+export type PaginationMeta = {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export type ApiEnvelope<T> = {
+  data: T
+  meta?: {
+    pagination?: PaginationMeta
+  }
+}
+
 function getErrorMessage(result: unknown, status: number) {
   const err = result as { error?: { code?: string; message?: string } } | null
   const code = err?.error?.code
@@ -25,7 +39,15 @@ function getErrorMessage(result: unknown, status: number) {
   return `Request failed (${status})`
 }
 
-export async function apiFetch(url: string, options: RequestInit = {}) {
+export async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const result = await apiFetchEnvelope<T>(url, options)
+  return result.data
+}
+
+export async function apiFetchEnvelope<T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<ApiEnvelope<T>> {
   const isFormData = options.body instanceof FormData
 
   const headers: HeadersInit = isFormData
@@ -52,20 +74,22 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     throw new Error(getErrorMessage(result, response.status))
   }
 
-  return result.data
+  return result as ApiEnvelope<T>
 }
 
 export const apiClient = {
-  get: (endpoint: string) => apiFetch(endpoint),
-  post: (endpoint: string, body: unknown) =>
-    apiFetch(endpoint, {
+  get: <T = unknown>(endpoint: string) => apiFetch<T>(endpoint),
+  getEnvelope: <T = unknown>(endpoint: string) => apiFetchEnvelope<T>(endpoint),
+  post: <T = unknown>(endpoint: string, body: unknown) =>
+    apiFetch<T>(endpoint, {
       method: "POST",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
-  put: (endpoint: string, body: unknown) =>
-    apiFetch(endpoint, {
+  put: <T = unknown>(endpoint: string, body: unknown) =>
+    apiFetch<T>(endpoint, {
       method: "PUT",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
-  delete: (endpoint: string) => apiFetch(endpoint, { method: "DELETE" }),
+  delete: <T = void>(endpoint: string) =>
+    apiFetch<T>(endpoint, { method: "DELETE" }),
 }

@@ -1,17 +1,79 @@
 import { Shipment } from "@/app/dashboard/shipments/columns";
 import { apiClient } from "@/lib/api-client";
+import type { ShipmentDetail } from "@/lib/types/entity-details";
+
+type CreateShipmentInput = {
+    orderNumber?: string;
+    month?: number;
+    year?: number;
+    customerCodeId: string;
+    customerShipperId: string;
+};
+
+export type ShipmentListParams = {
+    page: number;
+    pageSize: number;
+    search?: string;
+    status?: "all" | "true" | "false";
+    from?: string;
+    to?: string;
+};
+
+export type PaginatedShipments = {
+    items: Shipment[];
+    pagination: {
+        page: number;
+        pageSize: number;
+        total: number;
+        totalPages: number;
+    };
+};
 
 export const shipmentsService = {
-    getAll: async () => {
-        const response = await apiClient.get("/shipments");
-        console.log(response)
-        return response;
+    getAll: async (params: ShipmentListParams): Promise<PaginatedShipments> => {
+        const query = new URLSearchParams({
+            page: String(params.page),
+            pageSize: String(params.pageSize),
+            status: params.status ?? "all",
+        });
+        if (params.search) query.set("search", params.search);
+        if (params.from) query.set("from", params.from);
+        if (params.to) query.set("to", params.to);
+
+        const response = await apiClient.getEnvelope(`/shipments?${query.toString()}`);
+        const pagination = response.meta?.pagination ?? {
+            page: params.page,
+            pageSize: params.pageSize,
+            total: 0,
+            totalPages: 1,
+        };
+
+        return {
+            items: (response.data ?? []) as Shipment[],
+            pagination,
+        };
     },
-    getById: async (id: string) => {
-        const response = await apiClient.get(`/shipments/${id}`);
-        return response;
+    getNextOrderNumber: async (
+        month: number,
+        year: number,
+        excludeOrderNumber?: string
+    ) => {
+        const params = new URLSearchParams({
+            month: String(month),
+            year: String(year),
+        });
+        if (excludeOrderNumber) {
+            params.set("excludeOrderNumber", excludeOrderNumber);
+        }
+        const response = await apiClient.get(
+            `/shipments/next-order-number?${params.toString()}`
+        );
+        return response as { orderNumber: string };
     },
-    create: async (shipment: Shipment) => {
+    getById: async (id: string): Promise<ShipmentDetail> => {
+        return apiClient.get<ShipmentDetail>(`/shipments/${id}`);
+    },
+    create: async (shipment: CreateShipmentInput) => {
         const response = await apiClient.post("/shipments", shipment);
         return response;
     },
@@ -64,7 +126,7 @@ export const shipmentsService = {
         return response;
     },
     viewShipmentOperationalAttachment: async (shipmentId: string, id: string) => {
-        const response = await apiClient.get(`/shipments/${shipmentId}/attachments/${id}`);
+        const response = await apiClient.get<{ url: string }>(`/shipments/${shipmentId}/attachments/${id}`);
 
         window.open(response.url, "_blank");
     }

@@ -1,168 +1,212 @@
 "use client"
 
+import { useForm } from "@tanstack/react-form"
+import { useRouter } from "next/navigation"
+
+import type { Customer } from "@/app/dashboard/customers/columns"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { TextField } from "@/components/ui/text-field"
 import { Switch } from "@/components/ui/switch"
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers"
-import { IconPlus } from "@tabler/icons-react"
-import { useForm } from "@tanstack/react-form"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
+import { fieldError } from "@/lib/form-field"
+import { customerCodeSchema, customerNameSchema } from "@/lib/schemas/customer"
+import { zodOnChange } from "@/lib/zod-form"
+import { toast } from "sonner"
 
 export default function CustomerForm({
-    mode,
-    id,
-    customerName,
-    customerCode,
-    npwp,
-    isActive
+  mode,
+  customer,
 }: {
-    mode: "edit" | "create"
-    id: string | undefined,
-    customerName: string | undefined,
-    customerCode: string | undefined,
-    npwp: string | undefined,
-    isActive: boolean | undefined
+  mode: "edit" | "create"
+  customer?: Customer
 }) {
-    const [open, setOpen] = useState(false)
+  const router = useRouter()
+  const createCustomer = useCreateCustomer()
+  const updateCustomer = useUpdateCustomer()
 
-    const createCustomer = useCreateCustomer()
-    const updateCustomer = useUpdateCustomer()
+  const form = useForm({
+    defaultValues: {
+      id: customer?.id ?? "",
+      customerCode: customer?.customerCode ?? "",
+      customerName: customer?.customerName ?? "",
+      npwp: customer?.npwp ?? "",
+      isActive: customer?.isActive ?? true,
+    },
+    onSubmit: async ({ value }) => {
+      if (mode === "create") {
+        createCustomer.mutate(
+          {
+            customerName: value.customerName,
+            customerCode: value.customerCode,
+            npwp: value.npwp,
+            isActive: value.isActive,
+          },
+          {
+            onSuccess: (data) => {
+              if (data?.id) {
+                router.push(`/dashboard/customers/${data.id}`)
+                return
+              }
+              router.push("/dashboard/customers")
+            },
+          }
+        )
+        return
+      }
 
-    const form = useForm({
-        defaultValues: {
-            id: id ?? "",
-            customerName: customerName ?? "",
-            customerCode: customerCode ?? "",
-            npwp: npwp ?? "",
-            isActive: isActive ?? true,
-        },
-        onSubmit: async ({ value }) => {
-            if (mode === "create") {
-                createCustomer.mutate({
-                    customerName: value.customerName,
-                    customerCode: value.customerCode,
-                    npwp: value.npwp,
-                    isActive: value.isActive,
-                }, {
-                    onSuccess: () => {
-                        setOpen(false)
-                        form.reset()
-                    }
+      if (!customer?.id) return
+
+      const next = {
+        customerName: value.customerName,
+        customerCode: value.customerCode,
+        npwp: value.npwp,
+        isActive: value.isActive,
+      }
+
+      const hasChanges =
+        next.customerName !== customer.customerName ||
+        next.customerCode !== customer.customerCode ||
+        next.npwp !== (customer.npwp ?? "") ||
+        next.isActive !== customer.isActive
+
+      if (!hasChanges) {
+        toast.info("No changes to save")
+        return
+      }
+
+      updateCustomer.mutate({
+        id: customer.id,
+        customer: next,
+      })
+    },
+  })
+
+  const isPending =
+    mode === "create" ? createCustomer.isPending : updateCustomer.isPending
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-headline-md font-semibold">
+          {mode === "create" ? "Customer details" : "Edit customer details"}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {mode === "create"
+            ? "Set up a new customer with code, name, and tax information."
+            : "Update customer profile information and active status."}
+        </p>
+      </div>
+
+      <form
+        className="max-w-md space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          form.handleSubmit()
+        }}
+      >
+        <form.Field
+          name="customerCode"
+          validators={{
+            onChange: zodOnChange(customerCodeSchema),
+          }}
+        >
+          {(field) => (
+            <TextField
+              label="Customer Code"
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="customerName"
+          validators={{
+            onChange: zodOnChange(customerNameSchema),
+          }}
+        >
+          {(field) => (
+            <TextField
+              label="Customer Name"
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="npwp">
+          {(field) => (
+            <TextField
+              label="NPWP"
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              description="Optional tax identification number."
+            />
+          )}
+        </form.Field>
+
+        {mode === "edit" ? (
+          <form.Field name="isActive">
+            {(field) => (
+              <div className="flex items-center gap-3">
+                <Switch
+                  id={field.name}
+                  checked={field.state.value}
+                  onCheckedChange={(checked) => field.handleChange(checked)}
+                />
+                <Label htmlFor={field.name}>Active customer</Label>
+              </div>
+            )}
+          </form.Field>
+        ) : null}
+
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button type="submit" disabled={isPending}>
+            {mode === "edit"
+              ? isPending
+                ? "Saving..."
+                : "Save changes"
+              : isPending
+                ? "Creating..."
+                : "Create customer"}
+          </Button>
+          {mode === "create" ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/dashboard/customers")}
+            >
+              Cancel
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                form.reset({
+                  id: customer?.id ?? "",
+                  customerCode: customer?.customerCode ?? "",
+                  customerName: customer?.customerName ?? "",
+                  npwp: customer?.npwp ?? "",
+                  isActive: customer?.isActive ?? true,
                 })
-            } else {
-                updateCustomer.mutate({
-                    id: value.id,
-                    customer: {
-                        customerName: value.customerName,
-                        customerCode: value.customerCode,
-                        npwp: value.npwp,
-                        isActive: value.isActive,
-                    }
-                }, {
-                    onSuccess: () => {
-                        setOpen(false)
-                        form.reset()
-                    }
-                })
-            }
-        }
-    })
-
-    return (
-        <div>
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Customer</Button>}
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{ mode === "edit" ? "Edit Customer" : "Create New Customer"}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        form.handleSubmit()
-                    }}>
-                        <div>
-                            <form.Field
-                                name="customerCode"
-                                validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Customer Code is required" : undefined,
-                                }}
-                            >
-                                {( field ) => (
-                                    <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Customer Code</Label>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                        />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
-                                    </div>
-                                )}
-                            </form.Field>
-                            <form.Field
-                                name="customerName"
-                                validators={{
-                                    onChange: ({ value }) =>
-                                        !value ? "Customer Name is required" : undefined,
-                                }}
-                            >
-                                {( field ) => (
-                                    <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Customer Name</Label>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                        />
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
-                                    </div>
-                                )}
-                            </form.Field>
-                            <form.Field
-                                name="npwp"
-                            >
-                                {( field ) => (
-                                    <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">NPWP</Label>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            </form.Field>
-                            { mode === "edit" ? <form.Field
-                                    name="isActive"
-                                >
-                                    {( field ) => (
-                                    <div className="my-3">
-                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
-                                    </div>
-                                )}
-                            </form.Field> : null}
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit" disabled={ mode === "create" ? createCustomer.isPending : false || mode === "edit" ? updateCustomer.isPending : false}>{ mode === "edit" ? (updateCustomer.isPending ? "Updating..." : "Save Changes") : (createCustomer.isPending ? "Creating..." : "Create")}</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+              }
+            >
+              Reset
+            </Button>
+          )}
         </div>
-    )
+      </form>
+    </div>
+  )
 }
