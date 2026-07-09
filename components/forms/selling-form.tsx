@@ -5,6 +5,9 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Button } from "../ui/button"
 import { IconPencil, IconPlus } from "@tabler/icons-react"
 import { TextField } from "../ui/text-field"
+import { NumberField } from "../ui/number-field"
+import { FormLabel } from "../ui/form-label"
+import { FieldDescription } from "../ui/field"
 import { fieldError } from "@/lib/form-field"
 import {
   sellingAmountSchema,
@@ -16,22 +19,6 @@ import { zodOnChange } from "@/lib/zod-form"
 import { useState } from "react"
 import { useCreateSelling, useUpdateSelling } from "@/hooks/use-sellings"
 import { toast } from "sonner"
-
-/**
- * Generates a selling number in the format SL-{YYMM}-{XXXX}
- * where YYMM is the last 2 digits of the year followed by 2-digit month,
- * and XXXX is a 4-character random alphanumeric string.
- * Example: SL-2610-A3B9 (October 2026)
- */
-const generateSellingNumber = (): string => {
-    const now = new Date()
-    const year = String(now.getFullYear()).slice(2)
-    const month = String(now.getMonth() + 1).padStart(2, "0")
-    const dateCode = `${year}${month}`
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    const randomStr = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("")
-    return `SL-${dateCode}-${randomStr}`
-}
 
 export default function SellingForm({
     mode,
@@ -51,14 +38,12 @@ export default function SellingForm({
     pph23Percentage: number | undefined
 }) {
     const [open, setOpen] = useState(false)
-    const [autoSellingNumber] = useState<string>(() => generateSellingNumber())
 
     const createSelling = useCreateSelling()
     const updateSelling = useUpdateSelling()
 
     const form = useForm({
         defaultValues: {
-            sellingNumber: mode === "edit" ? (sellingNumber ?? "") : autoSellingNumber,
             description: description ?? "",
             amount: amount ?? "",
             vatPercentage: vatPercentage ?? "",
@@ -67,7 +52,6 @@ export default function SellingForm({
         onSubmit: async ({ value }) => {
             if (mode === "create") {
                 createSelling.mutate({
-                    sellingNumber: value.sellingNumber,
                     description: value.description,
                     amount: Number(value.amount),
                     vatPercentage: Number(value.vatPercentage),
@@ -85,7 +69,6 @@ export default function SellingForm({
                 updateSelling.mutate({
                     id: id as string,
                     selling: {
-                        sellingNumber: value.sellingNumber,
                         description: value.description,
                         amount: Number(value.amount),
                         vatPercentage: Number(value.vatPercentage),
@@ -123,20 +106,17 @@ export default function SellingForm({
                         form.handleSubmit()
                     }}>
                         <div>
-                            <form.Field name="sellingNumber">
-                                {(field) => (
-                                    <div className="my-3">
-                                        <TextField
-                                            label="Selling Number"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                            disabled
-                                        />
-                                    </div>
-                                )}
-                            </form.Field>
+                            {mode === "edit" && sellingNumber ? (
+                                <div className="my-3">
+                                    <FormLabel className="my-2">Selling Number</FormLabel>
+                                    <p className="text-sm font-medium">{sellingNumber}</p>
+                                </div>
+                            ) : null}
+                            {mode === "create" ? (
+                                <FieldDescription className="my-3">
+                                    The selling number will be generated automatically when you create this selling.
+                                </FieldDescription>
+                            ) : null}
                             <form.Field
                                 name="description"
                                 validators={{ onChange: zodOnChange(sellingDescriptionSchema) }}
@@ -145,6 +125,7 @@ export default function SellingForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Description"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -160,15 +141,15 @@ export default function SellingForm({
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <NumberField
                                             label="Amount (Rp)"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            placeholder="0"
                                         />
                                     </div>
                                 )}
@@ -179,15 +160,17 @@ export default function SellingForm({
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <NumberField
                                             label="VAT (%)"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            useGrouping={false}
+                                            maximumFractionDigits={2}
+                                            placeholder="0"
                                         />
                                     </div>
                                 )}
@@ -198,15 +181,17 @@ export default function SellingForm({
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <NumberField
                                             label="PPH 23 (%)"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            useGrouping={false}
+                                            maximumFractionDigits={2}
+                                            placeholder="0"
                                         />
                                     </div>
                                 )}

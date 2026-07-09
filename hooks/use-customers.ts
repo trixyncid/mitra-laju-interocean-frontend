@@ -44,7 +44,9 @@ export const useUpdateCustomer = () => {
     return useMutation({
         mutationFn: ({ id, customer }: { id: string, customer: Partial<Customer> }) => customersService.update(id, customer),
         onSuccess: (data, { id }) => {
-            queryClient.setQueryData(["customers", id], data)
+            queryClient.setQueryData(["customers", id], (existing) =>
+                existing && typeof existing === "object" ? { ...existing, ...data } : data
+            )
             queryClient.invalidateQueries({ queryKey: ["customers"] });
             toast.success("Customer updated successfully");
         },
@@ -150,11 +152,14 @@ export const useDeleteCustomerLocation = (customerId: string) => {
     })
 }
 
-export const useGetLocationsByCustomerId = (customerId: string) => {
+export const useGetLocationsByCustomerId = (
+    customerId: string,
+    options?: { enabled?: boolean }
+) => {
     return useQuery({
         queryKey: ["customers", customerId, "locations"],
         queryFn: () => customersService.getLocationsByCustomerId(customerId),
-        enabled: !!customerId,
+        enabled: !!customerId && (options?.enabled ?? true),
     })
 }
 

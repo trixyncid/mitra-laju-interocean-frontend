@@ -11,16 +11,8 @@ import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
 import { shipmentSelectionSchema } from "@/lib/schemas/link"
 import { zodOnChange } from "@/lib/zod-form"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-    ComboboxTrigger,
-    ComboboxValue,
-} from "@/components/ui/combobox"
+import { SearchableCombobox } from "@/components/searchable-combobox"
+import { fieldError } from "@/lib/form-field"
 
 export default function LinkSellingShipmentForm({
     sellingId,
@@ -96,39 +88,18 @@ export default function LinkSellingShipmentForm({
                         >
                             {(field) => (
                                 <div className="my-5">
-                                    <Label className="my-2">Shipment Order Number</Label>
-                                    {isLoading ? (
-                                        <p className="text-sm text-muted-foreground">Loading shipments...</p>
-                                    ) : (
-                                        <Combobox
-                                            items={shipmentItems}
-                                            value={shipmentItems.find((item) => item.value === field.state.value) ?? null}
-                                            onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                            isItemEqualToValue={(a, b) => a.value === b.value}
-                                        >
-                                            <ComboboxTrigger
-                                                render={
-                                                    <Button type="button" variant="outline" className="w-full justify-between font-normal">
-                                                        <ComboboxValue placeholder="Search shipment order number..." />
-                                                    </Button>
-                                                }
-                                            />
-                                            <ComboboxContent>
-                                                <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                <ComboboxEmpty>No shipments found.</ComboboxEmpty>
-                                                <ComboboxList>
-                                                    {(item) => (
-                                                        <ComboboxItem key={item.value} value={item}>
-                                                            {item.label}
-                                                        </ComboboxItem>
-                                                    )}
-                                                </ComboboxList>
-                                            </ComboboxContent>
-                                        </Combobox>
-                                    )}
-                                    {field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                    ) : null}
+                                    <SearchableCombobox
+                                        id={field.name}
+                                        label="Shipment Order Number"
+                                        value={field.state.value}
+                                        onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                        items={shipmentItems}
+                                        error={fieldError(field.state.meta.errors)}
+                                        required
+                                        isLoading={isLoading}
+                                        placeholder="Search shipment order number..."
+                                        emptyMessage="No shipments found."
+                                    />
                                 </div>
                             )}
                         </form.Field>

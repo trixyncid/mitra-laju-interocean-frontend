@@ -5,13 +5,16 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Button } from "../ui/button"
 import { IconPencil, IconPlus } from "@tabler/icons-react"
 import { TextField } from "../ui/text-field"
+import { NumberField } from "../ui/number-field"
+import { FormLabel } from "../ui/form-label"
+import { FieldDescription } from "../ui/field"
 import { Label } from "../ui/label"
 import { fieldError } from "@/lib/form-field"
 import {
   costingContainerSchema,
-  costingCurrencySchema,
+  costingCurrencyCodeSchema,
+  costingCurrencyRateForCodeSchema,
   costingDescriptionSchema,
-  costingNumberSchema,
   costingPph23Schema,
   costingPriceSchema,
   costingVendorInvoiceSchema,
@@ -20,29 +23,28 @@ import {
 } from "@/lib/schemas/costing"
 import { zodOnChange } from "@/lib/zod-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useShipmentById } from "@/hooks/use-shipments"
 import { useVendors } from "@/hooks/use-vendors"
 import { ShipmentOperationalContainer } from "@/app/dashboard/shipments/[shipmentId]/page"
 import { Vendor } from "@/app/dashboard/vendors/columns"
-import { useCreateCosting, useNextCostingNumber, useUpdateCosting } from "@/hooks/use-costings"
+import { useCreateCosting, useUpdateCosting } from "@/hooks/use-costings"
 import { usePermissions } from "@/hooks/use-permissions"
+import {
+  COSTING_CURRENCIES,
+  DEFAULT_COSTING_CURRENCY_CODE,
+  costingCurrencyRequiresRate,
+} from "@/lib/costing-currencies"
 
 const MONTH_IN_ROMANS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-const parseCostingNumberDate = (costingNumber: string | undefined): { monthIndex: number, year: number } | null => {
-    if (!costingNumber) return null
-    const parts = costingNumber.split("/")
-    if (parts.length !== 3) return null
-    const monthIndex = MONTH_IN_ROMANS.indexOf(parts[1]) + 1
-    const year = parseInt(parts[2], 10)
-    if (monthIndex === 0 || isNaN(year)) return null
-    return { monthIndex, year }
-}
-
 const currentYear = new Date().getFullYear()
 const YEAR_OPTIONS = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i)
+
+function normalizeSelectId(value: string) {
+    return value && value !== "-" ? value : undefined
+}
 
 export default function CostingForm({
     mode,
@@ -50,6 +52,7 @@ export default function CostingForm({
     costingNumber,
     description,
     price,
+    currencyCode,
     currency,
     containerId,
     vatPercentage,
@@ -63,6 +66,7 @@ export default function CostingForm({
     costingNumber: string | undefined,
     description: string | undefined,
     price: number | undefined,
+    currencyCode: string | undefined,
     currency: number | undefined,
     containerId: string | undefined,
     vatPercentage: number | undefined,
@@ -77,24 +81,8 @@ export default function CostingForm({
     const createCosting = useCreateCosting()
     const updateCosting = useUpdateCosting()
 
-    const parsedDate = parseCostingNumberDate(costingNumber)
-    const defaultMonth = parsedDate?.monthIndex ?? (new Date().getMonth() + 1)
-    const defaultYear = parsedDate?.year ?? new Date().getFullYear()
-
-    const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
-    const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
-
-    const excludeCostingNumber =
-        mode === "edit" &&
-        selectedMonth === defaultMonth &&
-        selectedYear === defaultYear
-            ? costingNumber
-            : undefined
-
-    const { data: nextCostingNumberData } = useNextCostingNumber(selectedMonth, selectedYear, {
-        enabled: open,
-        excludeCostingNumber,
-    })
+    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
 
     const fetchDependencies = open && canReadVendorsForCosting()
     const { data: shipmentData, isLoading: isLoadingContainers } = useShipmentById(
@@ -113,10 +101,10 @@ export default function CostingForm({
 
     const form = useForm({
         defaultValues: {
-            costingNumber: costingNumber ?? "",
             description: description ?? "",
+            currencyCode: currencyCode ?? DEFAULT_COSTING_CURRENCY_CODE,
             price: price ?? "",
-            currency: currency ?? "",
+            currency: currency ?? (costingCurrencyRequiresRate(currencyCode ?? DEFAULT_COSTING_CURRENCY_CODE) ? "" : 1),
             containerId: containerId ?? "-",
             vatPercentage: vatPercentage ?? "",
             pph23Percentage: pph23Percentage ?? "",
@@ -124,18 +112,28 @@ export default function CostingForm({
             vendorId: vendorId ?? "-",
         },
         onSubmit: async ({ value }) => {
+            const vendorId = normalizeSelectId(value.vendorId)
+            if (!vendorId) return
+
+            const containerId = shipmentId
+                ? normalizeSelectId(value.containerId)
+                : undefined
+
             if (mode === "create") {
                 createCosting.mutate({
                     month: selectedMonth,
                     year: selectedYear,
                     description: value.description,
+                    currencyCode: value.currencyCode,
                     price: Number(value.price),
-                    currency: Number(value.currency),
-                    containerId: value.containerId,
+                    ...(costingCurrencyRequiresRate(value.currencyCode)
+                        ? { currency: Number(value.currency) }
+                        : {}),
+                    ...(shipmentId ? { shipmentId, containerId } : {}),
                     vatPercentage: Number(value.vatPercentage),
                     pph23Percentage: Number(value.pph23Percentage),
                     vendorInvoiceNumber: value.vendorInvoiceNumber,
-                    vendorId: value.vendorId,
+                    vendorId,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -146,15 +144,17 @@ export default function CostingForm({
                 updateCosting.mutate({
                     id: id as string,
                     costing: {
-                        costingNumber: value.costingNumber,
                         description: value.description,
+                        currencyCode: value.currencyCode,
                         price: Number(value.price),
-                        currency: Number(value.currency),
-                        containerId: value.containerId,
+                        ...(costingCurrencyRequiresRate(value.currencyCode)
+                            ? { currency: Number(value.currency) }
+                            : { currency: 1 }),
+                        ...(shipmentId ? { containerId } : {}),
                         vatPercentage: Number(value.vatPercentage),
                         pph23Percentage: Number(value.pph23Percentage),
                         vendorInvoiceNumber: value.vendorInvoiceNumber,
-                        vendorId: value.vendorId,
+                        vendorId,
                     }
                 }, {
                     onSuccess: () => {
@@ -165,34 +165,6 @@ export default function CostingForm({
             }
         }
     })
-
-    useEffect(() => {
-        if (!open) return
-
-        if (
-            mode === "edit" &&
-            selectedMonth === defaultMonth &&
-            selectedYear === defaultYear &&
-            costingNumber
-        ) {
-            form.setFieldValue("costingNumber", costingNumber)
-            return
-        }
-
-        if (nextCostingNumberData?.costingNumber) {
-            form.setFieldValue("costingNumber", nextCostingNumberData.costingNumber)
-        }
-    }, [
-        open,
-        selectedMonth,
-        selectedYear,
-        nextCostingNumberData?.costingNumber,
-        mode,
-        costingNumber,
-        defaultMonth,
-        defaultYear,
-        form,
-    ])
 
     return (
         <div>
@@ -210,66 +182,61 @@ export default function CostingForm({
                         form.handleSubmit()
                     }}>
                         <div>
-                            <div className="my-3 grid grid-cols-2 gap-x-3">
-                                <div>
-                                    <Label className="my-2">Month</Label>
-                                    <Select
-                                        value={String(selectedMonth)}
-                                        onValueChange={(value) => setSelectedMonth(Number(value))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select month" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {MONTH_NAMES.map((name, i) => (
-                                                <SelectItem key={i + 1} value={String(i + 1)}>
-                                                    {name} ({MONTH_IN_ROMANS[i]})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            {mode === "edit" && costingNumber ? (
+                                <div className="my-3">
+                                    <FormLabel className="my-2">Costing Number</FormLabel>
+                                    <p className="text-sm font-medium">{costingNumber}</p>
                                 </div>
-                                <div>
-                                    <Label className="my-2">Year</Label>
-                                    <Select
-                                        value={String(selectedYear)}
-                                        onValueChange={(value) => setSelectedYear(Number(value))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select year" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {YEAR_OPTIONS.map((year) => (
-                                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <form.Field
-                                name="costingNumber"
-                                validators={{
-                                    onChange: zodOnChange(costingNumberSchema),
-                                }}
-                            >
-                                {(field) => (
-                                    <div className="my-3">
-                                        <TextField
-                                            label="Costing Number"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                            disabled
-                                        />
+                            ) : null}
+                            {mode === "create" ? (
+                                <>
+                                    <div className="my-3 grid grid-cols-2 gap-x-3">
+                                        <div>
+                                            <FormLabel className="my-2" required>Month</FormLabel>
+                                            <Select
+                                                value={String(selectedMonth)}
+                                                onValueChange={(value) => setSelectedMonth(Number(value))}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select month" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {MONTH_NAMES.map((name, i) => (
+                                                        <SelectItem key={i + 1} value={String(i + 1)}>
+                                                            {name} ({MONTH_IN_ROMANS[i]})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <FormLabel className="my-2" required>Year</FormLabel>
+                                            <Select
+                                                value={String(selectedYear)}
+                                                onValueChange={(value) => setSelectedYear(Number(value))}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select year" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {YEAR_OPTIONS.map((year) => (
+                                                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
-                                )}
-                            </form.Field>
+                                    <FieldDescription className="my-3">
+                                        The costing number will be generated automatically when you create this costing.
+                                    </FieldDescription>
+                                </>
+                            ) : null}
                             <form.Field name="description" validators={{ onChange: zodOnChange(costingDescriptionSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <TextField
                                             label="Description"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -279,43 +246,97 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
+                            <form.Field name="currencyCode" validators={{ onChange: zodOnChange(costingCurrencyCodeSchema), onSubmit: zodOnChange(costingCurrencyCodeSchema) }}>
+                                {(field) => (
+                                    <div className="my-3">
+                                        <FormLabel htmlFor={field.name} className="my-2" required>Currency</FormLabel>
+                                        <Select
+                                            value={field.state.value as string}
+                                            onValueChange={(value) => {
+                                                field.handleChange(value)
+                                                if (!costingCurrencyRequiresRate(value)) {
+                                                    form.setFieldValue("currency", 1)
+                                                } else {
+                                                    form.setFieldValue("currency", "")
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select currency" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {COSTING_CURRENCIES.map((item) => (
+                                                    <SelectItem key={item.code} value={item.code}>
+                                                        {item.code} — {item.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {field.state.meta.errors ? (
+                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
+                                        ) : null}
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Subscribe selector={(state) => state.values.currencyCode}>
+                                {(selectedCurrencyCode) => (
+                                    <>
                             <form.Field name="price" validators={{ onChange: zodOnChange(costingPriceSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <NumberField
                                             label="Price"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            placeholder="0"
+                                            description={
+                                                costingCurrencyRequiresRate(selectedCurrencyCode)
+                                                    ? `Vendor price in ${selectedCurrencyCode}.`
+                                                    : "Vendor price in IDR."
+                                            }
                                         />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="currency" validators={{ onChange: zodOnChange(costingCurrencySchema) }}>
+                            {costingCurrencyRequiresRate(selectedCurrencyCode) ? (
+                            <form.Field
+                                name="currency"
+                                validators={{
+                                    onChange: ({ value }) =>
+                                        zodOnChange(costingCurrencyRateForCodeSchema(selectedCurrencyCode))({ value }),
+                                    onSubmit: ({ value }) =>
+                                        zodOnChange(costingCurrencyRateForCodeSchema(selectedCurrencyCode))({ value }),
+                                }}
+                            >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
-                                            label="Currency"
+                                        <NumberField
+                                            label="Currency Rate"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            placeholder="0"
+                                            description={`${selectedCurrencyCode} to IDR exchange rate.`}
                                         />
                                     </div>
                                 )}
                             </form.Field>
+                            ) : null}
+                                    </>
+                                )}
+                            </form.Subscribe>
                             {shipmentId && (
-                                <form.Field name="containerId" validators={{ onChange: zodOnChange(costingContainerSchema) }}>
+                                <form.Field name="containerId" validators={{ onChange: zodOnChange(costingContainerSchema), onSubmit: zodOnChange(costingContainerSchema) }}>
                                     {(field) => (
                                         <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Container Number</Label>
+                                            <FormLabel htmlFor={field.name} className="my-2" required>Container Number</FormLabel>
                                             <Select
                                                 value={field.state.value as string}
                                                 onValueChange={(value) => field.handleChange(value)}
@@ -350,15 +371,17 @@ export default function CostingForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <NumberField
                                             label="VAT (%)"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            useGrouping={false}
+                                            maximumFractionDigits={2}
+                                            placeholder="0"
                                         />
                                     </div>
                                 )}
@@ -369,15 +392,17 @@ export default function CostingForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <NumberField
                                             label="PPH 23 (%)"
+                                            required
                                             id={field.name}
                                             name={field.name}
-                                            type="number"
-                                            step="0.01"
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            useGrouping={false}
+                                            maximumFractionDigits={2}
+                                            placeholder="0"
                                         />
                                     </div>
                                 )}
@@ -387,6 +412,7 @@ export default function CostingForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Vendor Invoice Number"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -396,10 +422,10 @@ export default function CostingForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="vendorId" validators={{ onChange: zodOnChange(costingVendorSchema) }}>
+                            <form.Field name="vendorId" validators={{ onChange: zodOnChange(costingVendorSchema), onSubmit: zodOnChange(costingVendorSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Vendor</Label>
+                                        <FormLabel htmlFor={field.name} className="my-2" required>Vendor</FormLabel>
                                         <Select
                                             value={field.state.value as string}
                                             onValueChange={(value) => field.handleChange(value)}

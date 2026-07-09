@@ -6,6 +6,7 @@ import {
   IconCalendar,
   IconClock,
   IconHash,
+  IconMapPin,
   IconReceipt,
   IconUserCheck,
 } from "@tabler/icons-react"
@@ -67,6 +68,10 @@ export function CustomerMetadataCard({ customer }: { customer: Customer }) {
 
         <MetadataRow icon={IconBuilding} label="Customer name">
           {customer.customerName}
+        </MetadataRow>
+
+        <MetadataRow icon={IconMapPin} label="Address">
+          {customer.address ? customer.address : <WarningChip>Unavailable</WarningChip>}
         </MetadataRow>
 
         <MetadataRow icon={IconReceipt} label="NPWP">

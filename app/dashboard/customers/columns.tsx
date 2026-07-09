@@ -20,6 +20,7 @@ export type Customer = {
     customerCode: string
     customerName: string
     npwp: string
+    address?: string | null
     isActive: boolean
     createdAt?: string
     updatedBy?: { name?: string } | string | null

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import type { User } from "@/app/dashboard/users/columns"
 import { USER_ROLES, formatRoleLabel, type UserRole } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
+import { FormLabel } from "@/components/ui/form-label"
 import { Label } from "@/components/ui/label"
 import { TextField } from "@/components/ui/text-field"
 import {
@@ -32,16 +33,20 @@ const roles = USER_ROLES
 
 function FormField({
   label,
+  required,
   field,
   children,
 }: {
   label: string
+  required?: boolean
   field: { name: string; state: { meta: { errors: unknown[] } } }
   children: ReactNode
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.name}>{label}</Label>
+      <FormLabel htmlFor={field.name} required={required}>
+        {label}
+      </FormLabel>
       {children}
       {field.state.meta.errors.length ? (
         <em className="text-xs text-[var(--mli-on-error-container)]">
@@ -136,6 +141,7 @@ export default function UserForm({
           {(field) => (
             <TextField
               label="Name"
+              required
               id={field.name}
               name={field.name}
               value={field.state.value}
@@ -154,6 +160,7 @@ export default function UserForm({
           {(field) => (
             <TextField
               label="Email"
+              required
               id={field.name}
               name={field.name}
               type="email"
@@ -175,6 +182,7 @@ export default function UserForm({
               {(field) => (
                 <TextField
                   label="Initial password"
+                  required
                   id={field.name}
                   name={field.name}
                   type="password"
@@ -197,6 +205,7 @@ export default function UserForm({
               {(field) => (
                 <TextField
                   label="Confirm password"
+                  required
                   id={field.name}
                   name={field.name}
                   type="password"
@@ -212,7 +221,7 @@ export default function UserForm({
 
         <form.Field name="role">
           {(field) => (
-            <FormField label="Role" field={field}>
+            <FormField label="Role" required field={field}>
               <Select
                 value={field.state.value}
                 onValueChange={(value) => field.handleChange(value as UserRole)}

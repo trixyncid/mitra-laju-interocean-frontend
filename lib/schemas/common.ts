@@ -30,6 +30,12 @@ export const requiredFormNumberSchema = (label: string) =>
   z.union([z.string(), z.number()]).superRefine((val, ctx) => {
     if (val === "" || val === null || val === undefined) {
       ctx.addIssue({ code: "custom", message: `${label} is required` })
+      return
+    }
+
+    const num = typeof val === "number" ? val : Number(String(val).replace(/\./g, "").replace(",", "."))
+    if (!Number.isFinite(num)) {
+      ctx.addIssue({ code: "custom", message: `${label} must be a valid number` })
     }
   })
 

@@ -116,6 +116,7 @@ export default function VendorContactForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Contact Name"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -135,6 +136,7 @@ export default function VendorContactForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Phone Number"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}

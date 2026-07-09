@@ -7,6 +7,7 @@ import { use } from "react";
 import { useCostingById, useUpdateCosting } from "@/hooks/use-costings";
 import type { CostingAttachment } from "@/app/dashboard/costings/columns";
 import { amountCalculation, formatDate } from "@/lib/utils";
+import { costingCurrencyRequiresRate } from "@/lib/costing-currencies";
 import DocumentUploadForm from "@/components/forms/document-upload-form";
 import { costingService } from "@/services/costing.service";
 import CostingLoading from "@/components/loading/costing-loading";
@@ -32,7 +33,8 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
 
     const attachments = costing.costingsAttachments ?? []
     const price = Number(costing.price) || 0
-    const currency = Number(costing.currency) || 0
+    const currencyCode = costing.currencyCode ?? "IDR"
+    const currency = Number(costing.currency) || (currencyCode === "IDR" ? 1 : 0)
     const vatPercentage = Number(costing.vatPercentage) || 0
     const pph23Percentage = Number(costing.pph23Percentage) || 0
 
@@ -169,13 +171,19 @@ export default function CostingDetailPage({ params }: { params: Promise<{ costin
 
                             <div className="border rounded-md">
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p>Price</p>
-                                    <p>{price.toLocaleString("id-ID")}</p>
+                                    <p>Currency</p>
+                                    <p>{currencyCode}</p>
                                 </div>
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p>Currency</p>
+                                    <p>Price ({currencyCode})</p>
+                                    <p>{price.toLocaleString("id-ID")}</p>
+                                </div>
+                                {costingCurrencyRequiresRate(currencyCode) ? (
+                                <div className="flex items-center justify-between py-3 px-2 border-b">
+                                    <p>Currency Rate</p>
                                     <p>{currency.toLocaleString("id-ID")}</p>
                                 </div>
+                                ) : null}
                                 <div className="flex items-center justify-between py-3 px-2 border-b">
                                     <p>VAT</p>
                                     <p className={`${vatPercentage !== 0 ? "" : "px-2 py-1 bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)] rounded-full"}`}>

@@ -1,5 +1,6 @@
 "use client"
 
+import { CountryCombobox } from "@/components/country-combobox"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -74,7 +75,7 @@ export default function PortForm({
 
     return (
         <div>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Port</Button>}
                 </DialogTrigger>
@@ -101,6 +102,7 @@ export default function PortForm({
                                         <div className="my-3">
                                             <TextField
                                                 label="Port Name"
+                                                required
                                                 id={field.name}
                                                 name={field.name}
                                                 value={field.state.value}
@@ -120,13 +122,13 @@ export default function PortForm({
                                 {
                                     (field) => (
                                         <div className="my-3">
-                                            <TextField
-                                                label="Country"
+                                            <CountryCombobox
                                                 id={field.name}
-                                                name={field.name}
                                                 value={field.state.value}
-                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                onValueChange={(nextValue) => field.handleChange(nextValue)}
                                                 error={fieldError(field.state.meta.errors)}
+                                                required
+                                                placeholder="Search country..."
                                             />
                                         </div>
                                     )

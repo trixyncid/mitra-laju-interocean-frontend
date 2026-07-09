@@ -7,8 +7,9 @@ export type CreateCostingInput = {
     year?: number
     description: string
     price: number
-    currency: number
-    containerId: string
+    currencyCode?: string
+    currency?: number
+    containerId?: string
     vatPercentage: number
     pph23Percentage: number
     vendorInvoiceNumber: string
@@ -63,23 +64,6 @@ export const costingService = {
             items: (response.data ?? []) as Costing[],
             pagination,
         }
-    },
-    getNextCostingNumber: async (
-        month: number,
-        year: number,
-        excludeCostingNumber?: string
-    ) => {
-        const params = new URLSearchParams({
-            month: String(month),
-            year: String(year),
-        })
-        if (excludeCostingNumber) {
-            params.set("excludeCostingNumber", excludeCostingNumber)
-        }
-        const response = await apiClient.get(
-            `/costings/next-costing-number?${params.toString()}`
-        )
-        return response as { costingNumber: string }
     },
     getById: async (id: string): Promise<CostingDetail> => {
         return apiClient.get<CostingDetail>(`/costings/${id}`)

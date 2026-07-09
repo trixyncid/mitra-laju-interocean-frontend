@@ -47,7 +47,7 @@ type VendorLocation = {
     postalCode: string
     vendorContacts: VendorContact[]
     updatedAt: string,
-    updatedBy: { name: string }
+    updatedBy?: { name: string }
 }
 
 export default function VendorDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
@@ -80,7 +80,12 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
     if (error) return <ErrorPage title="Vendor not found" message={error.message} />
     if (!data) return <ErrorPage title="Vendor not found" message="Unable to load this vendor." />
 
-    const vendorCostings = data.costings.map((costing: Costing) => ({
+    const updatedByName =
+        typeof data.updatedBy === "string" ? data.updatedBy : data.updatedBy?.name
+    const costings = Array.isArray(data.costings) ? data.costings : []
+    const vendorLocations = Array.isArray(data.vendorLocations) ? data.vendorLocations : []
+
+    const vendorCostings = costings.map((costing: Costing) => ({
         id: costing.id,
         invoiceNumber: costing.vendorInvoiceNumber,
         amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
@@ -88,7 +93,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
         updatedAt: costing.updatedAt ?? "",
     }))
 
-    const vendorShipments: LinkedShipment[] = data.costings
+    const vendorShipments: LinkedShipment[] = costings
         .filter((costing: Costing) => costing.shipment != null)
         .map((costing: Costing) => {
             const shipment = costing.shipment!
@@ -113,7 +118,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
     const calculateYTDSpend = () => {
         let total = 0
 
-        for (const costing of data.costings) {
+        for (const costing of costings) {
             total += amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage)
         }
 
@@ -125,13 +130,13 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
      * @returns {number} The total active shipments
      */
     const totalActiveShipments = () => {
-        return data.costings.filter((costing: Costing) => costing.shipment?.isActive).length
+        return costings.filter((costing: Costing) => costing.shipment?.isActive).length
     }
 
     const calculateOutstandingBills = () => {
         let total = 0
 
-        for (const costing of data.costings) {
+        for (const costing of costings) {
             if (costing.status !== "paid") {
                 total += amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage)
             }
@@ -159,7 +164,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                         </div>
                         <div>
                             <h1 className="text-headline-lg">{data.vendorName}</h1>
-                            <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: {data.vendorCode}</p>
+                            <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)}{updatedByName ? ` by ${updatedByName}` : ""} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: {data.vendorCode}</p>
                             <div className="mt-2">
                                 <StatusChip active={Boolean(data?.isActive)} />
                             </div>
@@ -175,7 +180,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                         </div>
 
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">{ data.costings.length }</p>
+                            <p className="mt-2 font-bold text-xl">{ costings.length }</p>
                             <p className="mb-2 text-sm text-muted-foreground">Total <br /> Assignments</p>
                         </div>
 
@@ -197,9 +202,9 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
             <Tabs defaultValue="details" className="mt-6">
                 <TabsList>
                     <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.vendorLocations.length }</span></TabsTrigger>
+                    <TabsTrigger value="offices-and-contacts">Offices & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ vendorLocations.length }</span></TabsTrigger>
                     <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ vendorShipments.length }</span></TabsTrigger>
-                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.costings.length }</span></TabsTrigger>
+                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ costings.length }</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="mt-6">
                     <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
@@ -224,7 +229,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                 </TabsContent>
                 <TabsContent value="offices-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
-                        <p className="text-sm text-muted-foreground my-2 flex flex-row">{ data.vendorLocations.length } offices <Dot /> { data.vendorLocations.map((loc: VendorLocation) => loc.vendorContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
+                        <p className="text-sm text-muted-foreground my-2 flex flex-row">{ vendorLocations.length } offices <Dot /> { vendorLocations.reduce((total, location) => total + (Array.isArray(location.vendorContacts) ? location.vendorContacts.length : 0), 0) } contacts</p>
                         <MasterDataWriteGate>
                             <VendorLocationForm mode="create" id={undefined} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} vendorId={vendorId} />
                         </MasterDataWriteGate>
@@ -238,11 +243,14 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                     />
 
                     {
-                        data.vendorLocations.length === 0 ? <p>No locations found for this vendor ...</p> :
+                        vendorLocations.length === 0 ? <p>No locations found for this vendor ...</p> :
                         filteredVendorLocations.length === 0 ? (
                             <p className="text-sm text-muted-foreground">No locations match &quot;{locationSearch.trim()}&quot;.</p>
                         ) :
-                        filteredVendorLocations.map((location: VendorLocation) => (
+                        filteredVendorLocations.map((location: VendorLocation) => {
+                            const locationContacts = Array.isArray(location.vendorContacts) ? location.vendorContacts : []
+
+                            return (
                             <Card key={location.id} className="mb-4">
                                 <CardContent>
                                     <div className="flex flex-row items-start justify-between">
@@ -269,8 +277,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                                     <Separator className="mt-4"/>
 
                                     {
-                                        location.vendorContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p> :
-                                        location.vendorContacts.map((contact: VendorContact) => (        
+                                        locationContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p> :
+                                        locationContacts.map((contact: VendorContact) => (        
                                             <div key={contact.id}>
                                                 <div className="flex flex-row items-center justify-between my-2">
                                                     <div className="flex flex-row items-center gap-x-2">
@@ -299,7 +307,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                                     }
                                 </CardContent>
                             </Card>
-                        ))
+                            )
+                        })
                     }
                 </TabsContent>
                 <TabsContent value="shipment-history">

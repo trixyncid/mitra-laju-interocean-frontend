@@ -152,6 +152,7 @@ export default function DocumentUploadForm({
                                 <div className="">
                                     <TextField
                                         label="Document Name"
+                                        required
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -171,6 +172,7 @@ export default function DocumentUploadForm({
                                         <div className="">
                                             <TextField
                                                 label="Document File"
+                                                required
                                                 id={field.name}
                                                 name={field.name}
                                                 type="file"

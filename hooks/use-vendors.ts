@@ -46,7 +46,9 @@ export const useUpdateVendor = () => {
         mutationFn: ({ id, vendor }: { id: string, vendor: Partial<Vendor> }) =>
             vendorsService.update(id, vendor),
         onSuccess: (data, { id }) => {
-            queryClient.setQueryData(["vendors", id], data)
+            queryClient.setQueryData(["vendors", id], (existing) =>
+                existing && typeof existing === "object" ? { ...existing, ...data } : data
+            )
             queryClient.invalidateQueries({ queryKey: ["vendors"] })
             toast.success("Vendor updated successfully")
         },

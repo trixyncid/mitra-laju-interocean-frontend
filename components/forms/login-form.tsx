@@ -131,6 +131,7 @@ export function LoginForm({
                 <TextField
                     ref={emailInputRef}
                     label="Email"
+                    required
                     id={field.name}
                     name={field.name}
                     type="email"
@@ -162,6 +163,7 @@ export function LoginForm({
                 <TextField
                     ref={passwordInputRef}
                     label="Password"
+                    required
                     id={field.name}
                     name={field.name}
                     type={passwordType}

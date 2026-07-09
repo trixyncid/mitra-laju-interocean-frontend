@@ -19,31 +19,6 @@ export const useShipmentById = (id: string) => {
     });
 }
 
-export const useNextOrderNumber = (
-    month: number,
-    year: number,
-    options?: { enabled?: boolean; excludeOrderNumber?: string }
-) => {
-    const enabled = options?.enabled ?? true;
-
-    return useQuery({
-        queryKey: [
-            "shipments",
-            "next-order-number",
-            month,
-            year,
-            options?.excludeOrderNumber,
-        ],
-        queryFn: () =>
-            shipmentsService.getNextOrderNumber(
-                month,
-                year,
-                options?.excludeOrderNumber
-            ),
-        enabled,
-    });
-}
-
 export const useCreateShipment = () => {
     const queryClient = useQueryClient();
 

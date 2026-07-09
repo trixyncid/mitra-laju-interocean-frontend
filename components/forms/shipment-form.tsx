@@ -1,25 +1,25 @@
 "use client"
 
-import { Customer } from "@/app/dashboard/customers/columns";
 import { Button } from "@/components/ui/button";
+import { CustomerCombobox } from "@/components/customer-combobox";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { TextField } from "@/components/ui/text-field";
+import { FormLabel } from "@/components/ui/form-label";
+import { FieldDescription } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { fieldError } from "@/lib/form-field";
 import {
   customerCodeIdSchema,
   customerShipperIdSchema,
-  orderNumberSchema,
 } from "@/lib/schemas/shipment";
 import { zodOnChange } from "@/lib/zod-form";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { useCustomers, useGetShippersByCustomerCodeId } from "@/hooks/use-customers";
-import { useCreateShipment, useNextOrderNumber, useUpdateShipment } from "@/hooks/use-shipments";
+import { useGetShippersByCustomerCodeId } from "@/hooks/use-customers";
+import { useCreateShipment, useUpdateShipment } from "@/hooks/use-shipments";
 import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export type Shipper = {
@@ -29,16 +29,6 @@ export type Shipper = {
 
 const MONTH_IN_ROMANS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-
-const parseOrderNumberDate = (orderNumber: string | undefined): { monthIndex: number, year: number } | null => {
-    if (!orderNumber) return null
-    const parts = orderNumber.split("/")
-    if (parts.length !== 3) return null
-    const monthIndex = MONTH_IN_ROMANS.indexOf(parts[1]) + 1
-    const year = parseInt(parts[2], 10)
-    if (monthIndex === 0 || isNaN(year)) return null
-    return { monthIndex, year }
-}
 
 const currentYear = new Date().getFullYear()
 const YEAR_OPTIONS = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i)
@@ -61,31 +51,14 @@ export default function ShipmentForm({
     const createShipment = useCreateShipment()
     const updateShipment = useUpdateShipment()
 
-    const parsedDate = parseOrderNumberDate(orderNumber)
-    const defaultMonth = parsedDate?.monthIndex ?? (new Date().getMonth() + 1)
-    const defaultYear = parsedDate?.year ?? new Date().getFullYear()
-
     const [open, setOpen] = useState(false)
-    const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth)
-    const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
+    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
     const [selectedCustomerCode, setSelectedCustomerCode] = useState<string | undefined>(customerCodeId ?? "")
-
-    const excludeOrderNumber =
-        mode === "edit" &&
-        selectedMonth === defaultMonth &&
-        selectedYear === defaultYear
-            ? orderNumber
-            : undefined
-
-    const { data: nextOrderNumberData } = useNextOrderNumber(selectedMonth, selectedYear, {
-        enabled: open,
-        excludeOrderNumber,
-    })
 
     const form = useForm({
         defaultValues: {
             id: id ?? "",
-            orderNumber: orderNumber ?? "",
             customerCodeId: customerCodeId ?? "",
             customerShipperId: customerShipperId ?? "-",
             isActive: isActive ?? true,
@@ -110,7 +83,6 @@ export default function ShipmentForm({
                 updateShipment.mutate({
                     id: value.id,
                     shipment: {
-                        orderNumber: value.orderNumber,
                         customerCodeId: value.customerCodeId,
                         customerShipperId: value.customerShipperId,
                         isActive: value.isActive,
@@ -128,44 +100,11 @@ export default function ShipmentForm({
         }
     })
 
-    useEffect(() => {
-        if (!open) return
-
-        if (
-            mode === "edit" &&
-            selectedMonth === defaultMonth &&
-            selectedYear === defaultYear &&
-            orderNumber
-        ) {
-            form.setFieldValue("orderNumber", orderNumber)
-            return
-        }
-
-        if (nextOrderNumberData?.orderNumber) {
-            form.setFieldValue("orderNumber", nextOrderNumberData.orderNumber)
-        }
-    }, [
-        open,
-        selectedMonth,
-        selectedYear,
-        nextOrderNumberData?.orderNumber,
-        mode,
-        orderNumber,
-        defaultMonth,
-        defaultYear,
-        form,
-    ])
-
-    const { data: customersPage, isLoading: customersLoading, error: customersError } = useCustomers({
-        page: 1,
-        pageSize: 100,
-    })
-    const customers = customersPage?.items ?? []
     const { data: shippers, isLoading: shippersLoading, error: shippersError } = useGetShippersByCustomerCodeId(selectedCustomerCode ?? "")
 
     return (
         <div>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
                 <DialogTrigger asChild>
                     {mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Shipment</Button>}
                 </DialogTrigger>
@@ -181,62 +120,55 @@ export default function ShipmentForm({
                         }
                     }>
                         <div>
-                            <div className="my-3 grid grid-cols-2 gap-x-3">
-                                <div>
-                                    <Label className="my-2">Month</Label>
-                                    <Select
-                                        value={String(selectedMonth)}
-                                        onValueChange={(value) => setSelectedMonth(Number(value))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select month" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {MONTH_NAMES.map((name, i) => (
-                                                <SelectItem key={i + 1} value={String(i + 1)}>
-                                                    {name} ({MONTH_IN_ROMANS[i]})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            {mode === "edit" && orderNumber ? (
+                                <div className="my-3">
+                                    <FormLabel className="my-2">Order Number</FormLabel>
+                                    <p className="text-sm font-medium">{orderNumber}</p>
                                 </div>
-                                <div>
-                                    <Label className="my-2">Year</Label>
-                                    <Select
-                                        value={String(selectedYear)}
-                                        onValueChange={(value) => setSelectedYear(Number(value))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select year" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {YEAR_OPTIONS.map((year) => (
-                                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <form.Field
-                                name="orderNumber"
-                                validators={{
-                                    onChange: zodOnChange(orderNumberSchema),
-                                }}
-                            >
-                                {(field) => (
-                                    <div className="my-3">
-                                        <TextField
-                                            label="Order Number"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                            disabled
-                                            error={fieldError(field.state.meta.errors)}
-                                        />
+                            ) : null}
+                            {mode === "create" ? (
+                                <>
+                                    <div className="my-3 grid grid-cols-2 gap-x-3">
+                                        <div>
+                                            <FormLabel className="my-2" required>Month</FormLabel>
+                                            <Select
+                                                value={String(selectedMonth)}
+                                                onValueChange={(value) => setSelectedMonth(Number(value))}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select month" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {MONTH_NAMES.map((name, i) => (
+                                                        <SelectItem key={i + 1} value={String(i + 1)}>
+                                                            {name} ({MONTH_IN_ROMANS[i]})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <FormLabel className="my-2" required>Year</FormLabel>
+                                            <Select
+                                                value={String(selectedYear)}
+                                                onValueChange={(value) => setSelectedYear(Number(value))}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select year" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {YEAR_OPTIONS.map((year) => (
+                                                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
-                                )}
-                            </form.Field>
+                                    <FieldDescription className="my-3">
+                                        The order number will be generated automatically when you create this shipment.
+                                    </FieldDescription>
+                                </>
+                            ) : null}
                             <form.Field
                                 name="customerCodeId"
                                 validators={{
@@ -245,37 +177,19 @@ export default function ShipmentForm({
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Customer Code</Label>
-                                        <Select
+                                        <CustomerCombobox
+                                            id={field.name}
                                             value={field.state.value}
-                                            onValueChange={(value) => {
-                                                field.handleChange(value)
-                                                setSelectedCustomerCode(value)
+                                            onValueChange={(nextValue) => {
+                                                field.handleChange(nextValue)
+                                                setSelectedCustomerCode(nextValue)
+                                                form.setFieldValue("customerShipperId", "-")
                                             }}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select customer code" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {
-                                                    customersLoading ?
-                                                        <SelectItem value="value" disabled>Loading...</SelectItem>
-                                                        :
-                                                        customersError ?
-                                                            toast.error(customersError.message)
-                                                            :
-                                                            customers?.length === 0 ?
-                                                                <SelectItem value="value" disabled>No customers found</SelectItem>
-                                                                :
-                                                                customers?.map((customer: Customer) => (
-                                                                    <SelectItem key={customer.id} value={customer?.id ?? ""}>{customer?.customerCode} ({customer?.customerName})</SelectItem>
-                                                                ))
-                                                }
-                                            </SelectContent>
-                                        </Select>
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            enabled={open}
+                                            placeholder="Search customer code or name..."
+                                        />
                                     </div>
                                 )}
                             </form.Field>
@@ -287,7 +201,7 @@ export default function ShipmentForm({
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Customer Shipper</Label>
+                                        <FormLabel htmlFor={field.name} className="my-2" required>Customer Shipper</FormLabel>
                                         <Select
                                             value={field.state.value}
                                             onValueChange={field.handleChange}
@@ -296,20 +210,17 @@ export default function ShipmentForm({
                                                 <SelectValue placeholder="Select customer code to enable shipper selection" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {
-                                                    shippersLoading ?
-                                                        <SelectItem value="value" disabled>Loading...</SelectItem>
-                                                        :
-                                                        shippersError ?
-                                                            toast.error(shippersError.message)
-                                                            :
-                                                            shippers?.length === 0 ?
-                                                                <SelectItem value="-">No shippers found for this customer code</SelectItem>
-                                                                :
-                                                                shippers?.map((shipper: Shipper) => (
-                                                                    <SelectItem key={shipper.id} value={shipper?.id ?? ""}>{shipper?.name}</SelectItem>
-                                                                ))
-                                                }
+                                                {shippersLoading ? (
+                                                    <SelectItem value="_loading" disabled>Loading...</SelectItem>
+                                                ) : shippersError ? (
+                                                    <SelectItem value="_error" disabled>Unable to load shippers</SelectItem>
+                                                ) : shippers?.length === 0 ? (
+                                                    <SelectItem value="-">No shippers found for this customer code</SelectItem>
+                                                ) : (
+                                                    shippers?.map((shipper: Shipper) => (
+                                                        <SelectItem key={shipper.id} value={shipper?.id ?? ""}>{shipper?.name}</SelectItem>
+                                                    ))
+                                                )}
                                             </SelectContent>
                                         </Select>
                                         {field.state.meta.errors ? (

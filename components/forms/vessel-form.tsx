@@ -1,5 +1,6 @@
 "use client"
 
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -7,7 +8,6 @@ import { TextField } from "@/components/ui/text-field";
 import { fieldError } from "@/lib/form-field"
 import { vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
 import { zodOnChange } from "@/lib/zod-form";
-import { ISOFormat } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -85,7 +85,7 @@ export default function VesselForm({
 
     return (
         <div>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Vessel</Button>}
                 </DialogTrigger>
@@ -111,6 +111,7 @@ export default function VesselForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Vessel Name"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             type="text"
@@ -131,6 +132,7 @@ export default function VesselForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Voyage"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             type="text"
@@ -146,14 +148,13 @@ export default function VesselForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <DatePicker
                                             label="ETD"
                                             id={field.name}
-                                            name={field.name}
-                                            type="date"
-                                            value={field.state.value ? field.state.value.split('T')[0] : ''}
-                                            onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            placeholder="Pick ETD"
                                         />
                                     </div>
                                 )}
@@ -163,14 +164,13 @@ export default function VesselForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
+                                        <DatePicker
                                             label="Closing Reefer"
                                             id={field.name}
-                                            name={field.name}
-                                            type="date"
-                                            value={field.state.value ? field.state.value.split('T')[0] : ''}
-                                            onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            placeholder="Pick closing reefer date"
                                         />
                                     </div>
                                 )}

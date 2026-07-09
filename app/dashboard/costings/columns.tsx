@@ -23,6 +23,7 @@ export type Costing = {
     createdAt: string
     description: string
     price: number
+    currencyCode: string
     currency: number
     vatPercentage: number
     pph23Percentage: number

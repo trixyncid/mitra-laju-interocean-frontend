@@ -51,7 +51,7 @@ type CustomerLocation = {
     postalCode: string
     customerContacts: CustomerContact[]
     updatedAt: string,
-    updatedBy: { name: string }
+    updatedBy?: { name: string }
 }
 
 type CustomerShipper = {
@@ -87,27 +87,40 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
     if (isLoading) return <CustomerVendorDetailLoading />
     if (!data) return <ErrorPage title="Customer not found" message="Unable to load this customer." />
-    /**
-     * Function to count the total number of customer locations for a customer
-     * @returns {number} The total number of customer locations
-     */
-    const totalCustomerLocations = data.customerShippers?.map((shipper: CustomerShipper) => shipper.customerLocations.length).reduce((a: number, b: number) => a + b, 0) ?? 0
 
-    /**
-     * Function to count the total number of customer contacts for a customer
-     * @returns {number} The total number of customer contacts
-     */
-    const totalCustomerContacts = data.customerShippers?.map((shipper: CustomerShipper) => shipper.customerLocations.map((location: CustomerLocation) => location.customerContacts.length).reduce((a: number, b: number) => a + b, 0)).reduce((a: number, b: number) => a + b, 0) ?? 0
+    const updatedByName =
+        typeof data.updatedBy === "string" ? data.updatedBy : data.updatedBy?.name
+
+    const customerShippers = Array.isArray(data.customerShippers) ? data.customerShippers : []
+    const shipments = Array.isArray(data.shipments) ? data.shipments : []
+
+    const totalCustomerLocations = customerShippers.reduce(
+        (total, shipper) =>
+            total + (Array.isArray(shipper.customerLocations) ? shipper.customerLocations.length : 0),
+        0
+    )
+
+    const totalCustomerContacts = customerShippers.reduce(
+        (total, shipper) =>
+            total +
+            (Array.isArray(shipper.customerLocations) ? shipper.customerLocations : []).reduce(
+                (locTotal, location) =>
+                    locTotal +
+                    (Array.isArray(location.customerContacts) ? location.customerContacts.length : 0),
+                0
+            ),
+        0
+    )
     
     /**
      * Function to map the customer shipments to a new object
      * @returns {Shipment[]} The mapped customer shipments
      */
-    const customerShipments: LinkedShipment[] = (data.shipments ?? []).map((shipment: CustomerShipment) => ({
+    const customerShipments: LinkedShipment[] = shipments.map((shipment: CustomerShipment) => ({
         id: shipment.id,
         orderNumber: shipment.orderNumber,
-        customerCode: shipment.customerCode.customerName + " (" + shipment.customerCode.customerCode + ")",
-        customerShipper: shipment.customerShipper.name,
+        customerCode: `${shipment.customerCode?.customerName ?? ""} (${shipment.customerCode?.customerCode ?? ""})`,
+        customerShipper: shipment.customerShipper?.name ?? "",
         departureCountry: shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
         arrivalCountry: shipment.shipmentOperational?.portDestination?.portCountry ?? "",
         eta: shipment.shipmentOperational?.eta?.split('T')[0] ?? "",
@@ -120,8 +133,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     const customerCostings = () => {
         const costings: CustomerCosting[] = []
 
-        for (const shipment of data.shipments ?? []) {
-            costings.push(...shipment.costings.map((costing: Costing) => ({
+        for (const shipment of shipments) {
+            costings.push(...(shipment.costings ?? []).map((costing: Costing) => ({
                 id: costing.id,
                 invoiceNumber: costing.vendorInvoiceNumber,
                 amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
@@ -140,8 +153,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     const costingsCount = () => {
         let count = 0
 
-        for (const shipment of data.shipments ?? []) {
-            count += shipment.costings.length
+        for (const shipment of shipments) {
+            count += (shipment.costings ?? []).length
         }
 
         return count
@@ -154,8 +167,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     const calculateYTDSpend = () => {
         let total = 0
 
-        for (const shipment of data.shipments ?? []) {
-            total += shipment.costings.reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)
+        for (const shipment of shipments) {
+            total += (shipment.costings ?? []).reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)
         }
 
         return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
@@ -164,7 +177,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
     const calculateOutstandingBills = () => {
         let total = 0
 
-        for (const shipment of data.shipments ?? []) {
+        for (const shipment of shipments) {
             if (shipment.shipmentOperational?.status !== "paid" && shipment.shipmentOperational?.customerChargeAmount) {
                 total += shipment.shipmentOperational.customerChargeAmount
             }
@@ -172,6 +185,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
         return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
     }
+
+    const activeShipmentsCount = shipments.filter((shipment: CustomerShipment) => shipment.isActive).length
 
     return (  
         <DashboardPage>
@@ -190,7 +205,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         </div>
                         <div>
                             <h1 className="text-headline-lg">{ data.customerName}</h1>
-                            <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)} by {data.updatedBy.name} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: { data.customerCode }</p>
+                            <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)}{updatedByName ? ` by ${updatedByName}` : ""} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: { data.customerCode }</p>
                             <div className="mt-2">
                                 <StatusChip active={Boolean(data?.isActive)} />
                             </div>
@@ -201,12 +216,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
                     <div className="grid grid-cols-4 text-center">
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">{ data.shipments.filter((shipment: CustomerShipment) => shipment.isActive).length }</p>
+                            <p className="mt-2 font-bold text-xl">{ activeShipmentsCount }</p>
                             <p className="mb-2 text-sm text-muted-foreground">Active <br /> Shipments</p>
                         </div>
 
                         <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">{ data.shipments.length }</p>
+                            <p className="mt-2 font-bold text-xl">{ shipments.length }</p>
                             <p className="mb-2 text-sm text-muted-foreground">Total <br /> Assignments</p>
                         </div>
 
@@ -227,8 +242,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
             <Tabs defaultValue="details" className="mt-6">
                 <TabsList>
                     <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="locations-and-contacts">Locations & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.customerShippers.length }</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ data.shipments.length }</span></TabsTrigger>
+                    <TabsTrigger value="locations-and-contacts">Locations & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ customerShippers.length }</span></TabsTrigger>
+                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ shipments.length }</span></TabsTrigger>
                     <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ costingsCount() }</span></TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="mt-6">
@@ -254,7 +269,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 </TabsContent>
                 <TabsContent value="locations-and-contacts">
                     <div className="flex flex-row items-center justify-between mb-4">
-                        <p className="text-sm text-muted-foreground my-2 flex flex-row">{ data.customerShippers.length } shippers <Dot /> { totalCustomerLocations } locations <Dot /> { totalCustomerContacts } contacts</p>
+                        <p className="text-sm text-muted-foreground my-2 flex flex-row">{ customerShippers.length } shippers <Dot /> { totalCustomerLocations } locations <Dot /> { totalCustomerContacts } contacts</p>
                         <MasterDataWriteGate>
                             <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
                         </MasterDataWriteGate>
@@ -269,12 +284,15 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
                     <Accordion type="multiple">
                         {
-                            data.customerShippers.length === 0 ? <p>No shippers found for this customer ...</p>
+                            customerShippers.length === 0 ? <p>No shippers found for this customer ...</p>
                             :
                             filteredShippers.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">No shippers match &quot;{shipperSearch.trim()}&quot;.</p>
                             ) :
-                            filteredShippers.map((shipper: CustomerShipper) => (
+                            filteredShippers.map((shipper: CustomerShipper) => {
+                                const shipperLocations = Array.isArray(shipper.customerLocations) ? shipper.customerLocations : []
+
+                                return (
                                 <AccordionItem value={shipper.id} key={shipper.id}>
                                     <AccordionTrigger className="flex flex-row items-center">
                                         <div>
@@ -286,7 +304,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <div className="flex items-center justify-between mb-4">
-                                            <p className="text-sm text-muted-foreground flex flex-row">{ shipper.customerLocations.length } locations <Dot /> { shipper.customerLocations.map((location: CustomerLocation) => location.customerContacts.length).reduce((a: number, b: number) => a + b, 0) } contacts</p>
+                                            <p className="text-sm text-muted-foreground flex flex-row">{ shipperLocations.length } locations <Dot /> { shipperLocations.reduce((total, location) => total + (Array.isArray(location.customerContacts) ? location.customerContacts.length : 0), 0) } contacts</p>
                                             
                                             <div className="flex items-center gap-x-2">
                                                 <MasterDataWriteGate>
@@ -296,9 +314,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                             </div>
                                         </div>
                                         {
-                                            shipper.customerLocations.length === 0 ? <p>No locations found for this shipper ...</p>
+                                            shipperLocations.length === 0 ? <p>No locations found for this shipper ...</p>
                                             :
-                                            shipper.customerLocations.map((location: CustomerLocation) => (
+                                            shipperLocations.map((location: CustomerLocation) => {
+                                                const locationContacts = Array.isArray(location.customerContacts) ? location.customerContacts : []
+
+                                                return (
                                                 <Card key={location.id} className="my-4">
                                                     <CardContent>
                                                         <div className="flex flex-row items-start justify-between">
@@ -311,7 +332,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                                 </div>
                                                                 <div className="text-xs text-muted-foreground">
                                                                     <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
-                                                                    <p>Last updated on { formatDate(location.updatedAt) } by { location.updatedBy.name }</p>
+                                                                    <p>Last updated on { formatDate(location.updatedAt) } by { location.updatedBy?.name ?? "Unknown" }</p>
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-row items-center gap-x-2">
@@ -326,9 +347,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
                                                         <div>
                                                             {
-                                                                location.customerContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p>
+                                                                locationContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p>
                                                                 :
-                                                                location.customerContacts.map((contact: CustomerContact) => (    
+                                                                locationContacts.map((contact: CustomerContact) => (    
                                                                     <div key={contact.id}>
                                                                         <div className="flex flex-row items-center justify-between my-2">
                                                                             <div className="flex flex-row items-center gap-x-2">
@@ -358,11 +379,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                                         </div>
                                                     </CardContent>
                                                 </Card>
-                                            ))
+                                                )
+                                            })
                                         }
                                     </AccordionContent>
                                 </AccordionItem>
-                            ))
+                                )
+                            })
                         }
                     </Accordion>
                 </TabsContent>

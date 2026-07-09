@@ -4,14 +4,13 @@ import { useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
+import { CountryCombobox } from "@/components/country-combobox"
 import { TextField } from "../ui/text-field"
 import { useForm } from "@tanstack/react-form"
 import { Label } from "../ui/label"
 import { fieldError } from "@/lib/form-field"
 import {
-  shipperCountrySchema,
   shipperNameSchema,
-  shipperPhoneSchema,
 } from "@/lib/schemas/shipper"
 import { zodOnChange } from "@/lib/zod-form"
 import { Switch } from "../ui/switch"
@@ -50,15 +49,22 @@ export default function CustomerShipperForm({
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
+            const shipper = {
+                name: value.name,
+                phoneNumber: value.phoneNumber.trim() === "" ? null : value.phoneNumber,
+                country: value.country.trim() === "" ? null : value.country,
+                isActive: value.isActive,
+            }
+
             if (mode === "create") {
-                createShipper.mutate({ customerId, shipper: { name: value.name, phoneNumber: value.phoneNumber, country: value.country, isActive: value.isActive } }, {
+                createShipper.mutate({ customerId, shipper }, {
                     onSuccess: () => {
                         setOpen(false)
                         form.reset()
                     }
                 })
             } else {
-                updateShipper.mutate({ customerId, shipperId: id ?? "", shipper: { name: value.name, phoneNumber: value.phoneNumber, country: value.country, isActive: value.isActive } }, {
+                updateShipper.mutate({ customerId, shipperId: id ?? "", shipper }, {
                     onSuccess: () => {
                         setOpen(false)
                         form.reset()
@@ -71,13 +77,18 @@ export default function CustomerShipperForm({
     return (
         <div className="flex flex-row items-center gap-x-2">
             {/* Create/Edit Shipper Dialog */}
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button>: <Button variant="outline" size="sm"><IconPlus /> Shipper</Button>}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{ mode === "edit" ? "Edit Shipper" : "Create New Shipper"}</DialogTitle>
+                        <DialogDescription>
+                            {mode === "edit"
+                                ? "Update shipper details for this customer."
+                                : "Add a new shipper for this customer."}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={(e) => {
                         e.preventDefault()
@@ -90,6 +101,7 @@ export default function CustomerShipperForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Name"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value ?? ""}
@@ -99,7 +111,7 @@ export default function CustomerShipperForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="phoneNumber" validators={{ onChange: zodOnChange(shipperPhoneSchema) }}>
+                            <form.Field name="phoneNumber">
                                 {( field ) => (
                                     <div className="my-3">
                                         <TextField
@@ -109,20 +121,21 @@ export default function CustomerShipperForm({
                                             value={field.state.value ?? ""}
                                             onChange={(e) => field.handleChange(e.target.value)}
                                             error={fieldError(field.state.meta.errors)}
+                                            description="Optional contact number."
                                         />
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="country" validators={{ onChange: zodOnChange(shipperCountrySchema) }}>
+                            <form.Field name="country">
                                 {( field ) => (
                                     <div className="my-3">
-                                        <TextField
-                                            label="Country"
+                                        <CountryCombobox
                                             id={field.name}
-                                            name={field.name}
                                             value={field.state.value ?? ""}
-                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
+                                            description="Optional shipper country or region."
+                                            placeholder="Search country..."
                                         />
                                     </div>
                                 )}

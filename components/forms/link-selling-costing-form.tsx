@@ -11,16 +11,8 @@ import { useMemo, useState } from "react"
 import { Costing } from "@/app/dashboard/costings/columns"
 import { costingSelectionSchema } from "@/lib/schemas/link"
 import { zodOnChange } from "@/lib/zod-form"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-    ComboboxTrigger,
-    ComboboxValue,
-} from "@/components/ui/combobox"
+import { SearchableCombobox } from "@/components/searchable-combobox"
+import { fieldError } from "@/lib/form-field"
 
 export default function LinkSellingCostingForm({
     sellingId,
@@ -99,39 +91,18 @@ export default function LinkSellingCostingForm({
                         >
                             {(field) => (
                                 <div className="my-5">
-                                    <Label className="my-2">Costing</Label>
-                                    {isLoading ? (
-                                        <p className="text-sm text-muted-foreground">Loading costings...</p>
-                                    ) : (
-                                        <Combobox
-                                            items={costingItems}
-                                            value={costingItems.find((item) => item.value === field.state.value) ?? null}
-                                            onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                            isItemEqualToValue={(a, b) => a.value === b.value}
-                                        >
-                                            <ComboboxTrigger
-                                                render={
-                                                    <Button type="button" variant="outline" className="w-full justify-between font-normal">
-                                                        <ComboboxValue placeholder="Search costing number or description..." />
-                                                    </Button>
-                                                }
-                                            />
-                                            <ComboboxContent>
-                                                <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                <ComboboxEmpty>No unlinked costings found.</ComboboxEmpty>
-                                                <ComboboxList>
-                                                    {(item) => (
-                                                        <ComboboxItem key={item.value} value={item}>
-                                                            {item.label}
-                                                        </ComboboxItem>
-                                                    )}
-                                                </ComboboxList>
-                                            </ComboboxContent>
-                                        </Combobox>
-                                    )}
-                                    {field.state.meta.errors ? (
-                                        <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                    ) : null}
+                                    <SearchableCombobox
+                                        id={field.name}
+                                        label="Costing"
+                                        value={field.state.value}
+                                        onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                        items={costingItems}
+                                        error={fieldError(field.state.meta.errors)}
+                                        required
+                                        isLoading={isLoading}
+                                        placeholder="Search costing number or description..."
+                                        emptyMessage="No unlinked costings found."
+                                    />
                                 </div>
                             )}
                         </form.Field>

@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { IconPlus } from "@tabler/icons-react"
 import { Label } from "../ui/label"
 import { TextField } from "../ui/text-field"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
+import { SearchableCombobox, type SearchableComboboxOption } from "@/components/searchable-combobox"
 import { usePorts } from "@/hooks/use-ports"
 import { Port } from "@/app/dashboard/ports/columns"
 import { fieldError } from "@/lib/form-field"
@@ -25,20 +26,9 @@ import type { CustomerLocationOption } from "@/services/customers.service"
 import { useCreateShipmentOperational, useUpdateShipmentOperational } from "@/hooks/use-shipments"
 import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
-import { ISOFormat } from "@/lib/utils"
 import { toast } from "sonner"
 import { usePermissions } from "@/hooks/use-permissions"
 import type { ShipmentType } from "@/lib/permissions"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-    ComboboxTrigger,
-    ComboboxValue,
-  } from "@/components/ui/combobox"
 
 export type Location = CustomerLocationOption
 
@@ -47,6 +37,17 @@ const SHIPMENT_TYPE_OPTIONS: { value: ShipmentType; label: string }[] = [
     { value: "EXPORT", label: "Export" },
     { value: "DOMESTIC", label: "Domestic" },
 ]
+
+function toLocationOption(location: CustomerLocationOption): SearchableComboboxOption {
+    return {
+        value: location.id,
+        label: `${location.addressLine1}, ${location.city}, ${location.country}`,
+    }
+}
+
+function activeLocations(locations: CustomerLocationOption[] | undefined) {
+    return (locations ?? []).filter((location) => location.isActive !== false)
+}
 
 export default function ShipmentOperationalForm({
     id,
@@ -86,9 +87,16 @@ export default function ShipmentOperationalForm({
     const [open, setOpen] = useState(false)
     const { canWrite, canWriteShipmentType, allowedShipmentTypes } = usePermissions()
 
-    const { data: portsData } = usePorts({ page: 1, pageSize: 100 })
-    const { data: locations } = useGetLocationsByCustomerId(customerCodeId ?? "")
-    const { data: vesselsData } = useVessels({ page: 1, pageSize: 100 })
+    const { data: portsData, isLoading: portsLoading } = usePorts({ page: 1, pageSize: 100 })
+    const {
+        data: locations,
+        isLoading: locationsLoading,
+        isError: locationsError,
+    } = useGetLocationsByCustomerId(customerCodeId ?? "", {
+        enabled: open && Boolean(customerCodeId),
+    })
+    const { data: vesselsData, isLoading: vesselsLoading } = useVessels({ page: 1, pageSize: 100 })
+
     const ports = portsData?.items
     const vessels = vesselsData?.items
 
@@ -140,26 +148,72 @@ export default function ShipmentOperationalForm({
         }
     })
 
-    const shipmentTypeOptions =
-        allowedShipmentTypes === "all"
-            ? SHIPMENT_TYPE_OPTIONS
-            : SHIPMENT_TYPE_OPTIONS.filter((o) => allowedShipmentTypes.includes(o.value))
+    const shipmentTypeOptions = useMemo(
+        () =>
+            allowedShipmentTypes === "all"
+                ? SHIPMENT_TYPE_OPTIONS
+                : SHIPMENT_TYPE_OPTIONS.filter((option) =>
+                      allowedShipmentTypes.includes(option.value)
+                  ),
+        [allowedShipmentTypes]
+    )
+
+    const shipmentTypeItems = useMemo<SearchableComboboxOption[]>(
+        () => shipmentTypeOptions.map((option) => ({
+            value: option.value,
+            label: option.label,
+        })),
+        [shipmentTypeOptions]
+    )
+
+    const portItems = useMemo<SearchableComboboxOption[]>(
+        () =>
+            ports?.map((port: Port) => ({
+                value: port.id ?? "",
+                label: `${port.portName}, ${port.portCountry}`,
+            })) ?? [],
+        [ports]
+    )
+
+    const vesselItems = useMemo<SearchableComboboxOption[]>(
+        () =>
+            vessels?.map((vessel: Vessel) => ({
+                value: vessel.id ?? "",
+                label: `${vessel.vesselName} / ${vessel.voyageNumber}`,
+            })) ?? [],
+        [vessels]
+    )
+
+    const activeCustomerLocations = useMemo(
+        () => activeLocations(locations),
+        [locations]
+    )
+
+    const loadingLocationItems = useMemo<SearchableComboboxOption[]>(() => {
+        const scopedLocations = customerShipperId
+            ? activeCustomerLocations.filter(
+                  (location) => location.customerShipperId === customerShipperId
+              )
+            : activeCustomerLocations
+
+        return scopedLocations.map(toLocationOption)
+    }, [activeCustomerLocations, customerShipperId])
+
+    const unloadingLocationItems = useMemo<SearchableComboboxOption[]>(
+        () => activeCustomerLocations.map(toLocationOption),
+        [activeCustomerLocations]
+    )
 
     const canEdit =
         mode === "create" ? canWrite("shipments") : canWriteShipmentType(shipmentType)
 
-    type ComboItem = { value: string; label: string }
-    const portItems: ComboItem[] = ports?.map((p: Port) => ({ value: p.id ?? "", label: `${p.portName}, ${p.portCountry}` })) ?? []
-    const toLocationItem = (l: CustomerLocationOption): ComboItem => ({
-        value: l.id,
-        label: `${l.addressLine1}, ${l.city}, ${l.country}`,
-    })
-    const locationItems: ComboItem[] = locations?.map(toLocationItem) ?? []
-    const filteredLocations: ComboItem[] = customerShipperId
-        ? locations?.filter((l) => l.customerShipperId === customerShipperId).map(toLocationItem) ?? []
-        : locationItems
-
     if (!canEdit) return null
+
+    const locationsEmptyMessage = locationsError
+        ? "Unable to load customer locations."
+        : customerShipperId
+          ? "No stuffing locations found for this customer shipper."
+          : "No customer locations found."
 
     return (
         <div className="flex items-center gap-x-2">
@@ -185,54 +239,40 @@ export default function ShipmentOperationalForm({
                     }}>
                         <div>
                             <form.Field name="shipmentType" validators={{ onChange: zodOnChange(shipmentTypeFieldSchema) }}>
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Shipment Type</Label>
-                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a shipment type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {shipmentTypeOptions.map((option) => (
-                                                        <SelectItem key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null }
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Shipment Type"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={shipmentTypeItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            placeholder="Search shipment type..."
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
                             <form.Field name="vesselId" validators={{ onChange: zodOnChange(vesselIdSchema) }}>
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Vessel</Label>
-                                            <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a vessel" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    { vessels?.map((vessel: Vessel) => (
-                                                        <SelectItem key={vessel.id} value={vessel.id ?? ""}>{ vessel.vesselName } / { vessel.voyageNumber }</SelectItem>
-                                                    )) ?? (
-                                                        <SelectItem value="-">No vessels found</SelectItem>
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null }
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Vessel"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={vesselItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            isLoading={vesselsLoading}
+                                            placeholder="Search vessel..."
+                                            emptyMessage="No vessels found."
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
@@ -240,35 +280,22 @@ export default function ShipmentOperationalForm({
                                 name="portDepartureId"
                                 validators={{ onChange: zodOnChange(portDepartureIdSchema) }}
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Port of Departure (From)</Label>
-                                            <Combobox
-                                                items={portItems}
-                                                value={portItems.find(item => item.value === field.state.value) ?? null}
-                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                                isItemEqualToValue={(a, b) => a.value === b.value}
-                                            >
-                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select port of departure..." /></Button>} />
-                                                <ComboboxContent>
-                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                    <ComboboxEmpty>No ports found.</ComboboxEmpty>
-                                                    <ComboboxList>
-                                                        {(item) => (
-                                                            <ComboboxItem key={item.value} value={item}>
-                                                                {item.label}
-                                                            </ComboboxItem>
-                                                        )}
-                                                    </ComboboxList>
-                                                </ComboboxContent>
-                                            </Combobox>
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null }
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Port of Loading"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={portItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            isLoading={portsLoading}
+                                            placeholder="Search port of loading..."
+                                            emptyMessage="No ports found."
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
@@ -276,35 +303,22 @@ export default function ShipmentOperationalForm({
                                 name="portDestinationId"
                                 validators={{ onChange: zodOnChange(portDestinationIdSchema) }}
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Port of Destination (To)</Label>
-                                            <Combobox
-                                                items={portItems}
-                                                value={portItems.find(item => item.value === field.state.value) ?? null}
-                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                                isItemEqualToValue={(a, b) => a.value === b.value}
-                                            >
-                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select port of destination..." /></Button>} />
-                                                <ComboboxContent>
-                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                    <ComboboxEmpty>No ports found.</ComboboxEmpty>
-                                                    <ComboboxList>
-                                                        {(item) => (
-                                                            <ComboboxItem key={item.value} value={item}>
-                                                                {item.label}
-                                                            </ComboboxItem>
-                                                        )}
-                                                    </ComboboxList>
-                                                </ComboboxContent>
-                                            </Combobox>
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null }
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Port of Discharge"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={portItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            isLoading={portsLoading}
+                                            placeholder="Search port of discharge..."
+                                            emptyMessage="No ports found."
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
@@ -312,35 +326,32 @@ export default function ShipmentOperationalForm({
                                 name="loadingLocationId"
                                 validators={{ onChange: zodOnChange(loadingLocationIdSchema) }}
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Loading Location (Stuffing)</Label>
-                                            <Combobox
-                                                items={filteredLocations}
-                                                value={filteredLocations.find((item: ComboItem) => item.value === field.state.value) ?? null}
-                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                                isItemEqualToValue={(a, b) => a.value === b.value}
-                                            >
-                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select stuffing location..." /></Button>} />
-                                                <ComboboxContent>
-                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                    <ComboboxEmpty>No locations found.</ComboboxEmpty>
-                                                    <ComboboxList>
-                                                        {(item) => (
-                                                            <ComboboxItem key={item.value} value={item.value}>
-                                                                {item.label}
-                                                            </ComboboxItem>
-                                                        )}
-                                                    </ComboboxList>
-                                                </ComboboxContent>
-                                            </Combobox>
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null }
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Loading Location (Stuffing)"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={loadingLocationItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            isLoading={locationsLoading}
+                                            disabled={!customerCodeId}
+                                            placeholder={
+                                                customerCodeId
+                                                    ? "Search stuffing location..."
+                                                    : "Customer is required to load locations"
+                                            }
+                                            emptyMessage={locationsEmptyMessage}
+                                            description={
+                                                !customerCodeId
+                                                    ? "This shipment has no linked customer."
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
@@ -348,96 +359,85 @@ export default function ShipmentOperationalForm({
                                 name="unloadingLocationId"
                                 validators={{ onChange: zodOnChange(unloadingLocationIdSchema) }}
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <Label htmlFor={field.name} className="my-2">Unloading Location (Unstuffing)</Label>
-                                            <Combobox
-                                                items={locationItems}
-                                                value={locationItems.find(item => item.value === field.state.value) ?? null}
-                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                                isItemEqualToValue={(a, b) => a.value === b.value}
-                                            >
-                                                <ComboboxTrigger render={<Button type="button" variant="outline" className="w-full justify-between font-normal"><ComboboxValue placeholder="Select unstuffing location..." /></Button>} />
-                                                <ComboboxContent>
-                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                    <ComboboxEmpty>No locations found.</ComboboxEmpty>
-                                                    <ComboboxList>
-                                                        {(item) => (
-                                                            <ComboboxItem key={item.value} value={item}>
-                                                                {item.label}
-                                                            </ComboboxItem>
-                                                        )}
-                                                    </ComboboxList>
-                                                </ComboboxContent>
-                                            </Combobox>
-                                            { field.state.meta.errors ? (
-                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                            ) : null }
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Unloading Location (Unstuffing)"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={unloadingLocationItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            isLoading={locationsLoading}
+                                            disabled={!customerCodeId}
+                                            placeholder={
+                                                customerCodeId
+                                                    ? "Search unstuffing location..."
+                                                    : "Customer is required to load locations"
+                                            }
+                                            emptyMessage={
+                                                locationsError
+                                                    ? "Unable to load customer locations."
+                                                    : "No customer locations found."
+                                            }
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
                             <form.Field
                                 name="eta"
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <TextField
-                                                label="ETA"
-                                                id={field.name}
-                                                name={field.name}
-                                                type="date"
-                                                value={field.state.value ? field.state.value.split('T')[0] : ''}
-                                                onChange={(e) => field.handleChange(e.target.value ? ISOFormat(e.target.value) : "")}
-                                                error={fieldError(field.state.meta.errors)}
-                                            />
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <DatePicker
+                                            label="ETA"
+                                            id={field.name}
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            error={fieldError(field.state.meta.errors)}
+                                            placeholder="Pick ETA"
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
                             <form.Field
                                 name="blNumber"
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <TextField
-                                                label="BL Number"
-                                                id={field.name}
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onChange={(e) => field.handleChange(e.target.value)}
-                                                error={fieldError(field.state.meta.errors)}
-                                            />
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <TextField
+                                            label="BL Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <div>
                             <form.Field
                                 name="bookingNumber"
                             >
-                                {
-                                    ( field ) => (
-                                        <div className="my-3">
-                                            <TextField
-                                                label="Booking Number"
-                                                id={field.name}
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onChange={(e) => field.handleChange(e.target.value)}
-                                                error={fieldError(field.state.meta.errors)}
-                                            />
-                                        </div>
-                                    )
-                                }
+                                {(field) => (
+                                    <div className="my-3">
+                                        <TextField
+                                            label="Booking Number"
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            error={fieldError(field.state.meta.errors)}
+                                        />
+                                    </div>
+                                )}
                             </form.Field>
                         </div>
                         <DialogFooter>

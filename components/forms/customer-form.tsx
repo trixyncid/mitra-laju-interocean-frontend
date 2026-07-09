@@ -31,6 +31,7 @@ export default function CustomerForm({
       customerCode: customer?.customerCode ?? "",
       customerName: customer?.customerName ?? "",
       npwp: customer?.npwp ?? "",
+      address: customer?.address ?? "",
       isActive: customer?.isActive ?? true,
     },
     onSubmit: async ({ value }) => {
@@ -40,6 +41,7 @@ export default function CustomerForm({
             customerName: value.customerName,
             customerCode: value.customerCode,
             npwp: value.npwp,
+            address: value.address,
             isActive: value.isActive,
           },
           {
@@ -61,6 +63,7 @@ export default function CustomerForm({
         customerName: value.customerName,
         customerCode: value.customerCode,
         npwp: value.npwp,
+        address: value.address,
         isActive: value.isActive,
       }
 
@@ -68,6 +71,7 @@ export default function CustomerForm({
         next.customerName !== customer.customerName ||
         next.customerCode !== customer.customerCode ||
         next.npwp !== (customer.npwp ?? "") ||
+        next.address !== (customer.address ?? "") ||
         next.isActive !== customer.isActive
 
       if (!hasChanges) {
@@ -115,6 +119,7 @@ export default function CustomerForm({
           {(field) => (
             <TextField
               label="Customer Code"
+              required
               id={field.name}
               name={field.name}
               value={field.state.value}
@@ -133,11 +138,26 @@ export default function CustomerForm({
           {(field) => (
             <TextField
               label="Customer Name"
+              required
               id={field.name}
               name={field.name}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="address">
+          {(field) => (
+            <TextField
+              label="Address"
+              multiline
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              description="Optional billing or office address."
             />
           )}
         </form.Field>
@@ -198,6 +218,7 @@ export default function CustomerForm({
                   customerCode: customer?.customerCode ?? "",
                   customerName: customer?.customerName ?? "",
                   npwp: customer?.npwp ?? "",
+                  address: customer?.address ?? "",
                   isActive: customer?.isActive ?? true,
                 })
               }

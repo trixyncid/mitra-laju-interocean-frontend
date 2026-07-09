@@ -1,5 +1,6 @@
 import { requiredString } from "./common"
+import { z } from "zod"
 
 export const shipperNameSchema = requiredString("Name")
-export const shipperPhoneSchema = requiredString("Phone Number")
-export const shipperCountrySchema = requiredString("Country")
+export const shipperPhoneSchema = z.string()
+export const shipperCountrySchema = z.string()

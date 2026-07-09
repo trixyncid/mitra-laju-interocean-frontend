@@ -1,17 +1,9 @@
 "use client"
 
 import { format, subDays } from "date-fns"
-import { CalendarIcon } from "lucide-react"
 
 import type { DashboardQueryParams } from "@/app/dashboard/dashboard-types"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Label } from "@/components/ui/label"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -74,61 +66,27 @@ export function DashboardDateRange({
       </ToggleGroup>
 
       <div className="flex flex-wrap items-end gap-3">
-        <DateField
+        <DatePicker
           label="From"
           value={startDate}
-          onChange={(date) => {
+          onValueChange={(date) => {
             onPresetChange("custom")
             onStartDateChange(date)
           }}
+          outputFormat="date-only"
+          className="min-w-[10.5rem]"
         />
-        <DateField
+        <DatePicker
           label="To"
           value={endDate}
-          onChange={(date) => {
+          onValueChange={(date) => {
             onPresetChange("custom")
             onEndDateChange(date)
           }}
+          outputFormat="date-only"
+          className="min-w-[10.5rem]"
         />
       </div>
-    </div>
-  )
-}
-
-function DateField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (isoDate: string) => void
-}) {
-  const selected = value ? new Date(`${value}T12:00:00`) : undefined
-
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="h-11 min-w-[10.5rem] justify-start rounded-full px-4 font-normal"
-          >
-            <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-            {value ? format(selected!, "dd MMM yyyy") : "Pick date"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto rounded-2xl p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={selected}
-            onSelect={(date) => {
-              if (date) onChange(format(date, "yyyy-MM-dd"))
-            }}
-          />
-        </PopoverContent>
-      </Popover>
     </div>
   )
 }

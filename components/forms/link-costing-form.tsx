@@ -4,7 +4,6 @@ import { useForm } from "@tanstack/react-form"
 import { Button } from "../ui/button"
 import { IconLink, IconLinkOff, IconTrash } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "../ui/dialog"
-import { Label } from "../ui/label"
 import { useUpdateCosting, useDeleteCosting } from "@/hooks/use-costings"
 import { useState } from "react"
 import { useShipments } from "@/hooks/use-shipments"
@@ -12,16 +11,8 @@ import { Shipment } from "@/app/dashboard/shipments/columns"
 import { usePermissions } from "@/hooks/use-permissions"
 import { shipmentSelectionSchema } from "@/lib/schemas/link"
 import { zodOnChange } from "@/lib/zod-form"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-    ComboboxTrigger,
-    ComboboxValue,
-} from "@/components/ui/combobox"
+import { SearchableCombobox } from "@/components/searchable-combobox"
+import { fieldError } from "@/lib/form-field"
 
 export default function LinkCostingForm({
     id,
@@ -46,8 +37,7 @@ export default function LinkCostingForm({
     const deleteCosting = useDeleteCosting()
     const updateCosting = useUpdateCosting()
 
-    type ComboItem = { value: string; label: string }
-    const shipmentItems: ComboItem[] =
+    const shipmentItems =
         shipmentsPage?.items.map((s: Shipment) => ({
             value: s.id ?? "",
             label: s.orderNumber,
@@ -103,41 +93,23 @@ export default function LinkCostingForm({
                             >
                                 {(field) => (
                                     <div className="my-5">
-                                        <Label className="my-2">Shipment Order Number</Label>
-                                        {isLoading ? (
-                                            <p className="text-sm text-muted-foreground">Loading shipments...</p>
-                                        ) : errorShipments ? (
-                                            <p className="text-sm text-[var(--mli-on-error-container)]">Error loading shipments</p>
-                                        ) : (
-                                            <Combobox
-                                                items={shipmentItems}
-                                                value={shipmentItems.find((item) => item.value === field.state.value) ?? null}
-                                                onValueChange={(item) => field.handleChange(item?.value ?? "")}
-                                                isItemEqualToValue={(a, b) => a.value === b.value}
-                                            >
-                                                <ComboboxTrigger
-                                                    render={
-                                                        <Button type="button" variant="outline" className="w-full justify-between font-normal">
-                                                            <ComboboxValue placeholder="Search shipment order number..." />
-                                                        </Button>
-                                                    }
-                                                />
-                                                <ComboboxContent>
-                                                    <ComboboxInput showTrigger={false} placeholder="Search..." />
-                                                    <ComboboxEmpty>No shipments found.</ComboboxEmpty>
-                                                    <ComboboxList>
-                                                        {(item) => (
-                                                            <ComboboxItem key={item.value} value={item}>
-                                                                {item.label}
-                                                            </ComboboxItem>
-                                                        )}
-                                                    </ComboboxList>
-                                                </ComboboxContent>
-                                            </Combobox>
-                                        )}
-                                        {field.state.meta.errors ? (
-                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                        ) : null}
+                                        <SearchableCombobox
+                                            id={field.name}
+                                            label="Shipment Order Number"
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            items={shipmentItems}
+                                            error={fieldError(field.state.meta.errors)}
+                                            required
+                                            isLoading={isLoading}
+                                            disabled={Boolean(errorShipments)}
+                                            placeholder="Search shipment order number..."
+                                            emptyMessage={
+                                                errorShipments
+                                                    ? "Unable to load shipments."
+                                                    : "No shipments found."
+                                            }
+                                        />
                                     </div>
                                 )}
                             </form.Field>
@@ -161,7 +133,9 @@ export default function LinkCostingForm({
                             >
                                 <IconLinkOff />Unlink
                             </Button>
-                            <Button type="submit" disabled={updateCosting.isPending}>{ updateCosting.isPending ? "Linking..." : "Link Costing" }</Button>
+                            <Button type="submit" disabled={updateCosting.isPending}>
+                                {updateCosting.isPending ? "Linking..." : "Link Costing"}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

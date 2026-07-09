@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { CountryCombobox } from "@/components/country-combobox"
 import { TextField } from "@/components/ui/text-field"
 import { fieldError } from "@/lib/form-field"
 import {
@@ -107,7 +108,7 @@ export default function CustomerLocationForm({
 
   return (
     <div className="flex flex-row items-center gap-x-2">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={setOpen} modal={false}>
             <DialogTrigger asChild>
                 { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button>: <Button variant="outline" size="sm"><IconPlus /> Location</Button>}
             </DialogTrigger>
@@ -131,6 +132,7 @@ export default function CustomerLocationForm({
                                 <div className="my-3">
                                     <TextField
                                         label="Address Line 1"
+                                        required
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -180,6 +182,7 @@ export default function CustomerLocationForm({
                                 <div className="my-3">
                                     <TextField
                                         label="City"
+                                        required
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -199,6 +202,7 @@ export default function CustomerLocationForm({
                                 <div className="my-3">
                                     <TextField
                                         label="Province / State"
+                                        required
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -216,13 +220,13 @@ export default function CustomerLocationForm({
                         >
                             {( field ) => (
                                 <div className="my-3">
-                                    <TextField
-                                        label="Country"
+                                    <CountryCombobox
                                         id={field.name}
-                                        name={field.name}
                                         value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        onValueChange={(nextValue) => field.handleChange(nextValue)}
                                         error={fieldError(field.state.meta.errors)}
+                                        required
+                                        placeholder="Search country..."
                                     />
                                 </div>
                             )}

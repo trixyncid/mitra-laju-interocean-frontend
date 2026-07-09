@@ -115,6 +115,7 @@ export default function VendorForm({
           {(field) => (
             <TextField
               label="Vendor Code"
+              required
               id={field.name}
               name={field.name}
               value={field.state.value}
@@ -133,6 +134,7 @@ export default function VendorForm({
           {(field) => (
             <TextField
               label="Vendor Name"
+              required
               id={field.name}
               name={field.name}
               value={field.state.value}

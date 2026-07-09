@@ -53,6 +53,7 @@ export default function CostingPage() {
                         costingNumber={undefined}
                         description={undefined}
                         price={undefined}
+                        currencyCode={undefined}
                         currency={undefined}
                         containerId={undefined}
                         vatPercentage={undefined}

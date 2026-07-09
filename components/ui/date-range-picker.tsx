@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { parseLocalDate, toIsoDateOnly } from "@/lib/date-input"
 import { cn } from "@/lib/utils"
 
 export type TableDateRange = {
@@ -24,16 +25,6 @@ type DateRangePickerProps = {
   value: TableDateRange
   onChange: (next: TableDateRange) => void
   className?: string
-}
-
-function parseLocalDate(iso?: string) {
-  if (!iso) return undefined
-  const parsed = new Date(`${iso}T12:00:00`)
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed
-}
-
-function toIsoDate(date: Date) {
-  return format(date, "yyyy-MM-dd")
 }
 
 function formatRangeLabel(value: TableDateRange) {
@@ -67,14 +58,15 @@ export function DateRangePicker({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-1.5">
+      <div className="relative w-fit min-w-[16rem]">
         <Popover>
           <PopoverTrigger asChild>
             <Button
               type="button"
               variant="outline"
               className={cn(
-                "h-11 min-w-[16rem] justify-start rounded-full bg-card px-4 font-normal",
+                "h-11 w-full justify-start rounded-full bg-card px-4 font-normal",
+                hasRange && "pr-10",
                 !hasRange && "text-muted-foreground"
               )}
               aria-label={`${label} date range`}
@@ -91,24 +83,26 @@ export function DateRangePicker({
               selected={selected}
               onSelect={(range) => {
                 onChange({
-                  from: range?.from ? toIsoDate(range.from) : undefined,
-                  to: range?.to ? toIsoDate(range.to) : undefined,
+                  from: range?.from ? toIsoDateOnly(range.from) : undefined,
+                  to: range?.to ? toIsoDateOnly(range.to) : undefined,
                 })
               }}
             />
           </PopoverContent>
         </Popover>
         {hasRange ? (
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="icon"
-            className="size-9 shrink-0 cursor-pointer rounded-full"
-            onClick={() => onChange({})}
+            className="absolute top-1/2 right-3 z-10 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              onChange({})
+            }}
             aria-label={`Clear ${label} date range`}
           >
-            <X className="size-4" />
-          </Button>
+            <X className="size-3.5" />
+          </button>
         ) : null}
       </div>
     </div>

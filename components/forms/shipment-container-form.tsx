@@ -3,6 +3,7 @@ import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { TextField } from "../ui/text-field";
+import { FormLabel } from "../ui/form-label"
 import { Label } from "../ui/label";
 import { fieldError } from "@/lib/form-field";
 import {
@@ -106,6 +107,7 @@ export default function ShipmentContainerForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Container Number"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -125,6 +127,7 @@ export default function ShipmentContainerForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Seal Number"
+                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -137,7 +140,7 @@ export default function ShipmentContainerForm({
                             <form.Field name="size" validators={{ onChange: zodOnChange(containerSizeSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Label htmlFor={field.name} className="my-2">Container Size</Label>
+                                        <FormLabel htmlFor={field.name} className="my-2" required>Container Size</FormLabel>
                                         <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
                                             <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select a container size" />

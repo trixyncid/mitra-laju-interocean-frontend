@@ -32,6 +32,7 @@ export type CustomerLocationOption = {
     city: string;
     country: string;
     customerShipperId: string;
+    isActive?: boolean;
 };
 
 export const customersService = {

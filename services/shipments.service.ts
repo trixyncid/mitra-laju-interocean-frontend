@@ -53,23 +53,6 @@ export const shipmentsService = {
             pagination,
         };
     },
-    getNextOrderNumber: async (
-        month: number,
-        year: number,
-        excludeOrderNumber?: string
-    ) => {
-        const params = new URLSearchParams({
-            month: String(month),
-            year: String(year),
-        });
-        if (excludeOrderNumber) {
-            params.set("excludeOrderNumber", excludeOrderNumber);
-        }
-        const response = await apiClient.get(
-            `/shipments/next-order-number?${params.toString()}`
-        );
-        return response as { orderNumber: string };
-    },
     getById: async (id: string): Promise<ShipmentDetail> => {
         return apiClient.get<ShipmentDetail>(`/shipments/${id}`);
     },

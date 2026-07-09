@@ -18,31 +18,6 @@ export const useCostingById = (id: string) => {
     })
 }
 
-export const useNextCostingNumber = (
-    month: number,
-    year: number,
-    options?: { enabled?: boolean; excludeCostingNumber?: string }
-) => {
-    const enabled = options?.enabled ?? true
-
-    return useQuery({
-        queryKey: [
-            "costings",
-            "next-costing-number",
-            month,
-            year,
-            options?.excludeCostingNumber,
-        ],
-        queryFn: () =>
-            costingService.getNextCostingNumber(
-                month,
-                year,
-                options?.excludeCostingNumber
-            ),
-        enabled,
-    })
-}
-
 export const useCreateCosting = () => {
     const queryClient = useQueryClient();
 

@@ -10,15 +10,18 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 type TextFieldProps = Omit<React.ComponentProps<typeof Input>, "id"> & {
   label: string
   id?: string
   error?: string
   description?: string
+  required?: boolean
+  multiline?: boolean
   trailing?: React.ReactNode
   containerClassName?: string
-  ref?: React.Ref<HTMLInputElement>
+  ref?: React.Ref<HTMLInputElement | HTMLTextAreaElement>
 }
 
 function TextField({
@@ -26,6 +29,8 @@ function TextField({
   id,
   error,
   description,
+  required,
+  multiline,
   trailing,
   className,
   containerClassName,
@@ -39,46 +44,67 @@ function TextField({
   const inputId = id ?? name
   const hasError = Boolean(error) || ariaInvalid
   const isFileInput = type === "file"
-  // File inputs stay uncontrolled. Text inputs must never flip
-  // from undefined → defined (React controlled warning).
-  const controlledProps = isFileInput
-    ? {}
-    : { value: value === undefined || value === null ? "" : value }
+  const controlledValue =
+    value === undefined || value === null ? "" : value
+  const sharedProps = {
+    id: inputId,
+    name,
+    "aria-invalid": hasError || undefined,
+    "aria-required": required || undefined,
+    required,
+    className: cn(containerClassName, className),
+    ...inputProps,
+  }
+
+  const renderInput = () => {
+    if (multiline) {
+      const { fieldSize: _fieldSize, ...textareaProps } = inputProps
+      return (
+        <Textarea
+          ref={ref as React.Ref<HTMLTextAreaElement>}
+          {...(textareaProps as React.ComponentProps<typeof Textarea>)}
+          id={inputId}
+          name={name}
+          aria-invalid={hasError || undefined}
+          aria-required={required || undefined}
+          required={required}
+          className={cn(containerClassName, className)}
+          value={controlledValue}
+        />
+      )
+    }
+
+    const inputElement = (
+      <Input
+        ref={ref as React.Ref<HTMLInputElement>}
+        type={type}
+        {...(isFileInput ? {} : { value: controlledValue })}
+        {...sharedProps}
+        className={cn(trailing ? "pr-11" : sharedProps.className)}
+      />
+    )
+
+    if (!trailing) {
+      return inputElement
+    }
+
+    return (
+      <div className={cn("relative w-full", containerClassName)}>
+        {inputElement}
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          <div className="pointer-events-auto">{trailing}</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Field data-invalid={hasError || undefined}>
-      <FieldLabel htmlFor={inputId} className="cursor-default">
+      <FieldLabel htmlFor={inputId} className="cursor-default" required={required}>
         {label}
       </FieldLabel>
       <FieldContent>
-        {trailing ? (
-          <div className={cn("relative w-full", containerClassName)}>
-            <Input
-              ref={ref}
-              id={inputId}
-              name={name}
-              type={type}
-              {...controlledProps}
-              aria-invalid={hasError || undefined}
-              className={cn("pr-11", className)}
-              {...inputProps}
-            />
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <div className="pointer-events-auto">{trailing}</div>
-            </div>
-          </div>
-        ) : (
-          <Input
-            ref={ref}
-            id={inputId}
-            name={name}
-            type={type}
-            {...controlledProps}
-            aria-invalid={hasError || undefined}
-            className={cn(containerClassName, className)}
-            {...inputProps}
-          />
-        )}
+        {renderInput()}
         {error ? (
           <em
             role="alert"

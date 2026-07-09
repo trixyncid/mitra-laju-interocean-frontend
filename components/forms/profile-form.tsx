@@ -86,6 +86,7 @@ export default function ProfileForm({ user }: { user: User }) {
             {(field) => (
               <TextField
                 label="Name"
+                required
                 id={field.name}
                 name={field.name}
                 value={field.state.value}
@@ -104,6 +105,7 @@ export default function ProfileForm({ user }: { user: User }) {
             {(field) => (
               <TextField
                 label="Email"
+                required
                 id={field.name}
                 name={field.name}
                 type="email"
@@ -147,6 +149,7 @@ export default function ProfileForm({ user }: { user: User }) {
             {(field) => (
               <TextField
                 label="Current password"
+                required
                 id={field.name}
                 name={field.name}
                 type="password"
@@ -167,6 +170,7 @@ export default function ProfileForm({ user }: { user: User }) {
             {(field) => (
               <TextField
                 label="New password"
+                required
                 id={field.name}
                 name={field.name}
                 type="password"
@@ -190,6 +194,7 @@ export default function ProfileForm({ user }: { user: User }) {
             {(field) => (
               <TextField
                 label="Confirm new password"
+                required
                 id={field.name}
                 name={field.name}
                 type="password"
