@@ -55,3 +55,24 @@ export interface DashboardQueryParams {
   startDate?: string
   endDate?: string
 }
+
+export type VoyageStatus = "ongoing" | "done"
+
+export interface DashboardVoyageShipment {
+  id: string
+  orderNumber: string
+  eta: string | null
+  shipmentType: ShipmentType
+  customerName: string
+  customerCode: string
+  portDeparture: string | null
+  portDestination: string | null
+}
+
+export interface DashboardVoyageGroup {
+  vesselId: string
+  vesselName: string
+  voyageNumber: string
+  etd: string | null
+  shipments: DashboardVoyageShipment[]
+}

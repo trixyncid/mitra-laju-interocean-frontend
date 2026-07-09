@@ -139,6 +139,7 @@ export type ShipmentLinkedSelling = {
   vatPercentage: number
   pph23Percentage: number
   status: string
+  updatedAt?: string
 }
 
 export type ShipmentOperationalDetail = {

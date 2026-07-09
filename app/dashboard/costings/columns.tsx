@@ -28,6 +28,7 @@ export type Costing = {
     vatPercentage: number
     pph23Percentage: number
     vendor?: { vendorName: string } | null
+    container?: { containerNumber: string } | null
     shipment?: {
         orderNumber: string | null
         id: string | null

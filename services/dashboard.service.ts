@@ -1,4 +1,9 @@
-import type { DashboardData, DashboardQueryParams } from "@/app/dashboard/dashboard-types"
+import type {
+  DashboardData,
+  DashboardQueryParams,
+  DashboardVoyageGroup,
+  VoyageStatus,
+} from "@/app/dashboard/dashboard-types"
 import { apiClient } from "@/lib/api-client"
 
 export const dashboardService = {
@@ -9,5 +14,11 @@ export const dashboardService = {
 
     const query = searchParams.toString()
     return apiClient.get(`/dashboard${query ? `?${query}` : ""}`)
+  },
+  getShipmentsByVoyage: async (
+    voyageStatus: VoyageStatus = "ongoing"
+  ): Promise<DashboardVoyageGroup[]> => {
+    const query = new URLSearchParams({ voyageStatus })
+    return apiClient.get(`/dashboard/shipments-by-voyage?${query.toString()}`)
   },
 }

@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { use } from "react"
 import ShipmentOperationalForm from "@/components/forms/shipment-operational-form"
 import { useShipmentById, useUpdateShipmentOperational } from "@/hooks/use-shipments"
-import { amountCalculation, formatDate, sellingNetAmount } from "@/lib/utils"
+import { amountCalculation, formatDate, sellingNetAmount, localDate } from "@/lib/utils"
+import { costingCurrencyRequiresRate } from "@/lib/costing-currencies"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
 import DocumentUploadForm from "@/components/forms/document-upload-form"
 import { Costing } from "../../costings/columns"
@@ -297,42 +298,86 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     <CardTitle>LINKED COSTINGS</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    {
-                                        data.costings.length === 0 ? (
-                                            <div>
-                                                <p>No linked costings found</p>
-                                            </div>
-                                        ) : (
-                                            <div>
-                                                <div>
-                                                    <table className="w-full text-left">
-                                                        <thead className="text-muted-foreground border-b bg-muted text-sm">
-                                                            <tr>
-                                                                <th className="py-2 px-4">DESCRIPTION</th>
-                                                                <th className="py-2 px-4">VENDOR</th>
-                                                                <th className="py-2 px-4">AMOUNT</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {   
-                                                                data.costings.map((costing: Costing) => (
-                                                                    <tr key={costing.id}>
-                                                                        <td className="py-2 px-4">{ costing.description }</td>
-                                                                        <td className="py-2 px-4">{ costing.vendor?.vendorName ?? "—" }</td>
-                                                                        <td className="py-2 px-4">{ amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) }</td>
-                                                                    </tr>
-                                                                ))
-                                                            }
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                                    {data.costings.length === 0 ? (
+                                        <p>No linked costings found</p>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[56rem] text-left">
+                                                <thead className="border-b bg-muted text-xs text-muted-foreground">
+                                                    <tr>
+                                                        <th className="px-4 py-2">COSTING #</th>
+                                                        <th className="px-4 py-2">DESCRIPTION</th>
+                                                        <th className="px-4 py-2">VENDOR</th>
+                                                        <th className="px-4 py-2">VENDOR INVOICE</th>
+                                                        <th className="px-4 py-2">CONTAINER</th>
+                                                        <th className="px-4 py-2">PRICE</th>
+                                                        <th className="px-4 py-2">RATE</th>
+                                                        <th className="px-4 py-2">VAT</th>
+                                                        <th className="px-4 py-2">PPH 23</th>
+                                                        <th className="px-4 py-2">NET AMOUNT (Rp)</th>
+                                                        <th className="px-4 py-2">STATUS</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {data.costings.map((costing: Costing) => {
+                                                        const currencyCode = costing.currencyCode ?? "IDR"
+                                                        const netAmount = amountCalculation(
+                                                            costing.price,
+                                                            costing.currency,
+                                                            costing.vatPercentage,
+                                                            costing.pph23Percentage
+                                                        )
 
-                                                <div className="mt-4 flex justify-end">
-                                                    <p className="text-sm text-muted-foreground">Total Cost: <span className="font-semibold">{formatIdr(totalVendorCost)}</span></p>
-                                                </div>
+                                                        return (
+                                                            <tr key={costing.id} className="border-b last:border-0">
+                                                                <td className="px-4 py-2 font-semibold text-blue-600">
+                                                                    <Link
+                                                                        href={`/dashboard/costings/${costing.id}`}
+                                                                        className="hover:underline"
+                                                                    >
+                                                                        {costing.costingNumber}
+                                                                    </Link>
+                                                                </td>
+                                                                <td className="px-4 py-2 text-sm">{costing.description}</td>
+                                                                <td className="px-4 py-2 text-sm">
+                                                                    {costing.vendor?.vendorName ?? "—"}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-sm">
+                                                                    {costing.vendorInvoiceNumber ?? "—"}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-sm">
+                                                                    {costing.container?.containerNumber ?? "—"}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-sm">
+                                                                    {Number(costing.price).toLocaleString("id-ID")} {currencyCode}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-sm">
+                                                                    {costingCurrencyRequiresRate(currencyCode)
+                                                                        ? Number(costing.currency).toLocaleString("id-ID")
+                                                                        : "—"}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-sm">{costing.vatPercentage}%</td>
+                                                                <td className="px-4 py-2 text-sm">{costing.pph23Percentage}%</td>
+                                                                <td className="px-4 py-2 text-sm font-medium">
+                                                                    {formatIdr(netAmount)}
+                                                                </td>
+                                                                <td className="px-4 py-2">
+                                                                    <PaymentStatusChip paid={costing.status === "paid"} />
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    })}
+                                                </tbody>
+                                            </table>
+
+                                            <div className="mt-4 flex justify-end">
+                                                <p className="text-sm text-muted-foreground">
+                                                    Total cost:{" "}
+                                                    <span className="font-semibold">{formatIdr(totalVendorCost)}</span>
+                                                </p>
                                             </div>
-                                        )
-                                    }
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -344,30 +389,53 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ shipm
                                     {sellings.length === 0 ? (
                                         <p>No linked sellings found</p>
                                     ) : (
-                                        <div>
-                                            <table className="w-full text-left">
-                                                <thead className="text-muted-foreground border-b bg-muted text-sm">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[48rem] text-left">
+                                                <thead className="border-b bg-muted text-xs text-muted-foreground">
                                                     <tr>
-                                                        <th className="py-2 px-4">SELLING #</th>
-                                                        <th className="py-2 px-4">DESCRIPTION</th>
-                                                        <th className="py-2 px-4">NET AMOUNT (Rp)</th>
-                                                        <th className="py-2 px-4">STATUS</th>
+                                                        <th className="px-4 py-2">SELLING #</th>
+                                                        <th className="px-4 py-2">DESCRIPTION</th>
+                                                        <th className="px-4 py-2">GROSS AMOUNT (Rp)</th>
+                                                        <th className="px-4 py-2">VAT</th>
+                                                        <th className="px-4 py-2">PPH 23</th>
+                                                        <th className="px-4 py-2">NET AMOUNT (Rp)</th>
+                                                        <th className="px-4 py-2">STATUS</th>
+                                                        <th className="px-4 py-2">UPDATED</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {sellings.map((selling: ShipmentLinkedSelling) => (
-                                                        <tr key={selling.id}>
-                                                            <td className="py-2 px-4 font-semibold text-blue-600">
-                                                                <Link href={`/dashboard/sellings/${selling.id}`} className="hover:underline">
+                                                        <tr key={selling.id} className="border-b last:border-0">
+                                                            <td className="px-4 py-2 font-semibold text-blue-600">
+                                                                <Link
+                                                                    href={`/dashboard/sellings/${selling.id}`}
+                                                                    className="hover:underline"
+                                                                >
                                                                     {selling.sellingNumber}
                                                                 </Link>
                                                             </td>
-                                                            <td className="py-2 px-4">{selling.description}</td>
-                                                            <td className="py-2 px-4">
-                                                                {sellingNetAmount(selling.amount, selling.vatPercentage, selling.pph23Percentage).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
+                                                            <td className="px-4 py-2 text-sm">{selling.description}</td>
+                                                            <td className="px-4 py-2 text-sm">
+                                                                {formatIdr(Number(selling.amount))}
                                                             </td>
-                                                            <td className="py-2 px-4">
+                                                            <td className="px-4 py-2 text-sm">{selling.vatPercentage}%</td>
+                                                            <td className="px-4 py-2 text-sm">{selling.pph23Percentage}%</td>
+                                                            <td className="px-4 py-2 text-sm font-medium">
+                                                                {formatIdr(
+                                                                    sellingNetAmount(
+                                                                        selling.amount,
+                                                                        selling.vatPercentage,
+                                                                        selling.pph23Percentage
+                                                                    )
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-2">
                                                                 <PaymentStatusChip paid={selling.status === "paid"} />
+                                                            </td>
+                                                            <td className="px-4 py-2 text-sm text-muted-foreground">
+                                                                {selling.updatedAt
+                                                                    ? localDate(selling.updatedAt)
+                                                                    : "—"}
                                                             </td>
                                                         </tr>
                                                     ))}
