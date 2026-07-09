@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { Vendor } from "@/app/dashboard/vendors/columns"
+import type { VendorDetail } from "@/lib/types/entity-details"
 import { vendorsService, type VendorListParams } from "@/services/vendors.service"
 import { toast } from "sonner"
 
@@ -46,8 +47,8 @@ export const useUpdateVendor = () => {
         mutationFn: ({ id, vendor }: { id: string, vendor: Partial<Vendor> }) =>
             vendorsService.update(id, vendor),
         onSuccess: (data, { id }) => {
-            queryClient.setQueryData(["vendors", id], (existing) =>
-                existing && typeof existing === "object" ? { ...existing, ...data } : data
+            queryClient.setQueryData<VendorDetail>(["vendors", id], (existing) =>
+                existing ? { ...existing, ...data } : data
             )
             queryClient.invalidateQueries({ queryKey: ["vendors"] })
             toast.success("Vendor updated successfully")

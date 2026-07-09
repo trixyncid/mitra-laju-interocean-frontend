@@ -61,9 +61,8 @@ export const customersService = {
         const response = await apiClient.post("/customers", customer);
         return response;
     },
-    update: async (id: string, customer: Partial<Customer>) => {
-        const response = await apiClient.put(`/customers/${id}`, customer);
-        return response;
+    update: async (id: string, customer: Partial<Customer>): Promise<CustomerDetail> => {
+        return apiClient.put<CustomerDetail>(`/customers/${id}`, customer);
     },
     getById: async (id: string): Promise<CustomerDetail> => {
         return apiClient.get<CustomerDetail>(`/customers/${id}`);

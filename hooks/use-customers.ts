@@ -1,5 +1,6 @@
 import { Customer } from "@/app/dashboard/customers/columns";
 import { customersService, type CustomerListParams } from "@/services/customers.service";
+import type { CustomerDetail } from "@/lib/types/entity-details";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -44,8 +45,8 @@ export const useUpdateCustomer = () => {
     return useMutation({
         mutationFn: ({ id, customer }: { id: string, customer: Partial<Customer> }) => customersService.update(id, customer),
         onSuccess: (data, { id }) => {
-            queryClient.setQueryData(["customers", id], (existing) =>
-                existing && typeof existing === "object" ? { ...existing, ...data } : data
+            queryClient.setQueryData<CustomerDetail>(["customers", id], (existing) =>
+                existing ? { ...existing, ...data } : data
             )
             queryClient.invalidateQueries({ queryKey: ["customers"] });
             toast.success("Customer updated successfully");
