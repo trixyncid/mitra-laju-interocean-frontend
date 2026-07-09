@@ -118,9 +118,16 @@ export default function ShipmentOperationalForm({
             bookingNumber: bookingNumber ?? "",
         },
         onSubmit: async ({ value }) => {
+            const normalizeLocationId = (locationId: string) => {
+                if (locationId !== "") return locationId
+                return mode === "create" ? undefined : null
+            }
+
             const payload = {
                 ...value,
                 eta: value.eta === "" ? null : value.eta,
+                loadingLocationId: normalizeLocationId(value.loadingLocationId),
+                unloadingLocationId: normalizeLocationId(value.unloadingLocationId),
             }
 
             if (mode === "create") {
@@ -335,7 +342,6 @@ export default function ShipmentOperationalForm({
                                             onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             items={loadingLocationItems}
                                             error={fieldError(field.state.meta.errors)}
-                                            required
                                             isLoading={locationsLoading}
                                             disabled={!customerCodeId}
                                             placeholder={
@@ -368,7 +374,6 @@ export default function ShipmentOperationalForm({
                                             onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             items={unloadingLocationItems}
                                             error={fieldError(field.state.meta.errors)}
-                                            required
                                             isLoading={locationsLoading}
                                             disabled={!customerCodeId}
                                             placeholder={

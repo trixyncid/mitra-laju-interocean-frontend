@@ -147,8 +147,8 @@ export type ShipmentOperationalDetail = {
   shipmentType: string
   portDepartureId: string
   portDestinationId: string
-  loadingLocationId: string
-  unloadingLocationId: string
+  loadingLocationId: string | null
+  unloadingLocationId: string | null
   blNumber: string | null
   bookingNumber: string | null
   vesselId: string
