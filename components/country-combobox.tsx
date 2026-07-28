@@ -95,10 +95,11 @@ export function CountryCombobox({
             onValueChange(nextValue)
             setInputValue(item?.label ?? "")
           }}
-          itemToStringLabel={(item) => item.label}
+          itemToStringLabel={(item) => item?.label ?? ""}
           isItemEqualToValue={(a, b) =>
-            a.value.localeCompare(b.value, undefined, { sensitivity: "accent" }) ===
-            0
+            (a?.value ?? "").localeCompare(b?.value ?? "", undefined, {
+              sensitivity: "accent",
+            }) === 0
           }
         >
           <div ref={anchor} className="w-full">

@@ -168,10 +168,7 @@ export default function CostingDetailPage({
         vatPercentage,
         pph23Percentage
     )
-    const updatedByName =
-        typeof costing.updatedBy === "string"
-            ? costing.updatedBy
-            : costing.updatedBy?.name
+    const updatedByName = costing.updatedBy?.name
     const isPaid = costing.status === "PAID"
     const shipment = costing.shipment
     const selling = costing.selling

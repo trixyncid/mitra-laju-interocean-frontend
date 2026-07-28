@@ -110,8 +110,8 @@ export function SearchableCombobox({
             onValueChange(nextValue)
             setInputValue(item?.label ?? "")
           }}
-          itemToStringLabel={(item) => item.label}
-          isItemEqualToValue={(a, b) => a.value === b.value}
+          itemToStringLabel={(item) => item?.label ?? ""}
+          isItemEqualToValue={(a, b) => (a?.value ?? "") === (b?.value ?? "")}
         >
           <div ref={anchor} className="w-full">
             <ComboboxInput
