@@ -1,5 +1,6 @@
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react"
 import { Button } from "../ui/button"
+import { DeleteConfirmButton } from "../ui/delete-confirm-button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
@@ -196,7 +197,13 @@ export default function DocumentUploadForm({
 
             {
                 mode === "edit" ? (
-                    <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                    <Dialog
+                        open={deleteOpen}
+                        onOpenChange={(next) => {
+                            if (deleteShipmentOperationalAttachment.isPending || deleteCostingAttachment.isPending) return
+                            setDeleteOpen(next)
+                        }}
+                    >
                         <DialogTrigger asChild>
                             <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] size-4" /></Button>
                         </DialogTrigger>
@@ -208,37 +215,49 @@ export default function DocumentUploadForm({
                                 Are you sure you want to delete this document? This action cannot be undone.
                             </DialogDescription>
                             <DialogFooter>
-                                <Button variant="destructive" onClick={() => {
-                                    if (shipmentId !== undefined) {
-                                        deleteShipmentOperationalAttachment.mutate({
-                                            shipmentId: shipmentId,
-                                            id: id ?? "",
-                                        }, {
-                                            onSuccess: () => {
-                                                setDeleteOpen(false)
-                                                form.reset()
-                                            },
-                                            onError: (error: Error) => {
-                                                toast.error(error.message)
-                                            }
-                                        })
-                                    } else {
-                                        deleteCostingAttachment.mutate({
-                                            costingId: costingId ?? "",
-                                            id: id ?? "",
-                                        }, {
-                                            onSuccess: () => {
-                                                setDeleteOpen(false)
-                                                form.reset()
-                                            },
-                                            onError: (error: Error) => {
-                                                toast.error(error.message)
-                                            }
-                                        })
+                                <DeleteConfirmButton
+                                    isPending={
+                                        shipmentId !== undefined
+                                            ? deleteShipmentOperationalAttachment.isPending
+                                            : deleteCostingAttachment.isPending
                                     }
-                                }}>Delete</Button>
+                                    onClick={() => {
+                                        if (shipmentId !== undefined) {
+                                            deleteShipmentOperationalAttachment.mutate({
+                                                shipmentId: shipmentId,
+                                                id: id ?? "",
+                                            }, {
+                                                onSuccess: () => {
+                                                    setDeleteOpen(false)
+                                                    form.reset()
+                                                },
+                                                onError: (error: Error) => {
+                                                    toast.error(error.message)
+                                                }
+                                            })
+                                        } else {
+                                            deleteCostingAttachment.mutate({
+                                                costingId: costingId ?? "",
+                                                id: id ?? "",
+                                            }, {
+                                                onSuccess: () => {
+                                                    setDeleteOpen(false)
+                                                    form.reset()
+                                                },
+                                                onError: (error: Error) => {
+                                                    toast.error(error.message)
+                                                }
+                                            })
+                                        }
+                                    }}
+                                />
                                 <DialogClose asChild>
-                                    <Button variant="secondary">Cancel</Button>
+                                    <Button
+                                        variant="secondary"
+                                        disabled={deleteShipmentOperationalAttachment.isPending || deleteCostingAttachment.isPending}
+                                    >
+                                        Cancel
+                                    </Button>
                                 </DialogClose>
                             </DialogFooter>
                         </DialogContent>

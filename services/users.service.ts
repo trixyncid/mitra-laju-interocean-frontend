@@ -5,7 +5,8 @@ export type CreateUserPayload = {
   name: string
   email: string
   password: string
-  role?: User["role"]
+  roleId?: string
+  role?: string
   image?: string | null
   emailVerified?: boolean
 }
@@ -13,7 +14,8 @@ export type CreateUserPayload = {
 export type UpdateUserPayload = {
   name?: string
   email?: string
-  role?: User["role"]
+  roleId?: string
+  role?: string
   image?: string | null
   emailVerified?: boolean
   isActive?: boolean

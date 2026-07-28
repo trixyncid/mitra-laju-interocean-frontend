@@ -44,7 +44,7 @@ export default function CustomerMasterDataPage() {
   if (error) return <ErrorPage message={error.message} />
 
   return (
-    <DashboardPage>
+    <DashboardPage atmosphere>
       <DashboardPageHeader
         title="Customer Management"
         description="View and manage your client database, view profiles, and update contact information."

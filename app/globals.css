@@ -6,7 +6,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-display: var(--font-space-grotesk);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -37,21 +38,21 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 0.5rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
-  --radius-xl: 2rem;
-  --radius-2xl: 3rem;
-  --radius-3xl: 3rem;
-  --radius-4xl: 3rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1rem;
+  --radius-4xl: 1rem;
   --shadow-ambient: 0 8px 24px rgba(0, 32, 70, 0.04);
 }
 
 :root {
   --mli-container-max: 90rem;
-  --background: #f7f9fb;
+  --background: #eef3f9;
   --foreground: #191c1e;
-  --card: #ffffff;
+  --card: #f7f9fb;
   --card-foreground: #191c1e;
   --popover: #ffffff;
   --popover-foreground: #191c1e;
@@ -73,14 +74,14 @@
   --chart-3: #6e9ef7;
   --chart-4: #91baff;
   --chart-5: #aec7f7;
-  --sidebar: #002046;
-  --sidebar-foreground: #eff1f3;
-  --sidebar-primary: #87a0cd;
-  --sidebar-primary-foreground: #002046;
-  --sidebar-accent: #1b365d;
-  --sidebar-accent-foreground: #eff1f3;
-  --sidebar-border: #1b365d;
-  --sidebar-ring: #325f9e;
+  --sidebar: #001833;
+  --sidebar-foreground: #e8eef6;
+  --sidebar-primary: #aec7f7;
+  --sidebar-primary-foreground: #001833;
+  --sidebar-accent: #163a66;
+  --sidebar-accent-foreground: #f4f7fb;
+  --sidebar-border: #2a4f7a;
+  --sidebar-ring: #91baff;
   --mli-surface-container-low: #f2f4f6;
   --mli-surface-container: #eceef0;
   --mli-outline-variant: #c4c6cf;
@@ -89,8 +90,8 @@
   --mli-on-error-container: #93000a;
   --mli-success-container: #d1f7d9;
   --mli-on-success-container: #0d5c2e;
-  --mli-warning-container: #fff3e0;
-  --mli-on-warning-container: #e65100;
+  --mli-warning-container: #e8eef6;
+  --mli-on-warning-container: #2e476f;
 }
 
 .dark {
@@ -125,8 +126,8 @@
   --mli-on-error-container: #ffdad6;
   --mli-success-container: #0d5c2e;
   --mli-on-success-container: #d1f7d9;
-  --mli-warning-container: #e65100;
-  --mli-on-warning-container: #fff3e0;
+  --mli-warning-container: #2e476f;
+  --mli-on-warning-container: #d6e3ff;
 }
 
 @layer base {
@@ -140,10 +141,10 @@
 
 @layer utilities {
   .text-headline-lg {
-    @apply text-2xl font-semibold tracking-[-0.01em] text-foreground lg:text-[32px] lg:leading-10;
+    @apply font-display text-2xl font-semibold tracking-[-0.01em] text-foreground lg:text-[32px] lg:leading-10;
   }
   .text-headline-md {
-    @apply text-2xl font-semibold tracking-[-0.01em] text-foreground;
+    @apply font-display text-2xl font-semibold tracking-[-0.01em] text-foreground;
   }
   .text-body-md {
     @apply text-base leading-6 text-muted-foreground;
@@ -157,4 +158,48 @@
   .shadow-ambient-hover {
     @apply transition-shadow duration-200 hover:shadow-ambient;
   }
+  .glass-panel {
+    @apply rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl;
+  }
+}
+
+/* Sonner — keep library layout, brand the surface tokens */
+[data-sonner-toaster] {
+  font-family: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-sonner-toast][data-styled="true"] {
+  padding: 14px 16px;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+[data-sonner-toast][data-styled="true"] [data-icon] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.125rem;
+}
+
+[data-sonner-toast][data-styled="true"] [data-content] {
+  gap: 2px;
+  padding-right: 0.5rem;
+}
+
+[data-sonner-toast][data-styled="true"] [data-title] {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+[data-sonner-toast][data-styled="true"] [data-description] {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.82;
+}
+
+[data-sonner-toast][data-styled="true"] [data-close-button] {
+  border-radius: 0.375rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }

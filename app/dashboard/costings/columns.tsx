@@ -28,10 +28,11 @@ export type Costing = {
     vatPercentage: number
     pph23Percentage: number
     vendor?: { vendorName: string } | null
-    container?: { containerNumber: string } | null
+    containerNumber?: string | null
     shipment?: {
         orderNumber: string | null
         id: string | null
+        status: "ONGOING" | "COMPLETED"
         isActive: boolean
         shipmentOperational?: {
             eta: string | null
@@ -42,7 +43,6 @@ export type Costing = {
         customerShipper?: { name?: string }
     } | null
     status: string
-    containerId: string
     vendorInvoiceNumber: string
     vendorId: string
     sellingId?: string | null
@@ -63,8 +63,8 @@ export type CostingAttachment = {
 
 export type CostingDetail = Costing & {
     costingsAttachments?: CostingAttachment[]
-    container?: { containerNumber: string } | null
     updatedBy?: { name: string } | null
+    selling?: { id: string; sellingNumber: string } | null
 }
 
 export const columns: ColumnDef<Costing>[] = [
@@ -127,7 +127,7 @@ export const columns: ColumnDef<Costing>[] = [
         accessorKey: "status",
         header: ({ column }) => sortHeader(column, "Status"),
         ...textSort,
-        cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "paid"} />
+        cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "PAID"} />
     },
     {
         id: "updatedBy",

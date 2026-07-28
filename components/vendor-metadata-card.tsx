@@ -13,6 +13,7 @@ import {
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import { Separator } from "@/components/ui/separator"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { glassShine, metadataCardShell, metadataIconWell } from "@/lib/design"
 import { localDate } from "@/lib/utils"
 
 function MetadataRow({
@@ -26,7 +27,7 @@ function MetadataRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+      <div className={metadataIconWell}>
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-1">
@@ -49,20 +50,21 @@ export function VendorMetadataCard({ vendor }: { vendor: Vendor }) {
   const updatedByName = updatedByLabel(vendor.updatedBy)
 
   return (
-    <div className="overflow-hidden rounded-[3rem] border border-border bg-card shadow-ambient-hover">
-      <div className="bg-gradient-to-br from-primary via-[var(--mli-primary-container)] to-primary px-6 py-8 text-primary-foreground">
+    <div className={metadataCardShell}>
+      <div aria-hidden className={glassShine} />
+      <div className="relative bg-gradient-to-br from-primary via-[var(--mli-primary-container)] to-primary px-6 py-8 text-primary-foreground">
         <p className="text-xs font-semibold tracking-[0.08em] text-primary-foreground/70 uppercase">
           Vendor overview
         </p>
-        <h2 className="mt-1 text-xl font-semibold">{vendor.vendorName}</h2>
-        <p className="mt-1 truncate text-sm text-primary-foreground/80">
+        <h2 className="mt-2 text-xl font-semibold tracking-tight">{vendor.vendorName}</h2>
+        <p className="mt-2 font-mono text-sm tracking-wide text-primary-foreground/80">
           {vendor.vendorCode}
         </p>
       </div>
 
-      <div className="space-y-5 px-6 py-6">
+      <div className="relative space-y-5 px-6 py-6">
         <MetadataRow icon={IconHash} label="Vendor code">
-          {vendor.vendorCode}
+          <span className="font-mono tracking-wide">{vendor.vendorCode}</span>
         </MetadataRow>
 
         <MetadataRow icon={IconBuilding} label="Vendor name">
@@ -70,14 +72,18 @@ export function VendorMetadataCard({ vendor }: { vendor: Vendor }) {
         </MetadataRow>
 
         <MetadataRow icon={IconReceipt} label="NPWP">
-          {vendor.npwp ? vendor.npwp : <WarningChip>Unavailable</WarningChip>}
+          {vendor.npwp ? (
+            <span className="font-mono tracking-wide">{vendor.npwp}</span>
+          ) : (
+            <WarningChip>Unavailable</WarningChip>
+          )}
         </MetadataRow>
 
         <MetadataRow icon={IconUserCheck} label="Status">
           <StatusChip active={vendor.isActive} />
         </MetadataRow>
 
-        <Separator />
+        <Separator className="bg-[rgba(214,227,255,0.35)]" />
 
         {vendor.createdAt ? (
           <MetadataRow icon={IconCalendar} label="Created">

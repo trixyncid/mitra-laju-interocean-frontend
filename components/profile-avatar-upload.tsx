@@ -126,7 +126,7 @@ export function ProfileAvatarUpload({
             type="button"
             disabled={isBusy}
             onClick={() => fileInputRef.current?.click()}
-            className="absolute -bottom-1 -right-1 flex size-10 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+            className="absolute -bottom-1 -right-1 flex size-10 items-center justify-center rounded-md border-2 border-background bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
             aria-label="Change profile photo"
           >
             <IconCamera className="size-4" />
@@ -182,7 +182,7 @@ export function ProfileAvatarUpload({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative h-72 w-full overflow-hidden rounded-2xl bg-muted">
+          <div className="relative h-72 w-full overflow-hidden rounded-lg bg-muted">
             {imageSrc ? (
               <Cropper
                 image={imageSrc}
@@ -210,7 +210,7 @@ export function ProfileAvatarUpload({
               step={0.05}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
+              className="h-2 w-full cursor-pointer appearance-none rounded-md bg-muted accent-primary"
             />
           </div>
 

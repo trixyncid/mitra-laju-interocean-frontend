@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form"
 import { Button } from "../ui/button"
+import { DeleteConfirmButton } from "../ui/delete-confirm-button"
 import { IconLink, IconLinkOff, IconTrash } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "../ui/dialog"
 import { useUpdateCosting, useDeleteCosting } from "@/hooks/use-costings"
@@ -64,9 +65,9 @@ export default function LinkCostingForm({
 
     return (
         <div className="flex items-center gap-x-2">
-            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon-sm" aria-label="Link costing">
                         <IconLink />
                     </Button>
                 </DialogTrigger>
@@ -141,9 +142,9 @@ export default function LinkCostingForm({
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteCosting.isPending) return; setDeleteOpen(next) }}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon-sm" aria-label="Delete costing">
                         <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
                     </Button>
                 </DialogTrigger>
@@ -155,15 +156,18 @@ export default function LinkCostingForm({
                         Are you sure you want to delete this costing? This action cannot be undone.
                     </DialogDescription>
                     <DialogFooter>
-                        <Button variant="destructive" onClick={() => {
-                            deleteCosting.mutate(id, {
-                                onSuccess: () => {
-                                    setDeleteOpen(false)
-                                }
-                            })
-                        }}>Delete</Button>
+                        <DeleteConfirmButton
+                            isPending={deleteCosting.isPending}
+                            onClick={() => {
+                                deleteCosting.mutate(id, {
+                                    onSuccess: () => {
+                                        setDeleteOpen(false)
+                                    }
+                                })
+                            }}
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deleteCosting.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

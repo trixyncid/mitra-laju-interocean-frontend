@@ -40,16 +40,16 @@ export type CustomerShipper = {
 export type CustomerShipment = {
   id: string
   orderNumber: string
+  status: "ONGOING" | "COMPLETED"
   customerCode: { customerName: string; customerCode: string }
   customerShipper: { name: string }
   shipmentOperational: {
     portDeparture: { portCountry: string }
     portDestination: { portCountry: string }
     eta: string
-    status?: string
-    customerChargeAmount?: number
   } | null
   costings: Costing[]
+  sellings: Selling[]
   isActive: boolean
 }
 
@@ -104,10 +104,20 @@ export type SellingLinkedCosting = {
   vendor: { vendorName: string }
 }
 
-export type SellingDetail = Selling & {
-  updatedAt: string
-  updatedBy: { name: string }
+export type SellingDetail = {
+  id: string
+  sellingNumber: string
+  description: string
+  amount: number
+  vatPercentage: number
+  pph23Percentage: number
+  status: string
+  shipmentId: string | null
+  shipment: { orderNumber: string | null; id: string | null } | null
   costings?: SellingLinkedCosting[]
+  createdAt?: string
+  updatedAt: string
+  updatedBy: { name: string } | string
 }
 
 export type ShipmentOperationalContainer = {
@@ -153,8 +163,6 @@ export type ShipmentOperationalDetail = {
   bookingNumber: string | null
   vesselId: string
   eta: string | null
-  customerChargeAmount: number | null
-  status: string
   updatedAt: string
   updatedBy: { name: string }
   portDeparture: { portName: string; portCountry: string }

@@ -3,6 +3,7 @@ import { Vessel } from "@/app/dashboard/vessels/columns";
 import VesselForm from "../forms/vessel-form";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogDescription, DialogFooter, DialogClose, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { DeleteConfirmButton } from "../ui/delete-confirm-button";
 import { IconTrash } from "@tabler/icons-react";
 import { useDeleteVessel } from "@/hooks/use-vessels";
 import { useState } from "react";
@@ -18,7 +19,7 @@ export default function VesselActionCell({ row }: { row: Row<Vessel> }) {
     return (
         <div className="flex items-center gap-x-2">
             <VesselForm mode="edit" vesselName={row.original.vesselName} voyageNumber={row.original.voyageNumber} etd={row.original.etd ?? undefined} closingReefer={row.original.closingReefer ?? undefined} isActive={row.original.isActive} id={row.original.id ?? undefined} />
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(next) => { if (deleteVessel.isPending) return; setOpen(next) }}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
@@ -30,15 +31,18 @@ export default function VesselActionCell({ row }: { row: Row<Vessel> }) {
                         Are you sure you want to delete this vessel? This action cannot be undone.
                     </DialogDescription>
                     <DialogFooter>
-                        <Button variant="destructive" onClick={() => {
-                            deleteVessel.mutate(row.original.id ?? "", {
-                                onSuccess: () => {
-                                    setOpen(false)
-                                }
-                            })
-                        }}>Delete</Button>
+                        <DeleteConfirmButton
+                            isPending={deleteVessel.isPending}
+                            onClick={() => {
+                                deleteVessel.mutate(row.original.id ?? "", {
+                                    onSuccess: () => {
+                                        setOpen(false)
+                                    }
+                                })
+                            }}
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deleteVessel.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

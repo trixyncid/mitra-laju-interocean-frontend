@@ -65,6 +65,7 @@ export default function ShipmentPage() {
                             orderNumber={undefined}
                             customerCodeId={undefined}
                             customerShipperId={undefined}
+                            status={undefined}
                             isActive={undefined}
                         />
                     </PermissionGate>

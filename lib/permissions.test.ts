@@ -1,66 +1,85 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, test } from "bun:test"
+
 import {
-  canRead,
-  canWrite,
-  canWriteShipmentType,
-  canReadVendorsForCosting,
-  canReadShipmentsForCosting,
-} from "@/lib/permissions"
+  canAccessRouteWithPermissions,
+  canReadResource,
+  canWriteResource,
+  canWriteShipmentTypeWithPermissions,
+  type MyPermissions,
+  type RoleDetails,
+} from "./permissions"
 
-describe("role permissions", () => {
-  it("domestic_admin can write costings and DOMESTIC operationals", () => {
-    expect(canWrite("domestic_admin", "costings")).toBe(true)
-    expect(canWriteShipmentType("domestic_admin", "DOMESTIC")).toBe(true)
-    expect(canWriteShipmentType("domestic_admin", "EXPORT")).toBe(false)
-    expect(canReadVendorsForCosting("domestic_admin")).toBe(true)
-    expect(canReadShipmentsForCosting("domestic_admin")).toBe(true)
+const adminPerms: MyPermissions["permissions"] = {}
+const adminRole: RoleDetails = {
+  id: "1",
+  slug: "admin",
+  name: "Admin",
+  isSystem: true,
+  allowedShipmentTypes: [],
+}
+
+const viewerPerms: MyPermissions["permissions"] = {
+  DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  SHIPMENT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  COSTING: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  SELLING: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+}
+
+const domesticPerms: MyPermissions["permissions"] = {
+  DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  SHIPMENT: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  COSTING: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+}
+
+const domesticRole: RoleDetails = {
+  id: "2",
+  slug: "domestic_admin",
+  name: "Domestic Admin",
+  isSystem: false,
+  allowedShipmentTypes: ["DOMESTIC"],
+}
+
+describe("dynamic permissions", () => {
+  test("admin bypass", () => {
+    expect(canReadResource(adminPerms, "dashboard", "admin")).toBe(true)
+    expect(canWriteResource(adminPerms, "users", "admin")).toBe(true)
+    expect(canAccessRouteWithPermissions(adminPerms, "/dashboard/roles", "admin")).toBe(
+      true
+    )
+    void adminRole
   })
 
-  it("export_admin can write costings and EXPORT operationals", () => {
-    expect(canWrite("export_admin", "costings")).toBe(true)
-    expect(canWriteShipmentType("export_admin", "EXPORT")).toBe(true)
-    expect(canWriteShipmentType("export_admin", "DOMESTIC")).toBe(false)
+  test("viewer read-only", () => {
+    expect(canReadResource(viewerPerms, "costings", "viewer")).toBe(true)
+    expect(canWriteResource(viewerPerms, "costings", "viewer")).toBe(false)
+    expect(canWriteResource(viewerPerms, "shipments", "viewer")).toBe(false)
   })
 
-  it("operational_admin can write costings and all shipment types", () => {
-    expect(canWrite("operational_admin", "costings")).toBe(true)
-    expect(canWriteShipmentType("operational_admin", "EXPORT")).toBe(true)
-    expect(canWriteShipmentType("operational_admin", "IMPORT")).toBe(true)
-    expect(canWriteShipmentType("operational_admin", "DOMESTIC")).toBe(true)
-  })
-
-  it("costing_admin can write costings but not shipments", () => {
-    expect(canWrite("costing_admin", "costings")).toBe(true)
-    expect(canWrite("costing_admin", "shipments")).toBe(false)
-    expect(canRead("costing_admin", "costings")).toBe(true)
-  })
-
-  it("viewer is read-only", () => {
-    expect(canWrite("viewer", "costings")).toBe(false)
-    expect(canWrite("viewer", "shipments")).toBe(false)
-    expect(canRead("viewer", "costings")).toBe(true)
-    expect(canRead("viewer", "dashboard")).toBe(false)
-  })
-
-  it("only admin roles can view dashboard", () => {
-    expect(canRead("admin", "dashboard")).toBe(true)
-    expect(canRead("superadmin", "dashboard")).toBe(true)
-    expect(canRead("viewer", "dashboard")).toBe(false)
-    expect(canRead("costing_admin", "dashboard")).toBe(false)
-    expect(canRead("operational_admin", "dashboard")).toBe(false)
-  })
-
-  it("only admin roles can view master data", () => {
-    expect(canRead("admin", "masterData")).toBe(true)
-    expect(canRead("superadmin", "masterData")).toBe(true)
-    expect(canRead("viewer", "masterData")).toBe(false)
-    expect(canRead("domestic_admin", "masterData")).toBe(false)
-    expect(canRead("operational_admin", "masterData")).toBe(false)
-  })
-
-  it("costing roles can still load vendors for costing forms without master data access", () => {
-    expect(canRead("costing_admin", "masterData")).toBe(false)
-    expect(canReadVendorsForCosting("costing_admin")).toBe(true)
-    expect(canReadVendorsForCosting("domestic_admin")).toBe(true)
+  test("domestic admin shipment type", () => {
+    expect(canWriteResource(domesticPerms, "shipments", "domestic_admin")).toBe(true)
+    expect(
+      canWriteShipmentTypeWithPermissions(
+        domesticPerms,
+        domesticRole,
+        "DOMESTIC",
+        "domestic_admin"
+      )
+    ).toBe(true)
+    expect(
+      canWriteShipmentTypeWithPermissions(
+        domesticPerms,
+        domesticRole,
+        "EXPORT",
+        "domestic_admin"
+      )
+    ).toBe(false)
   })
 })

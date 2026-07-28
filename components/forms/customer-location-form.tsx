@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { CountryCombobox } from "@/components/country-combobox"
 import { TextField } from "@/components/ui/text-field"
@@ -15,7 +16,7 @@ import { zodOnChange } from "@/lib/zod-form"
 import { useCreateCustomerLocation, useUpdateCustomerLocation, useDeleteCustomerLocation } from "@/hooks/use-customers"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function CustomerLocationForm({ 
     mode,
@@ -28,7 +29,13 @@ export default function CustomerLocationForm({
     country,
     postalCode,
     customerId,
-    shipperId
+    shipperId,
+    trigger,
+    hideDeleteTrigger = false,
+    open: openProp,
+    onOpenChange,
+    deleteOpen: deleteOpenProp,
+    onDeleteOpenChange,
  }: {
     mode: "edit" | "create",
     id: string | undefined,
@@ -41,9 +48,20 @@ export default function CustomerLocationForm({
     province: string | undefined,
     country: string | undefined,
     postalCode: string | undefined
+    trigger?: React.ReactNode
+    hideDeleteTrigger?: boolean
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    deleteOpen?: boolean
+    onDeleteOpenChange?: (open: boolean) => void
  }) {
-    const [open, setOpen] = useState(false)
-    const [ deleteOpen, setDeleteOpen ] = useState(false)
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+    const [uncontrolledDeleteOpen, setUncontrolledDeleteOpen] = useState(false)
+
+    const open = openProp ?? uncontrolledOpen
+    const setOpen = onOpenChange ?? setUncontrolledOpen
+    const deleteOpen = deleteOpenProp ?? uncontrolledDeleteOpen
+    const setDeleteOpen = onDeleteOpenChange ?? setUncontrolledDeleteOpen
 
     const deleteCustomerLocation = useDeleteCustomerLocation(customerId)
     const createCustomerLocation = useCreateCustomerLocation(customerId)
@@ -106,12 +124,51 @@ export default function CustomerLocationForm({
         }
     })
 
+    useEffect(() => {
+        if (!open) return
+        form.reset({
+            id: id ?? "",
+            customerId,
+            shipperId,
+            addressLine1: addressLine1 ?? "",
+            addressLine2: addressLine2 ?? "",
+            addressLine3: addressLine3 ?? "",
+            city: city ?? "",
+            province: province ?? "",
+            country: country ?? "",
+            postalCode: postalCode ?? "",
+        })
+        // form API is stable; reset when the dialog opens or entity values change
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- form.reset
+    }, [
+        open,
+        id,
+        customerId,
+        shipperId,
+        addressLine1,
+        addressLine2,
+        addressLine3,
+        city,
+        province,
+        country,
+        postalCode,
+    ])
+
+  const defaultTrigger =
+    mode === "edit" ? (
+      <Button variant="outline" size="sm">Edit</Button>
+    ) : (
+      <Button variant="outline" size="sm"><IconPlus /> Location</Button>
+    )
+
   return (
     <div className="flex flex-row items-center gap-x-2">
-        <Dialog open={open} onOpenChange={setOpen} modal={false}>
-            <DialogTrigger asChild>
-                { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button>: <Button variant="outline" size="sm"><IconPlus /> Location</Button>}
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={setOpen}>
+            {trigger === null ? null : (
+              <DialogTrigger asChild>
+                {trigger ?? defaultTrigger}
+              </DialogTrigger>
+            )}
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{ mode === "edit" ? "Edit Location" : "Create New Location"}</DialogTitle>
@@ -255,11 +312,13 @@ export default function CustomerLocationForm({
         </Dialog>
 
         {
-            mode === "create" ? <></> :
-            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
-                </DialogTrigger>
+            mode === "create" ? null :
+            <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteCustomerLocation.isPending) return; setDeleteOpen(next) }}>
+                {hideDeleteTrigger ? null : (
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon-sm" aria-label="Delete location"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
+                    </DialogTrigger>
+                )}
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Location</DialogTitle>
@@ -268,16 +327,19 @@ export default function CustomerLocationForm({
                         Are you sure you want to delete this location? This action cannot be undone and all contacts will be deleted as well.
                     </DialogDescription>
                     <DialogFooter>
-                        <Button variant="destructive" onClick={() => {
-                            deleteCustomerLocation.mutate({ customerId: customerId, shipperId: shipperId, locationId: id ?? "" }, {
-                                onSuccess: () => {
-                                    setDeleteOpen(false)
-                                    form.reset()
-                                }
-                            })
-                        }}>Delete</Button>
+                        <DeleteConfirmButton
+                            isPending={deleteCustomerLocation.isPending}
+                            onClick={() => {
+                                deleteCustomerLocation.mutate({ customerId: customerId, shipperId: shipperId, locationId: id ?? "" }, {
+                                    onSuccess: () => {
+                                        setDeleteOpen(false)
+                                        form.reset()
+                                    }
+                                })
+                            }}
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deleteCustomerLocation.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

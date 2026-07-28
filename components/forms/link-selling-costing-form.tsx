@@ -57,7 +57,7 @@ export default function LinkSellingCostingForm({
     })
 
     return (
-        <Dialog open={open} onOpenChange={setOpen} modal={false}>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                     <IconPlus className="mr-1 size-4" />

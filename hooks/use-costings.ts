@@ -40,6 +40,7 @@ export const useUpdateCosting = () => {
         mutationFn: ({ id, costing }: { id: string, costing: UpdateCostingInput }) => costingService.update(id, costing),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["costings"] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
             toast.success("Costing updated successfully");
         },
         onError: (error: Error) => {

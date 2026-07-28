@@ -1,13 +1,13 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { TextField } from "@/components/ui/text-field"
 import { fieldError } from "@/lib/form-field"
 import { contactNameSchema, phoneNumberSchema } from "@/lib/schemas/contact"
 import { zodOnChange } from "@/lib/zod-form"
-import { Switch } from "@/components/ui/switch"
 import { useCreateVendorContact, useDeleteVendorContact, useUpdateVendorContact } from "@/hooks/use-vendors"
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
@@ -167,8 +167,12 @@ export default function VendorContactForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                        <ActiveStatusField
+                                            id={field.name}
+                                            value={field.state.value === true}
+                                            onChange={(checked) => field.handleChange(checked)}
+                                            description="Inactive contacts stay in history but are hidden from new selections."
+                                        />
                                     </div>
                                 )}
                             </form.Field> : null}
@@ -183,7 +187,7 @@ export default function VendorContactForm({
             {
                 mode === "create" ? <></>
                 :
-                <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteVendorContact.isPending) return; setDeleteOpen(next) }}>
                     <DialogTrigger asChild>
                         <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                     </DialogTrigger>
@@ -195,18 +199,21 @@ export default function VendorContactForm({
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
-                            <Button variant="destructive" onClick={() => {
-                                deleteVendorContact.mutate({ vendorId: vendorId, locationId: locationId, contactId: id ?? "" }, {
-                                    onSuccess: () => {
-                                        setDeleteOpen(false)
-                                    },
-                                    onError: (error) => {
-                                        toast.error(error.message)
-                                    }
-                                })
-                            }}>Delete</Button>
+                            <DeleteConfirmButton
+                                isPending={deleteVendorContact.isPending}
+                                onClick={() => {
+                                    deleteVendorContact.mutate({ vendorId: vendorId, locationId: locationId, contactId: id ?? "" }, {
+                                        onSuccess: () => {
+                                            setDeleteOpen(false)
+                                        },
+                                        onError: (error) => {
+                                            toast.error(error.message)
+                                        }
+                                    })
+                                }}
+                            />
                             <DialogClose asChild>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button variant="secondary" disabled={deleteVendorContact.isPending}>Cancel</Button>
                             </DialogClose>
                         </DialogFooter>
                     </DialogContent>

@@ -27,6 +27,13 @@ export type User = {
   emailVerified: boolean
   image: string | null
   role: UserRole | string
+  roleId?: string
+  roleRef?: {
+    id: string
+    slug: string
+    name: string
+    isSystem: boolean
+  }
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -56,7 +63,9 @@ export const columns: ColumnDef<User>[] = [
     accessorKey: "role",
     header: ({ column }) => sortHeader(column, "Role"),
     ...textSort,
-    cell: ({ row }) => <RoleChip role={row.original.role} />,
+    cell: ({ row }) => (
+      <RoleChip role={row.original.roleRef?.name ?? row.original.role} />
+    ),
   },
   {
     accessorKey: "isActive",

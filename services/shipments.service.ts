@@ -1,5 +1,6 @@
 import { Shipment } from "@/app/dashboard/shipments/columns";
 import { apiClient } from "@/lib/api-client";
+import { openFetchedUrl } from "@/lib/open-attachment";
 import type { ShipmentDetail } from "@/lib/types/entity-details";
 
 type CreateShipmentInput = {
@@ -8,6 +9,7 @@ type CreateShipmentInput = {
     year?: number;
     customerCodeId: string;
     customerShipperId: string;
+    status?: "ONGOING" | "COMPLETED";
 };
 
 export type ShipmentListParams = {
@@ -109,8 +111,11 @@ export const shipmentsService = {
         return response;
     },
     viewShipmentOperationalAttachment: async (shipmentId: string, id: string) => {
-        const response = await apiClient.get<{ url: string }>(`/shipments/${shipmentId}/attachments/${id}`);
-
-        window.open(response.url, "_blank");
+        await openFetchedUrl(async () => {
+            const response = await apiClient.get<{ url: string }>(
+                `/shipments/${shipmentId}/attachments/${id}`
+            );
+            return response.url;
+        });
     }
 }

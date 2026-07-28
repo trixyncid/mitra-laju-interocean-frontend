@@ -40,15 +40,6 @@ type SearchableComboboxProps = {
   isLoading?: boolean
 }
 
-function filterOptions(items: SearchableComboboxOption[], query: string) {
-  const normalizedQuery = query.trim().toLowerCase()
-  if (!normalizedQuery) return items
-
-  return items.filter((item) =>
-    item.label.toLowerCase().includes(normalizedQuery)
-  )
-}
-
 function ensureSelectedOption(
   items: SearchableComboboxOption[],
   value: string
@@ -86,11 +77,6 @@ export function SearchableCombobox({
     [options, value]
   )
 
-  const filteredItems = useMemo(
-    () => filterOptions(options, inputValue),
-    [options, inputValue]
-  )
-
   useEffect(() => {
     if (!open) {
       setInputValue(selectedItem?.label ?? "")
@@ -105,7 +91,6 @@ export function SearchableCombobox({
       <FieldContent>
         <Combobox
           items={options}
-          filteredItems={filteredItems}
           open={open}
           onOpenChange={(nextOpen) => {
             setOpen(nextOpen)
@@ -119,9 +104,6 @@ export function SearchableCombobox({
           inputValue={inputValue}
           onInputValueChange={(nextValue) => {
             setInputValue(nextValue)
-            if (!nextValue.trim()) {
-              onValueChange("")
-            }
           }}
           onValueChange={(item) => {
             const nextValue = item?.value ?? ""

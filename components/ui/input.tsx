@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 const inputVariants = cva(
   [
-    "w-full min-w-0 rounded-full border bg-card px-5 py-1 text-base text-foreground shadow-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
+    "w-full min-w-0 rounded-md border bg-card px-5 py-1 text-base text-foreground shadow-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
     "placeholder:text-muted-foreground/80",
     "selection:bg-primary selection:text-primary-foreground",
     "caret-primary",

@@ -16,7 +16,7 @@ import { PermissionGate } from "@/components/permission-gate"
 export default function NewCustomerPage() {
   return (
     <PermissionGate resource="masterData" write>
-      <DashboardPage>
+      <DashboardPage atmosphere>
         <DashboardPageHeader
           title="Add Customer"
           description="Create a new customer profile with code, name, and tax details."

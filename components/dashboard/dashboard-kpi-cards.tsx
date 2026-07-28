@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { glassPanelInteractive } from "@/lib/design"
 import { cn } from "@/lib/utils"
 
 function parseAmount(value: string | number) {
@@ -57,8 +58,8 @@ export function DashboardKpiCards({ data }: { data: DashboardData }) {
       display: shipmentTotal.toLocaleString("id-ID"),
       full: shipmentTotal.toLocaleString("id-ID"),
       icon: IconPackage,
-      accent: "text-primary",
-      highlight: false,
+      accent: "text-[var(--chart-1)]",
+      tint: "from-[var(--chart-1)]/10 to-transparent",
     },
     {
       label: "Total selling",
@@ -66,7 +67,7 @@ export function DashboardKpiCards({ data }: { data: DashboardData }) {
       ...formatIdrKpi(data.totalNetSelling),
       icon: IconCoin,
       accent: "text-[var(--chart-1)]",
-      highlight: false,
+      tint: "from-[var(--chart-1)]/10 to-transparent",
     },
     {
       label: "Total costing",
@@ -74,37 +75,55 @@ export function DashboardKpiCards({ data }: { data: DashboardData }) {
       ...formatIdrKpi(data.totalNetCosting),
       icon: IconReceipt,
       accent: "text-[var(--chart-2)]",
-      highlight: false,
+      tint: "from-[var(--chart-2)]/10 to-transparent",
     },
     {
       label: "Net revenue",
       description: "Total selling minus total costing",
       ...formatIdrKpi(data.netRevenue),
       icon: IconTrendingUp,
-      accent: netRevenue >= 0 ? "text-secondary-foreground" : "text-[var(--mli-on-error-container)]",
-      highlight: true,
+      accent:
+        netRevenue >= 0
+          ? "text-secondary-foreground"
+          : "text-[var(--mli-on-error-container)]",
+      tint:
+        netRevenue >= 0
+          ? "from-[var(--mli-primary-container)]/12 to-transparent"
+          : "from-[var(--mli-error-container)] to-transparent",
     },
   ] as const
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map(({ label, description, display, full, icon: Icon, accent, highlight }, index) => (
+      {cards.map(({ label, description, display, full, icon: Icon, accent, tint }) => (
         <Card
           key={label}
           className={cn(
-            "relative min-w-0 overflow-hidden p-6 lg:p-8",
-            highlight && "border-primary/10 bg-gradient-to-br from-primary/5 to-card",
-            index === 0 && !highlight && "border-primary/10"
+            glassPanelInteractive,
+            "relative min-w-0 gap-0 overflow-hidden p-5 shadow-none lg:p-6"
           )}
         >
+          <div
+            aria-hidden
+            className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br", tint)}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
+          />
           <Icon
-            className={cn("pointer-events-none absolute right-6 top-6 size-8 shrink-0 opacity-40", accent)}
+            className={cn(
+              "pointer-events-none absolute right-5 top-5 size-7 shrink-0 opacity-30",
+              accent
+            )}
             aria-hidden
           />
-          <CardHeader className="min-w-0 gap-1.5 pr-10">
-            <CardDescription className="truncate">{label}</CardDescription>
+          <CardHeader className="relative min-w-0 gap-1.5 pr-10">
+            <CardDescription className="truncate text-[11px] font-semibold tracking-[0.08em] uppercase">
+              {label}
+            </CardDescription>
             <CardTitle
-              className="text-xl font-semibold leading-tight tracking-tight text-balance break-words tabular-nums sm:text-2xl 2xl:text-[1.65rem]"
+              className="text-xl font-semibold leading-tight tracking-tight text-balance break-words tabular-nums sm:text-2xl"
               title={full}
             >
               {display}

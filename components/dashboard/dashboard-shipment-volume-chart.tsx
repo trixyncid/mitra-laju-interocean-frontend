@@ -20,6 +20,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { glassPanel } from "@/lib/design"
+import { cn } from "@/lib/utils"
 
 const chartConfig = {
   count: { label: "Shipments" },
@@ -49,7 +51,7 @@ export function DashboardShipmentVolumeChart({ data }: { data: DashboardData }) 
 
   if (!hasData) {
     return (
-      <Card className="h-full min-w-0 overflow-hidden">
+      <Card className={cn(glassPanel, "h-full min-w-0 gap-0 overflow-hidden p-6 shadow-none lg:p-7")}>
         <CardHeader>
           <CardTitle>Shipment volume</CardTitle>
           <CardDescription>
@@ -66,24 +68,33 @@ export function DashboardShipmentVolumeChart({ data }: { data: DashboardData }) 
   }
 
   return (
-    <Card className="h-full min-w-0 overflow-hidden">
-      <CardHeader>
+    <Card className={cn(glassPanel, "relative h-full min-w-0 gap-0 overflow-hidden p-6 shadow-none lg:p-7")}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
+      />
+      <CardHeader className="pb-2">
+        <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
+          Volume
+        </p>
         <CardTitle>Shipment volume</CardTitle>
         <CardDescription>
           {total.toLocaleString("id-ID")} operationals — breakdown by type
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[220px]">
+      <CardContent className="space-y-5">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
           <PieChart>
             <ChartTooltip content={<ChartTooltipContent nameKey="label" />} />
             <Pie
               data={chartData}
               dataKey="count"
               nameKey="label"
-              innerRadius={50}
-              outerRadius={85}
-              paddingAngle={2}
+              innerRadius={48}
+              outerRadius={78}
+              paddingAngle={3}
+              stroke="rgba(255,255,255,0.6)"
+              strokeWidth={2}
             >
               {chartData.map((entry) => (
                 <Cell key={entry.type} fill={entry.fill} />
@@ -92,13 +103,13 @@ export function DashboardShipmentVolumeChart({ data }: { data: DashboardData }) 
           </PieChart>
         </ChartContainer>
 
-        <ChartContainer config={chartConfig} className="aspect-[4/3] max-h-[200px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-[4/3] max-h-[180px] w-full">
           <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-            <CartesianGrid vertical={false} />
+            <CartesianGrid vertical={false} stroke="rgba(27,54,93,0.08)" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
               {chartData.map((entry) => (
                 <Cell key={entry.type} fill={entry.fill} />
               ))}
@@ -106,17 +117,20 @@ export function DashboardShipmentVolumeChart({ data }: { data: DashboardData }) 
           </BarChart>
         </ChartContainer>
 
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {chartData.map((item) => (
-            <div key={item.type} className="flex items-center gap-2 text-sm">
+            <div
+              key={item.type}
+              className="flex items-center gap-2 rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.5)] px-3 py-2 text-sm"
+            >
               <span
-                className="size-3 rounded-full"
+                className="size-2.5 rounded-md"
                 style={{ backgroundColor: item.fill }}
               />
               <span className="text-muted-foreground">{item.label}</span>
-              <span className="font-medium tabular-nums">{item.count}</span>
+              <span className="ml-auto font-semibold tabular-nums">{item.count}</span>
               <span className="text-xs text-muted-foreground">
-                ({percentOf(item.count, total)})
+                {percentOf(item.count, total)}
               </span>
             </div>
           ))}

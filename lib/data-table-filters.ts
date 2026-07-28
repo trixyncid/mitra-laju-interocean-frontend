@@ -27,8 +27,8 @@ export const ACTIVE_STATUS_OPTIONS: FilterOption[] = [
 
 export const PAYMENT_STATUS_OPTIONS: FilterOption[] = [
   { value: "all", label: "All statuses" },
-  { value: "paid", label: "Paid" },
-  { value: "unpaid", label: "Unpaid" },
+  { value: "PAID", label: "Paid" },
+  { value: "UNPAID", label: "Unpaid" },
 ]
 
 export function matchesStatusFilter(value: unknown, filter: string): boolean {

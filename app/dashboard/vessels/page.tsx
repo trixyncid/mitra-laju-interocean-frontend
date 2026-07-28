@@ -41,7 +41,7 @@ export default function VesselMasterDataPage() {
     if (error) return <ErrorPage />
 
     return (
-        <DashboardPage>
+        <DashboardPage atmosphere>
             <DashboardPageHeader
                 title="Vessel Management"
                 description="View and manage vessels based on name, voyage, ETD, and closing reefer."

@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { glassControl } from "@/lib/design"
+import { cn } from "@/lib/utils"
 interface DataTablePaginationProps<TData> {
   table: Table<TData>
   totalRows?: number
@@ -34,7 +36,10 @@ export function DataTablePagination<TData>({
           >
             <SelectTrigger
               size="sm"
-              className="h-8 min-w-[4.5rem] gap-1 rounded-md px-2.5 pr-7 shadow-none"
+              className={cn(
+                glassControl,
+                "h-8 min-w-[4.5rem] gap-1 rounded-md py-0 pl-2.5 pr-7"
+              )}
             >
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
@@ -57,7 +62,7 @@ export function DataTablePagination<TData>({
             <Button
                 variant="outline"
                 size="icon"
-                className="hidden size-8 lg:flex"
+                className={cn(glassControl, "hidden size-8 lg:flex")}
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
             >
@@ -67,7 +72,7 @@ export function DataTablePagination<TData>({
             <Button
                 variant="outline"
                 size="icon"
-                className="size-8"
+                className={cn(glassControl, "size-8")}
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
             >
@@ -77,7 +82,7 @@ export function DataTablePagination<TData>({
             <Button
                 variant="outline"
                 size="icon"
-                className="size-8"
+                className={cn(glassControl, "size-8")}
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
             >
@@ -87,7 +92,7 @@ export function DataTablePagination<TData>({
             <Button
                 variant="outline"
                 size="icon"
-                className="hidden size-8 lg:flex"
+                className={cn(glassControl, "hidden size-8 lg:flex")}
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
             >

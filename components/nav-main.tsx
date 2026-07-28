@@ -19,9 +19,9 @@ export function NavMain({
   }[]
 }) {
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
+    <SidebarGroup className="py-1">
+      <SidebarGroupContent>
+        <SidebarMenu className="gap-1">
           {items.map((item) => (
             <NavSidebarLink
               key={item.title}

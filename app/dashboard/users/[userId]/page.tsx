@@ -25,12 +25,12 @@ export default function EditUserPage({
   params: Promise<{ userId: string }>
 }) {
   const { userId } = use(params)
-  const { isPending: isSessionPending, isAdmin, isRedirecting } = useRequireAdmin()
+  const { isPending: isSessionPending, canManageUsers, isRedirecting } = useRequireAdmin()
   const { data: user, isLoading, error } = useUserById(userId)
 
-  if (isSessionPending || isRedirecting || !isAdmin || isLoading) {
+  if (isSessionPending || isRedirecting || !canManageUsers || isLoading) {
     return (
-      <DashboardPage>
+      <DashboardPage atmosphere>
         <DashboardPageCard>
           <TableSkeleton />
         </DashboardPageCard>
@@ -47,7 +47,7 @@ export default function EditUserPage({
   }
 
   return (
-    <DashboardPage>
+    <DashboardPage atmosphere>
       <DashboardPageHeader
         title={user.name}
         description="Manage staff account details, photo, and access."

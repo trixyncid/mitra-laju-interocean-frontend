@@ -6,7 +6,7 @@ export type SellingListParams = {
     page: number
     pageSize: number
     search?: string
-    status?: "all" | "paid" | "unpaid"
+    status?: "all" | "PAID" | "UNPAID"
     from?: string
     to?: string
 }

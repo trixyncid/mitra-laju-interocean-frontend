@@ -94,7 +94,7 @@ export function DatePicker({
                 </span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto rounded-2xl p-0" align="start">
+            <PopoverContent className="w-auto rounded-lg p-0" align="start">
               <Calendar
                 mode="single"
                 selected={selected}
@@ -110,7 +110,7 @@ export function DatePicker({
           {showClear ? (
             <button
               type="button"
-              className="absolute top-1/2 right-3 z-10 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="absolute top-1/2 right-3 z-10 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={(event) => {
                 event.preventDefault()
                 event.stopPropagation()

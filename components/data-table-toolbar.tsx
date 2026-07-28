@@ -21,7 +21,7 @@ import {
   hasDateRange,
   type TableFilterConfig,
 } from "@/lib/data-table-filters"
-import { tableSearchInput } from "@/lib/design"
+import { glassControl, tableSearchInput } from "@/lib/design"
 import { cn } from "@/lib/utils"
 
 export type AppliedTableFilters = {
@@ -98,7 +98,7 @@ export function DataTableToolbar<TData>({
               <Button
                 type="button"
                 variant="outline"
-                className="cursor-pointer"
+                className={cn(glassControl, "cursor-pointer")}
                 onClick={clearAll}
               >
                 <X className="size-4" />
@@ -112,7 +112,7 @@ export function DataTableToolbar<TData>({
           <Button
             type="button"
             variant="outline"
-            className="cursor-pointer"
+            className={cn(glassControl, "cursor-pointer")}
             onClick={clearAll}
           >
             <X className="size-4" />
@@ -135,7 +135,10 @@ export function DataTableToolbar<TData>({
                 }
               >
                 <SelectTrigger
-                  className="w-full min-w-[10rem] bg-card sm:w-auto"
+                  className={cn(
+                    glassControl,
+                    "w-full min-w-[10rem] rounded-md sm:w-auto"
+                  )}
                   aria-label={filters.status.label ?? "Status"}
                 >
                   <SelectValue placeholder={filters.status.label ?? "Status"} />

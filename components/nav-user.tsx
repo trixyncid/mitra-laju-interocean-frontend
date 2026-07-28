@@ -84,46 +84,46 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="h-auto rounded-lg border border-white/10 bg-white/[0.07] px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-[background-color,border-color] duration-200 hover:bg-white/[0.11] data-[state=open]:bg-white/[0.12] data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-full">
+              <Avatar className="size-9 rounded-full ring-2 ring-white/15">
                 <AvatarImage
                   key={avatarUrl ?? "no-avatar"}
                   src={avatarUrl}
                   alt={displayName}
                   className="rounded-full object-cover"
                 />
-                <AvatarFallback className="rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xs font-medium">
+                <AvatarFallback className="rounded-full bg-gradient-to-br from-[#6e9ef7] to-[#1b365d] text-xs font-semibold text-white">
                   {getInitialContactName(displayName)}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium text-sidebar-foreground">
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold tracking-tight text-sidebar-foreground">
                   {displayName}
                 </span>
-                <span className="truncate text-xs text-sidebar-foreground/70">
+                <span className="truncate text-[11px] text-sidebar-foreground/55">
                   {displayEmail}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4 text-sidebar-foreground/70" />
+              <IconDotsVertical className="ml-auto size-4 text-sidebar-foreground/50" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-md border-[rgba(214,227,255,0.45)] bg-[rgba(247,249,251,0.96)] p-1 shadow-[0_16px_40px_rgba(27,54,93,0.16)] backdrop-blur-xl"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
+            sideOffset={8}
           >
             <DropdownMenuItem
-              className="cursor-pointer"
+              className="cursor-pointer rounded-sm px-3 py-2.5"
               onClick={() => router.push("/dashboard/profile")}
             >
               <IconUser />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="mx-1 bg-[rgba(214,227,255,0.5)]" />
             <DropdownMenuItem
-              className="cursor-pointer text-[var(--mli-on-error-container)] hover:text-[var(--mli-on-error-container)]"
+              className="cursor-pointer rounded-sm px-3 py-2.5 text-[var(--mli-on-error-container)] focus:bg-[var(--mli-error-container)] focus:text-[var(--mli-on-error-container)]"
               onClick={() => setLogoutOpen(true)}
             >
               <IconLogout className="text-[var(--mli-on-error-container)]" />

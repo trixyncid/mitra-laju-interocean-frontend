@@ -37,15 +37,6 @@ type CountryComboboxProps = {
   placeholder?: string
 }
 
-function filterCountryOptions(items: CountryOption[], query: string) {
-  const normalizedQuery = query.trim().toLowerCase()
-  if (!normalizedQuery) return items
-
-  return items.filter((item) =>
-    item.label.toLowerCase().includes(normalizedQuery)
-  )
-}
-
 export function CountryCombobox({
   id,
   label = "Country",
@@ -59,7 +50,7 @@ export function CountryCombobox({
   const anchor = useComboboxAnchor()
   const { data: countries = [], isLoading, isError } = useCountries()
   const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(value)
+  const [inputValue, setInputValue] = useState("")
 
   const items = useMemo(
     () => buildCountryOptions(countries, value),
@@ -71,14 +62,11 @@ export function CountryCombobox({
     [items, value]
   )
 
-  const filteredItems = useMemo(
-    () => filterCountryOptions(items, inputValue),
-    [items, inputValue]
-  )
-
   useEffect(() => {
-    setInputValue(selectedItem?.label ?? value)
-  }, [selectedItem, value])
+    if (!open) {
+      setInputValue(selectedItem?.label ?? "")
+    }
+  }, [open, selectedItem, value])
 
   return (
     <Field data-invalid={Boolean(error) || undefined}>
@@ -88,18 +76,21 @@ export function CountryCombobox({
       <FieldContent>
         <Combobox
           items={items}
-          filteredItems={filteredItems}
           open={open}
-          onOpenChange={setOpen}
+          onOpenChange={(nextOpen) => {
+            setOpen(nextOpen)
+            if (nextOpen) {
+              setInputValue("")
+              return
+            }
+            setInputValue(selectedItem?.label ?? "")
+          }}
           value={selectedItem}
           inputValue={inputValue}
           onInputValueChange={(nextValue) => {
             setInputValue(nextValue)
-            if (!nextValue.trim()) {
-              onValueChange("")
-            }
           }}
-          onValueChange={(item) => {
+          onValueChange={(item: CountryOption | null) => {
             const nextValue = item?.value ?? ""
             onValueChange(nextValue)
             setInputValue(item?.label ?? "")

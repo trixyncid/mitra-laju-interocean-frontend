@@ -1,90 +1,127 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { use, useMemo, useState } from "react"
-import { IconArrowLeft, IconBrandWhatsapp, IconBuildingFactory2 } from "@tabler/icons-react"
-import { useCustomerById } from "@/hooks/use-customers"
-import ErrorPage from "@/components/error-page"
-import { Button } from "@/components/ui/button"
+import { use } from "react"
 import Link from "next/link"
+import {
+    IconArrowLeft,
+    IconBuildingFactory2,
+    IconCash,
+    IconChartBar,
+    IconReceipt,
+    IconShip,
+} from "@tabler/icons-react"
 import { Dot } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import clsx from "clsx"
-import { amountCalculation, formatDate, getInitialContactName } from "@/lib/utils"
-import { toWhatsAppUrl } from "@/lib/whatsapp"
+
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import CustomerLocationForm from "@/components/forms/customer-location-form"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import CustomerShipperForm from "@/components/forms/customer-shipper-form"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import CustomerContactForm from "@/components/forms/customer-contact-form"
+import { StatusChip } from "@/components/ui/status-chip"
+import { CustomerMetadataCard } from "@/components/customer-metadata-card"
+import { CustomerNetworkPanel } from "@/components/customer-network-panel"
+import CustomerForm from "@/components/forms/customer-form"
+import ErrorPage from "@/components/error-page"
+import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
+import { MasterDataWriteGate } from "@/components/write-gates"
+import { useCustomerById } from "@/hooks/use-customers"
+import {
+    glassInset,
+    glassPanel,
+    glassShine,
+    glassTabCount,
+    glassTabsTrigger,
+} from "@/lib/design"
+import { amountCalculation, cn, formatDate, sellingNetAmount } from "@/lib/utils"
+import type { CustomerShipment } from "@/lib/types/entity-details"
+import { Costing } from "@/app/dashboard/costings/columns"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import type { LinkedShipment } from "./(shipments)/shipment-columns"
 import CostingHistoryPage from "./(costings)/costing-history-page"
 import { Costing as CustomerCosting } from "./(costings)/costing-column"
-import { Costing } from "@/app/dashboard/costings/columns"
-import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
-import { MasterDataWriteGate } from "@/components/write-gates"
-import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
-import { StatusChip } from "@/components/ui/status-chip"
-import { CustomerMetadataCard } from "@/components/customer-metadata-card"
-import CustomerForm from "@/components/forms/customer-form"
-import type { CustomerShipment } from "@/lib/types/entity-details"
+import SellingHistoryPage from "./(sellings)/selling-history-page"
+import type { CustomerSelling } from "./(sellings)/selling-column"
+import MonthlySummary, {
+    type MonthlySummaryRow,
+} from "./(summary)/monthly-summary"
 
-type CustomerContact = {
-    id: string
-    contactName: string
-    phoneNumber: string
-    email: string
-    isActive: boolean
+function MetricTile({
+    label,
+    value,
+    hint,
+}: {
+    label: string
+    value: string | number
+    hint?: string
+}) {
+    return (
+        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                {label}
+            </p>
+            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums break-words sm:text-2xl">
+                {value}
+            </p>
+            {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+        </div>
+    )
 }
 
-type CustomerLocation = {
-    id: string
-    addressLine1: string
-    addressLine2: string
-    addressLine3: string
-    city: string
-    province: string
-    country: string
-    postalCode: string
-    customerContacts: CustomerContact[]
-    updatedAt: string,
-    updatedBy?: { name: string }
+function SectionIntro({
+    title,
+    description,
+}: {
+    title: string
+    description: string
+}) {
+    return (
+        <div className="mb-6 space-y-1">
+            <h2 className="text-headline-md font-semibold tracking-tight">{title}</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+        </div>
+    )
 }
 
-type CustomerShipper = {
-    id: string,
-    name: string,
-    phoneNumber: string,
-    country: string,
-    isActive: boolean,
-    customerLocations: CustomerLocation[],
-    updatedAt: string,
-    updatedBy: string
+function EmptyState({
+    icon: Icon,
+    title,
+    description,
+}: {
+    icon: React.ComponentType<{ className?: string }>
+    title: string
+    description: string
+}) {
+    return (
+        <div className={cn(glassInset, "flex flex-col items-center justify-center gap-3 px-6 py-14 text-center")}>
+            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+                <Icon className="size-6" />
+            </div>
+            <div className="space-y-1">
+                <p className="font-semibold text-foreground">{title}</p>
+                <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+            </div>
+        </div>
+    )
 }
 
+function CountPill({ children }: { children: React.ReactNode }) {
+    return (
+        <span className="inline-flex items-center rounded-md bg-[rgba(214,227,255,0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
+            {children}
+        </span>
+    )
+}
 
 export default function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
     const { customerId } = use(params)
     const { data, isLoading, error } = useCustomerById(customerId)
 
-    const [shipperSearch, setShipperSearch] = useState<string>("")
-
-    const filteredShippers = useMemo(() => {
-        const shippers = data?.customerShippers ?? []
-        const q = shipperSearch.trim().toLowerCase()
-        if (!q) return shippers
-        return shippers.filter((shipper: CustomerShipper) => {
-            const haystack = [shipper.name, shipper.phoneNumber ?? "", shipper.country ?? ""]
-                .join(" ")
-                .toLowerCase()
-            return haystack.includes(q)
-        })
-    }, [data?.customerShippers, shipperSearch])
-
-    if (error) return <ErrorPage title="Customer Detail Not Found" message="Customer detail not found. Please check the customer ID and try again." />
+    if (error) {
+        return (
+            <ErrorPage
+                title="Customer Detail Not Found"
+                message="Customer detail not found. Please check the customer ID and try again."
+            />
+        )
+    }
     if (isLoading) return <CustomerVendorDetailLoading />
     if (!data) return <ErrorPage title="Customer not found" message="Unable to load this customer." />
 
@@ -111,11 +148,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
             ),
         0
     )
-    
-    /**
-     * Function to map the customer shipments to a new object
-     * @returns {Shipment[]} The mapped customer shipments
-     */
+
     const customerShipments: LinkedShipment[] = shipments.map((shipment: CustomerShipment) => ({
         id: shipment.id,
         orderNumber: shipment.orderNumber,
@@ -123,129 +156,272 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
         customerShipper: shipment.customerShipper?.name ?? "",
         departureCountry: shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
         arrivalCountry: shipment.shipmentOperational?.portDestination?.portCountry ?? "",
-        eta: shipment.shipmentOperational?.eta?.split('T')[0] ?? "",
+        eta: shipment.shipmentOperational?.eta?.split("T")[0] ?? "",
+        status: shipment.status,
+        costingTotal: (shipment.costings ?? []).reduce(
+            (sum, costing) =>
+                sum +
+                amountCalculation(
+                    costing.price,
+                    costing.currency,
+                    costing.vatPercentage,
+                    costing.pph23Percentage
+                ),
+            0
+        ),
+        sellingTotal: (shipment.sellings ?? []).reduce(
+            (sum, selling) =>
+                sum +
+                sellingNetAmount(
+                    Number(selling.amount) || 0,
+                    Number(selling.vatPercentage) || 0,
+                    Number(selling.pph23Percentage) || 0
+                ),
+            0
+        ),
     }))
 
-    /**
-     * Function to map the customer costings to a new object
-     * @returns {CustomerCosting[]} The mapped customer costings
-     */
-    const customerCostings = () => {
-        const costings: CustomerCosting[] = []
+    const customerCostings: CustomerCosting[] = []
+    const customerSellings: CustomerSelling[] = []
+    const monthlyMap = new Map<string, MonthlySummaryRow>()
 
-        for (const shipment of shipments) {
-            costings.push(...(shipment.costings ?? []).map((costing: Costing) => ({
+    const monthLabel = (year: number, month: number) =>
+        new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(
+            new Date(year, month, 1)
+        )
+
+    const ensureMonth = (dateStr: string) => {
+        const date = new Date(dateStr)
+        if (Number.isNaN(date.getTime())) return null
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+        let row = monthlyMap.get(key)
+        if (!row) {
+            row = {
+                key,
+                label: monthLabel(date.getFullYear(), date.getMonth()),
+                sellingCount: 0,
+                sellingTotal: 0,
+                costingCount: 0,
+                costingTotal: 0,
+                netTotal: 0,
+            }
+            monthlyMap.set(key, row)
+        }
+        return row
+    }
+
+    for (const shipment of shipments) {
+        for (const costing of shipment.costings ?? []) {
+            const amount = amountCalculation(
+                costing.price,
+                costing.currency,
+                costing.vatPercentage,
+                costing.pph23Percentage
+            )
+            customerCostings.push({
                 id: costing.id,
                 invoiceNumber: costing.vendorInvoiceNumber,
-                amount: amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage),
-                shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
+                amount,
+                shipmentOrderNumber: costing.shipment?.orderNumber ?? shipment.orderNumber ?? "",
                 updatedAt: costing.updatedAt ?? "",
-            } as CustomerCosting)))
+            })
+
+            const month = ensureMonth(costing.createdAt ?? costing.updatedAt ?? "")
+            if (month) {
+                month.costingCount += 1
+                month.costingTotal += amount
+                month.netTotal -= amount
+            }
         }
 
-        return costings
-    }
-    
-    /**
-     * Function to count the total number of costings for a customer
-     * @returns {number} The total number of costings
-     */
-    const costingsCount = () => {
-        let count = 0
+        for (const selling of shipment.sellings ?? []) {
+            const amount = sellingNetAmount(
+                Number(selling.amount) || 0,
+                Number(selling.vatPercentage) || 0,
+                Number(selling.pph23Percentage) || 0
+            )
+            customerSellings.push({
+                id: selling.id,
+                sellingNumber: selling.sellingNumber,
+                description: selling.description,
+                amount,
+                shipmentOrderNumber: selling.shipment?.orderNumber ?? shipment.orderNumber ?? "",
+                status: selling.status,
+                updatedAt: selling.updatedAt ?? "",
+            })
 
-        for (const shipment of shipments) {
-            count += (shipment.costings ?? []).length
+            const month = ensureMonth(selling.createdAt ?? selling.updatedAt ?? "")
+            if (month) {
+                month.sellingCount += 1
+                month.sellingTotal += amount
+                month.netTotal += amount
+            }
         }
-
-        return count
     }
 
-    /**
-     * Function to calculate the total YTD spend for a customer
-     * @returns {number} The total YTD spend
-     */
+    const monthlySummary = Array.from(monthlyMap.values()).sort((a, b) =>
+        b.key.localeCompare(a.key)
+    )
+
     const calculateYTDSpend = () => {
+        const year = new Date().getFullYear()
         let total = 0
-
         for (const shipment of shipments) {
-            total += (shipment.costings ?? []).reduce((acc: number, costing: Costing) => acc + amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage), 0)
+            total += (shipment.costings ?? []).reduce((acc: number, costing: Costing) => {
+                const created = new Date(costing.createdAt ?? costing.updatedAt ?? "")
+                if (!Number.isNaN(created.getTime()) && created.getFullYear() === year) {
+                    return (
+                        acc +
+                        amountCalculation(
+                            costing.price,
+                            costing.currency,
+                            costing.vatPercentage,
+                            costing.pph23Percentage
+                        )
+                    )
+                }
+                return acc
+            }, 0)
         }
-
-        return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
+        return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
     }
 
     const calculateOutstandingBills = () => {
         let total = 0
-
-        for (const shipment of shipments) {
-            if (shipment.shipmentOperational?.status !== "paid" && shipment.shipmentOperational?.customerChargeAmount) {
-                total += shipment.shipmentOperational.customerChargeAmount
+        for (const selling of customerSellings) {
+            if (selling.status !== "PAID") {
+                total += selling.amount
             }
         }
-
-        return total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })
+        return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
     }
 
-    const activeShipmentsCount = shipments.filter((shipment: CustomerShipment) => shipment.isActive).length
+    const activeShipmentsCount = shipments.filter(
+        (shipment: CustomerShipment) => shipment.status === "ONGOING"
+    ).length
+    const costingsTotal = customerCostings.length
+    const sellingsTotal = customerSellings.length
 
-    return (  
-        <DashboardPage>
-            <div className="mb-5">
+    return (
+        <DashboardPage atmosphere>
+            <div className="mb-6">
                 <Button asChild variant="ghost" className="text-muted-foreground">
-                    <Link href={`/dashboard/customers`}>
-                        <IconArrowLeft className="text-2xl"/> Back to customers
+                    <Link href="/dashboard/customers">
+                        <IconArrowLeft className="size-5" />
+                        Back to customers
                     </Link>
                 </Button>
             </div>
-            <Card>
-                <CardContent>
-                <div className="flex items-center gap-x-4">
-                        <div className="border border-2 rounded-lg p-3">
-                            <IconBuildingFactory2 className="text-ring w-10 h-10" />
-                        </div>
-                        <div>
-                            <h1 className="text-headline-lg">{ data.customerName}</h1>
-                            <p className="text-sm text-muted-foreground flex items-center mt-1">Last updated on {formatDate(data.updatedAt)}{updatedByName ? ` by ${updatedByName}` : ""} <Dot /> Registered since {formatDate(data.createdAt)} <Dot /> Vendor Code: { data.customerCode }</p>
-                            <div className="mt-2">
-                                <StatusChip active={Boolean(data?.isActive)} />
+
+            <section className={cn(glassPanel, "relative overflow-hidden")}>
+                <div aria-hidden className={glassShine} />
+
+                <div className="relative space-y-8 p-6 lg:p-8">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+                            <div
+                                className={cn(
+                                    glassInset,
+                                    "flex size-14 shrink-0 items-center justify-center sm:size-16"
+                                )}
+                            >
+                                <IconBuildingFactory2 className="size-8 text-[var(--mli-primary-container)] sm:size-9" />
+                            </div>
+
+                            <div className="min-w-0 space-y-3">
+                                <div className="space-y-2">
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                        <h1 className="text-headline-lg tracking-tight">
+                                            {data.customerName}
+                                        </h1>
+                                        <StatusChip active={Boolean(data?.isActive)} />
+                                    </div>
+                                    <p className="font-mono text-sm font-medium tracking-wide text-[var(--mli-primary-container)]">
+                                        {data.customerCode}
+                                    </p>
+                                </div>
+
+                                <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+                                    <span>
+                                        Updated {formatDate(data.updatedAt)}
+                                        {updatedByName ? ` by ${updatedByName}` : ""}
+                                    </span>
+                                    <Dot className="hidden size-4 sm:inline" />
+                                    <span>Registered {formatDate(data.createdAt)}</span>
+                                </p>
                             </div>
                         </div>
-                    </div>
 
-                    <Separator className="mt-4"/>
-
-                    <div className="grid grid-cols-4 text-center">
-                        <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">{ activeShipmentsCount }</p>
-                            <p className="mb-2 text-sm text-muted-foreground">Active <br /> Shipments</p>
-                        </div>
-
-                        <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">{ shipments.length }</p>
-                            <p className="mb-2 text-sm text-muted-foreground">Total <br /> Assignments</p>
-                        </div>
-
-                        <div className="w-full border-r">
-                            <p className="mt-2 font-bold text-xl">{ calculateYTDSpend() }</p>
-                            <p className="mb-2 text-sm text-muted-foreground">YTD <br /> Spend</p>
-                        </div>
-
-                        <div className="w-full">
-                            <p className="mt-2 font-bold text-xl">{ calculateOutstandingBills() }</p>
-                            <p className="mb-2 text-sm text-muted-foreground">Outstanding <br /> Bills</p>
+                        <div className="flex flex-wrap gap-2 lg:justify-end">
+                            <CountPill>
+                                {customerShippers.length} shipper
+                                {customerShippers.length === 1 ? "" : "s"}
+                            </CountPill>
+                            <CountPill>
+                                {totalCustomerLocations} location
+                                {totalCustomerLocations === 1 ? "" : "s"}
+                            </CountPill>
+                            <CountPill>
+                                {totalCustomerContacts} contact
+                                {totalCustomerContacts === 1 ? "" : "s"}
+                            </CountPill>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
 
-            {/* Tabs */}
-            <Tabs defaultValue="details" className="mt-6">
-                <TabsList>
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="locations-and-contacts">Locations & Contacts <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ customerShippers.length }</span></TabsTrigger>
-                    <TabsTrigger value="shipment-history">Shipment History <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ shipments.length }</span></TabsTrigger>
-                    <TabsTrigger value="costings">Costings <span className="bg-blue-100/50 text-ring px-1 rounded-full">{ costingsCount() }</span></TabsTrigger>
-                </TabsList>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <MetricTile
+                            label="Active shipments"
+                            value={activeShipmentsCount}
+                            hint="Currently in progress"
+                        />
+                        <MetricTile
+                            label="Total assignments"
+                            value={shipments.length}
+                            hint="All linked shipments"
+                        />
+                        <MetricTile
+                            label="YTD spend"
+                            value={calculateYTDSpend()}
+                            hint="Costings this year"
+                        />
+                        <MetricTile
+                            label="Outstanding bills"
+                            value={calculateOutstandingBills()}
+                            hint="Unpaid customer charges"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <Tabs defaultValue="details" className="mt-8 gap-0">
+                <div className="overflow-x-auto pb-1">
+                    <TabsList className="h-auto min-w-max rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-1 backdrop-blur-xl">
+                        <TabsTrigger value="details" className={glassTabsTrigger}>
+                            Profile
+                        </TabsTrigger>
+                        <TabsTrigger value="locations-and-contacts" className={glassTabsTrigger}>
+                            Network
+                            <span className={glassTabCount}>{customerShippers.length}</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="shipment-history" className={glassTabsTrigger}>
+                            Shipments
+                            <span className={glassTabCount}>{shipments.length}</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="sellings" className={glassTabsTrigger}>
+                            Sellings
+                            <span className={glassTabCount}>{sellingsTotal}</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="costings" className={glassTabsTrigger}>
+                            Costings
+                            <span className={glassTabCount}>{costingsTotal}</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="summary" className={glassTabsTrigger}>
+                            Summary
+                            <span className={glassTabCount}>{monthlySummary.length}</span>
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
+
                 <TabsContent value="details" className="mt-6">
                     <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
                         <aside className="lg:sticky lg:top-6">
@@ -255,9 +431,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             <MasterDataWriteGate
                                 fallback={
                                     <div className="space-y-2">
-                                        <h2 className="text-headline-md font-semibold">Customer details</h2>
+                                        <h2 className="text-headline-md font-semibold">
+                                            Customer details
+                                        </h2>
                                         <p className="text-sm text-muted-foreground">
-                                            You can view this customer profile, but you do not have permission to edit it.
+                                            You can view this customer profile, but you do not have
+                                            permission to edit it.
                                         </p>
                                     </div>
                                 }
@@ -267,133 +446,91 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         </DashboardPageCard>
                     </div>
                 </TabsContent>
-                <TabsContent value="locations-and-contacts">
-                    <div className="flex flex-row items-center justify-between mb-4">
-                        <p className="text-sm text-muted-foreground my-2 flex flex-row">{ customerShippers.length } shippers <Dot /> { totalCustomerLocations } locations <Dot /> { totalCustomerContacts } contacts</p>
-                        <MasterDataWriteGate>
-                            <CustomerShipperForm mode="create" id={undefined} name={undefined} phoneNumber={undefined} country={undefined} isActive={undefined} customerId={data.id} />
-                        </MasterDataWriteGate>
-                    </div>
 
-                    <Input
-                        placeholder="Search shippers by name, phone, or country"
-                        className="mb-4 w-full max-w-md"
-                        value={shipperSearch ?? ""}
-                        onChange={(e) => setShipperSearch(e.target.value)}
-                    />
-
-                    <Accordion type="multiple">
-                        {
-                            customerShippers.length === 0 ? <p>No shippers found for this customer ...</p>
-                            :
-                            filteredShippers.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No shippers match &quot;{shipperSearch.trim()}&quot;.</p>
-                            ) :
-                            filteredShippers.map((shipper: CustomerShipper) => {
-                                const shipperLocations = Array.isArray(shipper.customerLocations) ? shipper.customerLocations : []
-
-                                return (
-                                <AccordionItem value={shipper.id} key={shipper.id}>
-                                    <AccordionTrigger className="flex flex-row items-center">
-                                        <div>
-                                            <h1 className="text-xl font-semibold">{shipper.name}</h1>
-                                            <div className="flex flex-row items-center">
-                                                { shipper.country }
-                                            </div>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <p className="text-sm text-muted-foreground flex flex-row">{ shipperLocations.length } locations <Dot /> { shipperLocations.reduce((total, location) => total + (Array.isArray(location.customerContacts) ? location.customerContacts.length : 0), 0) } contacts</p>
-                                            
-                                            <div className="flex items-center gap-x-2">
-                                                <MasterDataWriteGate>
-                                                    <CustomerShipperForm mode="edit" id={shipper.id} name={shipper.name} phoneNumber={shipper.phoneNumber} country={shipper.country} isActive={shipper.isActive} customerId={data.id} />
-                                                    <CustomerLocationForm mode="create" id={undefined} customerId={data.id} shipperId={shipper.id} addressLine1={undefined} addressLine2={undefined} addressLine3={undefined} city={undefined} province={undefined} country={undefined} postalCode={undefined} />
-                                                </MasterDataWriteGate>
-                                            </div>
-                                        </div>
-                                        {
-                                            shipperLocations.length === 0 ? <p>No locations found for this shipper ...</p>
-                                            :
-                                            shipperLocations.map((location: CustomerLocation) => {
-                                                const locationContacts = Array.isArray(location.customerContacts) ? location.customerContacts : []
-
-                                                return (
-                                                <Card key={location.id} className="my-4">
-                                                    <CardContent>
-                                                        <div className="flex flex-row items-start justify-between">
-                                                            <div>
-                                                                <div className="flex flex-row items-start gap-x-2">
-                                                                    <h2 className="text-lg font-bold">{location.addressLine1}</h2>
-                                                                    <div className="mt-2">
-                                                                        <StatusChip active />
-                                                                    </div>
-                                                                </div>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    <p>{`${ location.addressLine2 === "" ? "" : location.addressLine2 + ", " } ${ location.addressLine3 === "" ? "" : location.addressLine3 + ", "} ${ location.city }, ${ location.province }, ${ location.country } ${ location.postalCode === "" ? "" : location.postalCode }`}</p>
-                                                                    <p>Last updated on { formatDate(location.updatedAt) } by { location.updatedBy?.name ?? "Unknown" }</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-row items-center gap-x-2">
-                                                                <MasterDataWriteGate>
-                                                                    <CustomerLocationForm mode="edit" id={location.id} customerId={data.id} shipperId={shipper.id} addressLine1={location.addressLine1} addressLine2={location.addressLine2} addressLine3={location.addressLine3} city={location.city} province={location.province} country={location.country} postalCode={location.postalCode} />
-                                                                    <CustomerContactForm mode="create" contactName={undefined} customerId={data.id} shipperId={shipper.id} phoneNumber={undefined} email={undefined} isActive={undefined} locationId={location.id} />
-                                                                </MasterDataWriteGate>
-                                                            </div>
-                                                        </div>
-
-                                                        <Separator className="mt-4"/>
-
-                                                        <div>
-                                                            {
-                                                                locationContacts.length === 0 ? <p className="mt-4">No contacts found for this location ...</p>
-                                                                :
-                                                                locationContacts.map((contact: CustomerContact) => (    
-                                                                    <div key={contact.id}>
-                                                                        <div className="flex flex-row items-center justify-between my-2">
-                                                                            <div className="flex flex-row items-center gap-x-2">
-                                                                                <Avatar>
-                                                                                    <AvatarFallback>{ getInitialContactName(contact.contactName) }</AvatarFallback>
-                                                                                </Avatar>
-                                                                                <div>
-                                                                                    <h2 className="font-semibold text-sm">{ contact.contactName }</h2>
-                                                                                    <p className="text-xs text-muted-foreground">{ contact.email === "" ? "No email provided" : contact.email }</p>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex flex-row items-center gap-x-2">
-                                                                                <p className="text-sm text-muted-foreground">{ contact.phoneNumber === "" ? "No phone number provided" : contact.phoneNumber }</p>
-                                                                                {toWhatsAppUrl(contact.phoneNumber) ? (
-                                                                                <Button variant="outline" size="icon" asChild><Link href={toWhatsAppUrl(contact.phoneNumber)!} target="_blank" rel="noopener noreferrer"><IconBrandWhatsapp className="text-[#25D366] hover:text-[#25D366]" /></Link></Button>
-                                                                                ) : null}
-                                                                                <MasterDataWriteGate>
-                                                                                    <CustomerContactForm mode="edit" id={contact.id} contactName={contact.contactName} customerId={data.id} shipperId={shipper.id} phoneNumber={contact.phoneNumber} email={contact.email} isActive={contact.isActive} locationId={location.id} />
-                                                                                </MasterDataWriteGate>
-                                                                            </div>
-                                                                        </div>
-                                                                        
-                                                                        <Separator className="my-3" />
-                                                                    </div>    
-                                                                ))
-                                                            }
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                                )
-                                            })
-                                        }
-                                    </AccordionContent>
-                                </AccordionItem>
-                                )
-                            })
-                        }
-                    </Accordion>
+                <TabsContent value="locations-and-contacts" className="mt-6">
+                    <DashboardPageCard>
+                        <CustomerNetworkPanel
+                            customerId={data.id}
+                            shippers={customerShippers}
+                            totalLocations={totalCustomerLocations}
+                            totalContacts={totalCustomerContacts}
+                        />
+                    </DashboardPageCard>
                 </TabsContent>
-                <TabsContent value="shipment-history">
-                    <ShipmentHistoryPage customerShipments={customerShipments} />
+
+                <TabsContent value="shipment-history" className="mt-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Shipment history"
+                            description="All shipments linked to this customer, including routes and ETAs."
+                        />
+                        {shipments.length === 0 ? (
+                            <EmptyState
+                                icon={IconShip}
+                                title="No shipments yet"
+                                description="Shipments assigned to this customer will appear here."
+                            />
+                        ) : (
+                            <ShipmentHistoryPage customerShipments={customerShipments} />
+                        )}
+                    </DashboardPageCard>
                 </TabsContent>
-                <TabsContent value="costings">
-                    <CostingHistoryPage customerName={data.customerName ?? ""} customerCostings={customerCostings()} />
+
+                <TabsContent value="sellings" className="mt-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Selling history"
+                            description="Customer charges and invoices tied to this customer’s shipments."
+                        />
+                        {sellingsTotal === 0 ? (
+                            <EmptyState
+                                icon={IconCash}
+                                title="No sellings yet"
+                                description="Sellings from linked shipments will show up in this list."
+                            />
+                        ) : (
+                            <SellingHistoryPage customerSellings={customerSellings} />
+                        )}
+                    </DashboardPageCard>
+                </TabsContent>
+
+                <TabsContent value="costings" className="mt-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Costing history"
+                            description="Vendor invoices and amounts tied to this customer’s shipments."
+                        />
+                        {costingsTotal === 0 ? (
+                            <EmptyState
+                                icon={IconReceipt}
+                                title="No costings yet"
+                                description="Costings from linked shipments will show up in this list."
+                            />
+                        ) : (
+                            <CostingHistoryPage
+                                customerName={data.customerName ?? ""}
+                                customerCostings={customerCostings}
+                            />
+                        )}
+                    </DashboardPageCard>
+                </TabsContent>
+
+                <TabsContent value="summary" className="mt-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Monthly summary"
+                            description="Sellings and costings grouped by transaction month, with net margin per month."
+                        />
+                        {monthlySummary.length === 0 ? (
+                            <EmptyState
+                                icon={IconChartBar}
+                                title="No transactions yet"
+                                description="Monthly totals will appear once this customer has sellings or costings."
+                            />
+                        ) : (
+                            <MonthlySummary rows={monthlySummary} />
+                        )}
+                    </DashboardPageCard>
                 </TabsContent>
             </Tabs>
         </DashboardPage>

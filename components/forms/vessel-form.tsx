@@ -1,14 +1,13 @@
 "use client"
 
+import { ActiveStatusField } from "@/components/forms/active-status-field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { TextField } from "@/components/ui/text-field";
 import { fieldError } from "@/lib/form-field"
 import { vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
 import { zodOnChange } from "@/lib/zod-form";
-import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useCreateVessel, useUpdateVessel } from "@/hooks/use-vessels";
@@ -85,7 +84,7 @@ export default function VesselForm({
 
     return (
         <div>
-            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Vessel</Button>}
                 </DialogTrigger>
@@ -175,16 +174,20 @@ export default function VesselForm({
                                     </div>
                                 )}
                             </form.Field>
-                            { mode === "edit" ? <form.Field
-                                name="isActive"
-                            >
-                                {( field ) => (
-                                    <div className="my-3">
-                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
-                                    </div>
-                                )}
-                            </form.Field> : null}
+                            {mode === "edit" ? (
+                                <form.Field name="isActive">
+                                    {(field) => (
+                                        <div className="my-3">
+                                            <ActiveStatusField
+                                                id={field.name}
+                                                value={field.state.value === true}
+                                                onChange={(checked) => field.handleChange(checked)}
+                                                description="Inactive vessels stay in history but are hidden when creating new shipments."
+                                            />
+                                        </div>
+                                    )}
+                                </form.Field>
+                            ) : null}
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={ mode === "create" ? createVessel.isPending : false || mode === "edit" ? updateVessel.isPending : false}>{ mode === "edit" ? (updateVessel.isPending ? "Updating..." : "Save Changes") : (createVessel.isPending ? "Creating..." : "Create")}</Button>

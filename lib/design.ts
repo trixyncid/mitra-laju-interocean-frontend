@@ -6,22 +6,67 @@ export const containerMaxWidth = "max-w-[var(--mli-container-max)]"
 export const pageShell = "min-h-full w-full bg-background px-4 sm:px-6 lg:px-8 xl:px-10"
 export const pageMain = `mx-auto min-w-0 w-full ${containerMaxWidth} py-6 lg:py-12`
 export const pageHeader = "mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between lg:mb-12"
-export const pageCard =
-  "rounded-[3rem] border border-border bg-card p-6 shadow-ambient-hover lg:p-8"
+
+/**
+ * Frosted glass surface — cool blue-tinted fill (not pure white) so panels
+ * sit softly on the atmosphere gradient without chalky contrast.
+ */
+export const glassPanel =
+  "rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl"
+
+export const glassPanelInteractive =
+  "rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-200 hover:border-[rgba(214,227,255,0.8)] hover:bg-[rgba(238,243,249,0.88)] hover:shadow-[0_12px_40px_rgba(27,54,93,0.1)]"
+
+export const pageCard = cn(
+  glassPanel,
+  "p-6 shadow-[0_8px_32px_rgba(27,54,93,0.07)] lg:p-8"
+)
+
+/** Nested table shell inside glass page cards. */
+export const tableShell =
+  "overflow-hidden rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.55)]"
 
 export const tableSearchInput =
-  "h-11 w-full max-w-xl cursor-text caret-primary rounded-full border-border bg-card px-5 text-base shadow-none placeholder:text-muted-foreground/80 transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-input focus-visible:border-ring focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/20"
+  "h-11 w-full max-w-xl cursor-text caret-primary rounded-md border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.6)] px-5 text-base shadow-none placeholder:text-muted-foreground/80 transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-input focus-visible:border-ring focus-visible:bg-[rgba(247,249,251,0.92)] focus-visible:ring-[3px] focus-visible:ring-ring/20"
+
+/** Outline controls (selects, date pickers) on glass surfaces. */
+export const glassControl =
+  "rounded-md border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.6)] shadow-none hover:border-input hover:bg-[rgba(247,249,251,0.85)]"
 
 export const tableHeaderRow =
-  "border-b border-border bg-muted/60 hover:bg-muted/60"
+  "border-b border-[rgba(214,227,255,0.35)] bg-[rgba(232,238,246,0.55)] hover:bg-[rgba(232,238,246,0.55)]"
 export const tableHeaderCell =
-  "h-auto px-4 py-3 text-left text-sm font-medium text-muted-foreground whitespace-nowrap"
+  "h-auto px-4 py-3 text-left text-sm font-medium text-foreground/70 whitespace-nowrap"
 export const tableRowClass =
-  "border-b border-border/50 transition-colors hover:bg-muted/30"
+  "border-b border-[rgba(214,227,255,0.28)] transition-colors hover:bg-[rgba(247,249,251,0.65)]"
 export const tableCellClass = "px-4 py-3 text-sm align-middle text-foreground"
 
+export const brandText = "text-[var(--mli-primary-container)]"
+export const brandLink =
+  "font-medium text-[var(--mli-primary-container)] hover:underline"
+
+export const glassTabsTrigger =
+  "rounded-md data-[state=active]:bg-[var(--mli-primary-container)] data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+
+export const glassTabCount =
+  "rounded-md bg-[rgba(247,249,251,0.7)] px-1.5 text-[var(--mli-primary-container)]"
+
+export const glassShine =
+  "pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
+
+export const glassInset =
+  "rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.5)]"
+
+export const metadataCardShell = cn(
+  glassPanel,
+  "overflow-hidden rounded-lg shadow-[0_8px_32px_rgba(27,54,93,0.07)]"
+)
+
+export const metadataIconWell =
+  "flex size-9 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]"
+
 export const chipBase =
-  "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-[0.05em]"
+  "inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold tracking-[0.05em]"
 
 export function chipActive(className?: string) {
   return cn(

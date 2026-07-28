@@ -56,7 +56,7 @@ export interface DashboardQueryParams {
   endDate?: string
 }
 
-export type VoyageStatus = "ongoing" | "done"
+export type VoyageStatus = "ongoing" | "completed"
 
 export interface DashboardVoyageShipment {
   id: string

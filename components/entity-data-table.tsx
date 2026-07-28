@@ -35,6 +35,7 @@ import {
   tableHeaderCell,
   tableHeaderRow,
   tableRowClass,
+  tableShell,
 } from "@/lib/design"
 
 type EntityDataTableProps<TData, TValue> = {
@@ -127,7 +128,7 @@ export function EntityDataTable<TData, TValue>({
         />
       ) : null}
 
-      <div className="overflow-hidden rounded-md border border-border">
+      <div className={tableShell}>
         <Table>
           <TableHeader className="[&_tr]:border-0">
             {table.getHeaderGroups().map((headerGroup) => (

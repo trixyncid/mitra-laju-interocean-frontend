@@ -20,7 +20,7 @@ function MetadataRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-1">
@@ -35,7 +35,7 @@ function MetadataRow({
 
 export function ProfileMetadataCard({ user }: { user: User }) {
   return (
-    <div className="overflow-hidden rounded-[3rem] border border-border bg-card shadow-ambient-hover">
+    <div className="overflow-hidden rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl">
       <div className="bg-gradient-to-br from-primary via-[var(--mli-primary-container)] to-primary px-6 pb-16 pt-8 text-primary-foreground">
         <p className="text-xs font-semibold tracking-[0.08em] text-primary-foreground/70 uppercase">
           Account overview
@@ -56,7 +56,7 @@ export function ProfileMetadataCard({ user }: { user: User }) {
 
         <div className="space-y-5">
           <MetadataRow icon={IconUser} label="Role">
-            <RoleChip role={user.role} />
+            <RoleChip role={user.roleRef?.name ?? user.role} />
           </MetadataRow>
 
           <MetadataRow icon={IconCalendar} label="Date joined">

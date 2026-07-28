@@ -7,6 +7,7 @@ import { IconPencil, IconTrash } from "@tabler/icons-react"
 
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import {
   Dialog,
   DialogClose,
@@ -36,7 +37,13 @@ export default function VendorActionCell({ row }: { row: Row<Vendor> }) {
           <IconPencil />
         </Link>
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (deleteVendor.isPending) return
+          setOpen(next)
+        }}
+      >
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon">
             <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
@@ -51,8 +58,8 @@ export default function VendorActionCell({ row }: { row: Row<Vendor> }) {
             undone.
           </DialogDescription>
           <DialogFooter>
-            <Button
-              variant="destructive"
+            <DeleteConfirmButton
+              isPending={deleteVendor.isPending}
               onClick={() => {
                 deleteVendor.mutate(
                   { id: vendorId ?? "" },
@@ -61,11 +68,11 @@ export default function VendorActionCell({ row }: { row: Row<Vendor> }) {
                   }
                 )
               }}
-            >
-              Delete
-            </Button>
+            />
             <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
+              <Button variant="secondary" disabled={deleteVendor.isPending}>
+                Cancel
+              </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

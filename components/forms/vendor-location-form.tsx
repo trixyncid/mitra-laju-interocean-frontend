@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { CountryCombobox } from "@/components/country-combobox"
 import { TextField } from "@/components/ui/text-field"
@@ -15,10 +16,10 @@ import { zodOnChange } from "@/lib/zod-form"
 import { useCreateVendorLocation, useDeleteVendorLocation, useUpdateVendorLocation } from "@/hooks/use-vendors"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-export default function VendorLocationForm({ 
+export default function VendorLocationForm({
     mode,
     id,
     addressLine1,
@@ -28,7 +29,13 @@ export default function VendorLocationForm({
     province,
     country,
     postalCode,
-    vendorId
+    vendorId,
+    trigger,
+    hideDeleteTrigger = false,
+    open: openProp,
+    onOpenChange,
+    deleteOpen: deleteOpenProp,
+    onDeleteOpenChange,
  }: {
     mode: "edit" | "create",
     id: string | undefined,
@@ -40,9 +47,20 @@ export default function VendorLocationForm({
     country: string | undefined,
     postalCode: string | undefined
     vendorId: string
+    trigger?: React.ReactNode
+    hideDeleteTrigger?: boolean
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    deleteOpen?: boolean
+    onDeleteOpenChange?: (open: boolean) => void
  }) {
-    const [ open, setOpen ] = useState(false)
-    const [ deleteOpen, setDeleteOpen ] = useState(false)
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+    const [uncontrolledDeleteOpen, setUncontrolledDeleteOpen] = useState(false)
+
+    const open = openProp ?? uncontrolledOpen
+    const setOpen = onOpenChange ?? setUncontrolledOpen
+    const deleteOpen = deleteOpenProp ?? uncontrolledDeleteOpen
+    const setDeleteOpen = onDeleteOpenChange ?? setUncontrolledDeleteOpen
 
     const createVendorLocation = useCreateVendorLocation(vendorId)
     const updateVendorLocation = useUpdateVendorLocation(vendorId)
@@ -106,13 +124,53 @@ export default function VendorLocationForm({
         }
     })
 
+    useEffect(() => {
+        if (!open) return
+        form.reset({
+            addressLine1: addressLine1 ?? "",
+            addressLine2: addressLine2 ?? "",
+            addressLine3: addressLine3 ?? "",
+            city: city ?? "",
+            province: province ?? "",
+            country: country ?? "",
+            postalCode: postalCode ?? "",
+        })
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- form.reset
+    }, [
+        open,
+        id,
+        addressLine1,
+        addressLine2,
+        addressLine3,
+        city,
+        province,
+        country,
+        postalCode,
+    ])
+
+  const defaultTrigger =
+    mode === "edit" ? (
+      <Button variant="outline" size="sm">Edit</Button>
+    ) : (
+      <Button variant="outline" size="sm"><IconPlus /> Add Office</Button>
+    )
+
   return (
     <div className="flex flex-row items-center gap-x-2">
-        <Dialog open={open} onOpenChange={setOpen} modal={false}>
-            <DialogTrigger asChild>
-                { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button> : <Button variant="outline" size="sm"><IconPlus /> Add Office</Button>}
-            </DialogTrigger>
-            <DialogContent>
+        <Dialog open={open} onOpenChange={setOpen}>
+            {trigger === null ? null : (
+              <DialogTrigger asChild>
+                {trigger ?? defaultTrigger}
+              </DialogTrigger>
+            )}
+            <DialogContent
+                onInteractOutside={(e) => {
+                    const target = e.target as Element
+                    if (target.closest('[data-slot="combobox-content"]')) {
+                        e.preventDefault()
+                    }
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>{ mode === "edit" ? "Edit Vendor Location" : "Create New Vendor Location"}</DialogTitle>
                 </DialogHeader>
@@ -255,12 +313,14 @@ export default function VendorLocationForm({
         </Dialog>
 
         {
-            mode === "create" ? <></>
+            mode === "create" ? null
             :
-            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
-                </DialogTrigger>
+            <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteVendorLocation.isPending) return; setDeleteOpen(next) }}>
+                {hideDeleteTrigger ? null : (
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
+                    </DialogTrigger>
+                )}
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Vendor Location</DialogTitle>
@@ -269,18 +329,21 @@ export default function VendorLocationForm({
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="destructive" onClick={() => {
-                            deleteVendorLocation.mutate({ vendorId: vendorId, locationId: id ?? "" }, {
-                                onSuccess: () => {
-                                    setDeleteOpen(false)
-                                },
-                                onError: (error) => {
-                                    toast.error(error.message)
-                                }
-                            })
-                        }}>Delete</Button>
+                        <DeleteConfirmButton
+                            isPending={deleteVendorLocation.isPending}
+                            onClick={() => {
+                                deleteVendorLocation.mutate({ vendorId: vendorId, locationId: id ?? "" }, {
+                                    onSuccess: () => {
+                                        setDeleteOpen(false)
+                                    },
+                                    onError: (error) => {
+                                        toast.error(error.message)
+                                    }
+                                })
+                            }}
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deleteVendorLocation.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

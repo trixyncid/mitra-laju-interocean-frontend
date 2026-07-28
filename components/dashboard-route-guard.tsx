@@ -24,15 +24,17 @@ export function DashboardRouteGuard({ children }: { children: React.ReactNode })
 
   if (isPending) {
     return (
-      <DashboardPage>
-        <DashboardPageCard>
-          <TableSkeleton />
-        </DashboardPageCard>
-      </DashboardPage>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <DashboardPage atmosphere>
+          <DashboardPageCard>
+            <TableSkeleton />
+          </DashboardPageCard>
+        </DashboardPage>
+      </div>
     )
   }
 
   if (!allowed) return null
 
-  return <>{children}</>
+  return <div className="flex min-h-0 flex-1 flex-col">{children}</div>
 }

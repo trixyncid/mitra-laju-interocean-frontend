@@ -1,203 +1,622 @@
 "use client"
 
-import { Button } from "@/components/ui/button";
-import { IconEye, IconFile } from "@tabler/icons-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { use } from "react";
-import { useCostingById, useUpdateCosting } from "@/hooks/use-costings";
-import type { CostingAttachment } from "@/app/dashboard/costings/columns";
-import { amountCalculation, formatDate } from "@/lib/utils";
-import { costingCurrencyRequiresRate } from "@/lib/costing-currencies";
-import DocumentUploadForm from "@/components/forms/document-upload-form";
-import { costingService } from "@/services/costing.service";
-import CostingLoading from "@/components/loading/costing-loading";
-import { toast } from "sonner";
-import clsx from "clsx";
-import { DashboardPage } from "@/components/layout/dashboard-page";
-import { CostingWriteGate } from "@/components/write-gates";
-import ErrorPage from "@/components/error-page";
-import { PaymentStatusChip } from "@/components/ui/status-chip";
+import { use } from "react"
+import Link from "next/link"
+import {
+    IconArrowLeft,
+    IconBox,
+    IconBuildingStore,
+    IconEye,
+    IconFile,
+    IconLinkOff,
+    IconPencil,
+    IconReceipt,
+    IconShip,
+    IconTags,
+} from "@tabler/icons-react"
+import { Dot } from "lucide-react"
+import { toast } from "sonner"
 
-export default function CostingDetailPage({ params }: { params: Promise<{ costingId: string }> }) {
+import { Button } from "@/components/ui/button"
+import DocumentUploadForm from "@/components/forms/document-upload-form"
+import CostingForm from "@/components/forms/costing-form"
+import { useCostingById, useUpdateCosting } from "@/hooks/use-costings"
+import type { CostingAttachment } from "@/app/dashboard/costings/columns"
+import { amountCalculation, cn, formatDate, localDate } from "@/lib/utils"
+import { costingCurrencyRequiresRate } from "@/lib/costing-currencies"
+import { costingService } from "@/services/costing.service"
+import CostingLoading from "@/components/loading/costing-loading"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
+import { CostingWriteGate } from "@/components/write-gates"
+import ErrorPage from "@/components/error-page"
+import { PaymentStatusChip, UnlinkedChip, WarningChip } from "@/components/ui/status-chip"
+import {
+    brandLink,
+    brandText,
+    glassInset,
+    glassPanel,
+    glassShine,
+} from "@/lib/design"
+
+function SectionIntro({
+    title,
+    description,
+    action,
+}: {
+    title: string
+    description: string
+    action?: React.ReactNode
+}) {
+    return (
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+                <h2 className="text-headline-md font-semibold tracking-tight">{title}</h2>
+                <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+            </div>
+            {action ? <div className="shrink-0">{action}</div> : null}
+        </div>
+    )
+}
+
+function OverviewField({
+    label,
+    children,
+    className,
+}: {
+    label: string
+    children: React.ReactNode
+    className?: string
+}) {
+    return (
+        <div className={cn("space-y-1.5", className)}>
+            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                {label}
+            </p>
+            <div className="text-sm font-medium text-foreground">{children}</div>
+        </div>
+    )
+}
+
+function EmptyState({
+    icon: Icon,
+    title,
+    description,
+    action,
+}: {
+    icon: React.ComponentType<{ className?: string }>
+    title: string
+    description: string
+    action?: React.ReactNode
+}) {
+    return (
+        <div
+            className={cn(
+                glassInset,
+                "flex flex-col items-center justify-center gap-3 px-6 py-14 text-center"
+            )}
+        >
+            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+                <Icon className="size-6" />
+            </div>
+            <div className="space-y-1">
+                <p className="font-semibold text-foreground">{title}</p>
+                <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+            </div>
+            {action ? <div className="pt-1">{action}</div> : null}
+        </div>
+    )
+}
+
+function SummaryRow({
+    label,
+    value,
+    muted,
+}: {
+    label: string
+    value: React.ReactNode
+    muted?: boolean
+}) {
+    return (
+        <div className="flex items-start justify-between gap-4 border-b border-[rgba(214,227,255,0.35)] py-3 last:border-b-0">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <div
+                className={cn(
+                    "text-right text-sm font-medium tabular-nums",
+                    muted ? "text-muted-foreground" : "text-foreground"
+                )}
+            >
+                {value}
+            </div>
+        </div>
+    )
+}
+
+function formatIdr(value: number) {
+    return value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
+}
+
+export default function CostingDetailPage({
+    params,
+}: {
+    params: Promise<{ costingId: string }>
+}) {
     const { costingId } = use(params)
-
     const updateCosting = useUpdateCosting()
+    const { data: costing, isLoading, error } = useCostingById(costingId)
 
-    const { data: costing, isLoading: isLoadingCosting, error: errorCosting } = useCostingById(costingId)
-
-    if (isLoadingCosting) return <CostingLoading />
-
-    if (errorCosting) return <ErrorPage message={errorCosting.message} />
-
-    if (!costing) return <ErrorPage title="Costing not found" message="Unable to load this costing." />
+    if (isLoading) return <CostingLoading />
+    if (error) return <ErrorPage message={error.message} />
+    if (!costing) {
+        return (
+            <ErrorPage
+                title="Costing not found"
+                message="Unable to load this costing."
+            />
+        )
+    }
 
     const attachments = costing.costingsAttachments ?? []
     const price = Number(costing.price) || 0
     const currencyCode = costing.currencyCode ?? "IDR"
-    const currency = Number(costing.currency) || (currencyCode === "IDR" ? 1 : 0)
+    const currency =
+        Number(costing.currency) || (currencyCode === "IDR" ? 1 : 0)
     const vatPercentage = Number(costing.vatPercentage) || 0
     const pph23Percentage = Number(costing.pph23Percentage) || 0
+    const netAmount = amountCalculation(
+        price,
+        currency,
+        vatPercentage,
+        pph23Percentage
+    )
+    const updatedByName =
+        typeof costing.updatedBy === "string"
+            ? costing.updatedBy
+            : costing.updatedBy?.name
+    const isPaid = costing.status === "PAID"
+    const shipment = costing.shipment
+    const selling = costing.selling
 
     return (
-        <DashboardPage>
-            {/* Header */}
-            <div className="mb-5 flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">Costing Number - {costing?.costingNumber}</h1>
-                    <p className="text-muted-foreground text-sm">
-                        Last modified on{" "}
-                        {costing.updatedAt ? formatDate(costing.updatedAt.split("T")[0]) : "—"}
-                        {costing.updatedBy?.name ? ` by ${costing.updatedBy.name}` : ""}
-                    </p>
-                </div>
-
-                <CostingWriteGate>
-                    <Button size="sm" onClick={() => {
-                        updateCosting.mutate({
-                            id: costingId,
-                            costing: {
-                                status: costing?.status === "unpaid" ? "paid" : "unpaid"
-                            }
-                        }, {
-                            onSuccess: () => {
-                                toast.success("Costing status updated successfully")
-                            },
-                            onError: (error: Error) => {
-                                toast.error(error.message)
-                            }
-                        })
-                    }} disabled={updateCosting.isPending}>{ updateCosting.isPending ? "Updating..." : costing?.status === "unpaid" ? "Mark as Paid" : "Mark as Unpaid"}</Button>
-                </CostingWriteGate>
+        <DashboardPage atmosphere>
+            <div className="mb-6">
+                <Button asChild variant="ghost" className="text-muted-foreground">
+                    <Link href="/dashboard/costings">
+                        <IconArrowLeft className="size-5" />
+                        Back to costings
+                    </Link>
+                </Button>
             </div>
 
-            {/* Costing Detail */}
-            
-            <div className="flex items-start justify-between gap-x-4">
-                <div className="w-9/12">
-                    <Card>
-                        <CardContent>
-                            <h1 className="mb-4 flex items-center gap-x-2 font-bold">
-                                COSTING DETAILS
-                                <PaymentStatusChip paid={costing?.status === "paid"} />
-                            </h1>
-                            
-                            <div className="grid grid-cols-2 gap-x-4">
-                                <div>
-                                    <div className="mb-4">
-                                        <p className="text-sm text-muted-foreground">VENDOR</p>
-                                        <p className="font-semibold">{costing.vendor?.vendorName ?? "—"}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">CONTAINER NUMBER</p>
-                                        <p className="font-semibold">{costing.container?.containerNumber ?? "—"}</p>
-                                    </div>
-                                </div>
+            <section className={cn(glassPanel, "relative mb-8 overflow-hidden")}>
+                <div aria-hidden className={glassShine} />
 
-                                <div>
-                                    <div className="mb-4">
-                                        <p className="text-sm text-muted-foreground">VENDOR INVOICE NUMBER</p>
-                                        <p className="font-semibold">{costing?.vendorInvoiceNumber}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">DESCRIPTION</p>
-                                        <p className="font-semibold">{costing?.description}</p>
-                                    </div>
-                                </div>
+                <div className="relative space-y-8 p-6 lg:p-8">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+                            <div
+                                className={cn(
+                                    glassInset,
+                                    "flex size-14 shrink-0 items-center justify-center sm:size-16"
+                                )}
+                            >
+                                <IconReceipt className="size-8 text-[var(--mli-primary-container)] sm:size-9" />
                             </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Documents */}
-                    <Card className="my-4">
-                        <CardContent>
-                            <div className="mb-4 flex items-center justify-between">
-                                <h1 className="font-bold">SUPPORTING DOCUMENTS</h1>
+                            <div className="min-w-0 space-y-3">
+                                <div className="space-y-2">
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                        <h1 className="text-headline-lg tracking-tight">
+                                            {costing.costingNumber}
+                                        </h1>
+                                        <PaymentStatusChip paid={isPaid} />
+                                    </div>
+                                    <p
+                                        className={cn(
+                                            "font-mono text-sm font-medium tracking-wide",
+                                            brandText
+                                        )}
+                                    >
+                                        {costing.vendor?.vendorName ?? "No vendor"}
+                                    </p>
+                                </div>
+
+                                <p className="max-w-2xl text-sm text-muted-foreground">
+                                    {costing.description}
+                                </p>
+
+                                <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+                                    <span>
+                                        Updated{" "}
+                                        {costing.updatedAt
+                                            ? localDate(costing.updatedAt)
+                                            : "—"}
+                                        {updatedByName ? ` by ${updatedByName}` : ""}
+                                    </span>
+                                    {costing.createdAt ? (
+                                        <>
+                                            <Dot className="hidden size-4 sm:inline" />
+                                            <span>
+                                                Created {localDate(costing.createdAt)}
+                                            </span>
+                                        </>
+                                    ) : null}
+                                </p>
+                            </div>
+                        </div>
+
+                        <CostingWriteGate>
+                            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                <Button
+                                    size="sm"
+                                    variant={isPaid ? "outline" : "default"}
+                                    onClick={() => {
+                                        updateCosting.mutate(
+                                            {
+                                                id: costingId,
+                                                costing: {
+                                                    status: isPaid ? "UNPAID" : "PAID",
+                                                },
+                                            },
+                                            {
+                                                onSuccess: () => {
+                                                    toast.success(
+                                                        isPaid
+                                                            ? "Costing marked as unpaid"
+                                                            : "Costing marked as paid"
+                                                    )
+                                                },
+                                                onError: (err: Error) =>
+                                                    toast.error(err.message),
+                                            }
+                                        )
+                                    }}
+                                    disabled={updateCosting.isPending}
+                                >
+                                    {updateCosting.isPending
+                                        ? "Updating..."
+                                        : isPaid
+                                          ? "Mark as Unpaid"
+                                          : "Mark as Paid"}
+                                </Button>
+                                <CostingForm
+                                    mode="edit"
+                                    id={costing.id}
+                                    costingNumber={costing.costingNumber}
+                                    description={costing.description}
+                                    price={price}
+                                    currencyCode={currencyCode}
+                                    currency={currency}
+                                    containerNumber={
+                                        costing.containerNumber ?? undefined
+                                    }
+                                    vatPercentage={vatPercentage}
+                                    pph23Percentage={pph23Percentage}
+                                    vendorInvoiceNumber={costing.vendorInvoiceNumber}
+                                    vendorId={costing.vendorId}
+                                    shipmentId={shipment?.id ?? null}
+                                    trigger={
+                                        <Button size="sm" variant="outline">
+                                            <IconPencil className="size-4" />
+                                            Edit
+                                        </Button>
+                                    }
+                                />
+                            </div>
+                        </CostingWriteGate>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Net amount
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums break-words sm:text-2xl">
+                                {formatIdr(netAmount)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                After VAT & PPH 23
+                            </p>
+                        </div>
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Currency
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums sm:text-2xl">
+                                {currencyCode}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {price.toLocaleString("id-ID")} {currencyCode}
+                            </p>
+                        </div>
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Container
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground break-words sm:text-2xl">
+                                {costing.containerNumber || "—"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Assigned container
+                            </p>
+                        </div>
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Documents
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums sm:text-2xl">
+                                {attachments.length}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Supporting files
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="min-w-0 space-y-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Costing details"
+                            description="Vendor invoice reference and operational context for this charge."
+                        />
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            <OverviewField label="Vendor">
+                                <span className="inline-flex items-center gap-2">
+                                    <IconBuildingStore className="size-4 shrink-0 text-[var(--mli-primary-container)]" />
+                                    {costing.vendor?.vendorName ?? "—"}
+                                </span>
+                            </OverviewField>
+                            <OverviewField label="Vendor invoice">
+                                {costing.vendorInvoiceNumber || "—"}
+                            </OverviewField>
+                            <OverviewField label="Container number">
+                                {costing.containerNumber ? (
+                                    <span className="inline-flex items-center gap-2 font-mono tracking-wide">
+                                        <IconBox className="size-4 shrink-0 text-[var(--mli-primary-container)]" />
+                                        {costing.containerNumber}
+                                    </span>
+                                ) : (
+                                    <WarningChip>Not set</WarningChip>
+                                )}
+                            </OverviewField>
+                            <OverviewField label="Description" className="sm:col-span-2">
+                                {costing.description || "—"}
+                            </OverviewField>
+                        </div>
+                    </DashboardPageCard>
+
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Linked records"
+                            description="Shipment and selling associations for this costing."
+                        />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className={cn(glassInset, "space-y-3 p-4")}>
+                                <div className="flex items-center gap-2 text-[var(--mli-primary-container)]">
+                                    <IconShip className="size-4" />
+                                    <p className="text-xs font-semibold tracking-[0.05em] uppercase">
+                                        Shipment
+                                    </p>
+                                </div>
+                                {shipment?.id ? (
+                                    <div className="space-y-1">
+                                        <Link
+                                            href={`/dashboard/shipments/${shipment.id}`}
+                                            className={cn(brandLink, "font-mono text-base")}
+                                        >
+                                            {shipment.orderNumber ?? "View shipment"}
+                                        </Link>
+                                        <p className="text-xs text-muted-foreground">
+                                            Open linked shipment detail
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <UnlinkedChip />
+                                        <IconLinkOff className="size-3.5" />
+                                        <span>Not linked</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={cn(glassInset, "space-y-3 p-4")}>
+                                <div className="flex items-center gap-2 text-[var(--mli-primary-container)]">
+                                    <IconTags className="size-4" />
+                                    <p className="text-xs font-semibold tracking-[0.05em] uppercase">
+                                        Selling
+                                    </p>
+                                </div>
+                                {selling?.id ? (
+                                    <div className="space-y-1">
+                                        <Link
+                                            href={`/dashboard/sellings/${selling.id}`}
+                                            className={cn(brandLink, "font-mono text-base")}
+                                        >
+                                            {selling.sellingNumber}
+                                        </Link>
+                                        <p className="text-xs text-muted-foreground">
+                                            Open linked selling detail
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <UnlinkedChip />
+                                        <IconLinkOff className="size-3.5" />
+                                        <span>Not linked</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </DashboardPageCard>
+
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Supporting documents"
+                            description="Invoices and files attached to this costing."
+                            action={
                                 <CostingWriteGate>
-                                    <DocumentUploadForm mode="create" module="costing" shipmentId={undefined} costingId={costingId} id={undefined} attachmentName={undefined} document={undefined} />
+                                    <DocumentUploadForm
+                                        mode="create"
+                                        module="costing"
+                                        shipmentId={undefined}
+                                        costingId={costingId}
+                                        id={undefined}
+                                        attachmentName={undefined}
+                                        document={undefined}
+                                    />
                                 </CostingWriteGate>
-                            </div>
-
-                            {
-                                attachments.length === 0 ? (
-                                    <div>
-                                        <p>No documents available ...</p>
-                                    </div>
-                                ) :
-                                attachments.map((attachment: CostingAttachment) => (
-                                    <div key={attachment.id} className="border rounded-md px-3 py-2 flex items-center gap-x-2 justify-between mb-4">
-                                        <div className="flex items-center gap-x-2">
-                                            <IconFile className="text-ring bg-blue-100 rounded-md p-1 size-8" />
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">{ attachment.attachmentName } - { attachment.fileName }</p>
-                                                <p className="text-xs text-muted-foreground">Last modified: { formatDate(attachment.updatedAt.split("T")[0]) }{ attachment.updatedBy?.name ? ` by ${attachment.updatedBy.name}` : "" }</p>
+                            }
+                        />
+                        {attachments.length === 0 ? (
+                            <EmptyState
+                                icon={IconFile}
+                                title="No documents yet"
+                                description="Upload vendor invoices or supporting files for this costing."
+                                action={
+                                    <CostingWriteGate>
+                                        <DocumentUploadForm
+                                            mode="create"
+                                            module="costing"
+                                            shipmentId={undefined}
+                                            costingId={costingId}
+                                            id={undefined}
+                                            attachmentName={undefined}
+                                            document={undefined}
+                                        />
+                                    </CostingWriteGate>
+                                }
+                            />
+                        ) : (
+                            <ul className="space-y-3">
+                                {attachments.map((attachment: CostingAttachment) => (
+                                    <li
+                                        key={attachment.id}
+                                        className={cn(
+                                            glassInset,
+                                            "flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                                        )}
+                                    >
+                                        <div className="flex min-w-0 items-start gap-3">
+                                            <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+                                                <IconFile className="size-5" />
+                                            </div>
+                                            <div className="min-w-0 space-y-1">
+                                                <p className="truncate font-medium text-foreground">
+                                                    {attachment.attachmentName}
+                                                </p>
+                                                <p className="truncate text-xs text-muted-foreground">
+                                                    {attachment.fileName}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Updated{" "}
+                                                    {formatDate(
+                                                        attachment.updatedAt.split("T")[0]
+                                                    )}
+                                                    {attachment.updatedBy?.name
+                                                        ? ` by ${attachment.updatedBy.name}`
+                                                        : ""}
+                                                </p>
                                             </div>
                                         </div>
-
-                                        <div className="flex items-center gap-x-2">
+                                        <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
                                             <Button
                                                 variant="outline"
                                                 size="icon"
-                                                onClick={() => costingService.viewCostingAttachment(costingId, attachment.id!)}
+                                                onClick={() => {
+                                                    void costingService
+                                                        .viewCostingAttachment(
+                                                            costingId,
+                                                            attachment.id
+                                                        )
+                                                        .catch((err: unknown) => {
+                                                            toast.error(
+                                                                err instanceof Error
+                                                                    ? err.message
+                                                                    : "Unable to open attachment"
+                                                            )
+                                                        })
+                                                }}
                                             >
-                                                <IconEye className="text-muted-foreground size-4" />
+                                                <IconEye className="size-4 text-muted-foreground" />
                                             </Button>
                                             <CostingWriteGate>
-                                                <DocumentUploadForm mode="edit" module="costing" shipmentId={undefined} costingId={costingId} id={attachment.id} attachmentName={attachment.attachmentName} document={undefined} />
+                                                <DocumentUploadForm
+                                                    mode="edit"
+                                                    module="costing"
+                                                    shipmentId={undefined}
+                                                    costingId={costingId}
+                                                    id={attachment.id}
+                                                    attachmentName={
+                                                        attachment.attachmentName
+                                                    }
+                                                    document={undefined}
+                                                />
                                             </CostingWriteGate>
                                         </div>
-                                    </div>
-                                ))
-                            }
-                        </CardContent>
-                    </Card>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </DashboardPageCard>
                 </div>
 
-                <div className="w-3/12">
-                    <Card>
-                        <CardContent>
-                            <div className="mb-4">
-                                <h1 className="font-bold">AMOUNT SUMMARY</h1>
-                            </div>
+                <aside className="lg:sticky lg:top-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Amount summary"
+                            description="Breakdown used to calculate the net IDR amount."
+                        />
 
-                            <div className="mb-4">
-                                <h4 className="text-sm text-muted-foreground text-center">TOTAL COST (Rp)</h4>
-                                <h2 className="font-bold text-2xl text-center text-blue-600">
-                                    {amountCalculation(price, currency, vatPercentage, pph23Percentage).toLocaleString("id-ID", {
-                                        style: "currency",
-                                        currency: "IDR",
-                                    })}
-                                </h2>
-                            </div>
+                        <div
+                            className={cn(
+                                glassInset,
+                                "mb-5 space-y-1 px-5 py-5 text-center"
+                            )}
+                        >
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Total cost
+                            </p>
+                            <p
+                                className={cn(
+                                    "text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl",
+                                    brandText
+                                )}
+                            >
+                                {formatIdr(netAmount)}
+                            </p>
+                        </div>
 
-                            <div className="border rounded-md">
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p>Currency</p>
-                                    <p>{currencyCode}</p>
-                                </div>
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p>Price ({currencyCode})</p>
-                                    <p>{price.toLocaleString("id-ID")}</p>
-                                </div>
-                                {costingCurrencyRequiresRate(currencyCode) ? (
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p>Currency Rate</p>
-                                    <p>{currency.toLocaleString("id-ID")}</p>
-                                </div>
-                                ) : null}
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p>VAT</p>
-                                    <p className={`${vatPercentage !== 0 ? "" : "px-2 py-1 bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)] rounded-full"}`}>
-                                        {vatPercentage !== 0 ? vatPercentage : "Not applicable"}%
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between py-3 px-2">
-                                    <p>PPH23</p>
-                                    <p>{pph23Percentage}%</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        <div>
+                            <SummaryRow label="Currency" value={currencyCode} />
+                            <SummaryRow
+                                label={`Price (${currencyCode})`}
+                                value={price.toLocaleString("id-ID")}
+                            />
+                            {costingCurrencyRequiresRate(currencyCode) ? (
+                                <SummaryRow
+                                    label="Exchange rate"
+                                    value={currency.toLocaleString("id-ID")}
+                                />
+                            ) : null}
+                            <SummaryRow
+                                label="VAT"
+                                value={
+                                    vatPercentage !== 0 ? (
+                                        `${vatPercentage}%`
+                                    ) : (
+                                        <WarningChip>Not applicable</WarningChip>
+                                    )
+                                }
+                            />
+                            <SummaryRow
+                                label="PPH 23"
+                                value={`${pph23Percentage}%`}
+                            />
+                        </div>
+                    </DashboardPageCard>
+                </aside>
             </div>
         </DashboardPage>
     )

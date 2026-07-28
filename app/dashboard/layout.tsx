@@ -5,9 +5,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
-import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 import { DashboardRouteGuard } from "@/components/dashboard-route-guard";
 import ErrorPage from "@/components/error-page";
+import DashboardPrepLoading from "@/components/loading/dashboard-prep-loading";
 
 export default function DashboardLayout({
   children,
@@ -17,12 +17,7 @@ export default function DashboardLayout({
   const { session, isPending, error, isRedirecting } = useRequireAuth()
 
   if (isPending || isRedirecting) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <AudioLines animate="path-loop" speed={3} className="size-10 text-ring animate-pulse"/>
-        <p className="mt-4 text-sm text-muted-foreground">Preparing your dashboard...</p>
-      </div>
-    )
+    return <DashboardPrepLoading />
   }
 
   if (error) return <ErrorPage message={error.message} />
@@ -42,9 +37,9 @@ export default function DashboardLayout({
             <AppSidebar variant="inset" />
             <SidebarInset>
             <SiteHeader />
-              <div className="flex flex-1 flex-col">
-                <div className="@container/main flex flex-1 flex-col gap-2">
-                  <div className="flex flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="@container/main flex min-h-0 flex-1 flex-col">
+                  <div className="flex min-h-0 flex-1 flex-col">
                     <DashboardRouteGuard>{children}</DashboardRouteGuard>
                   </div>
                 </div>

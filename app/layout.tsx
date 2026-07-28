@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
 
-const inter = Inter({
-  variable: "--font-inter",
+const ibmPlexSans = IBM_Plex_Sans({
+  variable: "--font-ibm-plex-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -22,12 +29,12 @@ export default function RootLayout({
   return (
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${inter.variable} font-sans antialiased`}
+          className={`${ibmPlexSans.variable} ${spaceGrotesk.variable} font-sans antialiased`}
           suppressHydrationWarning
         >
           <Providers>
             {children}
-            <Toaster richColors position="top-center" />
+            <Toaster position="top-center" />
           </Providers>
         </body>
       </html>

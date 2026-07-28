@@ -4,6 +4,7 @@ import { Shipment } from "@/app/dashboard/shipments/columns";
 import { useState } from "react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { DeleteConfirmButton } from "../ui/delete-confirm-button";
 import { IconTrash } from "@tabler/icons-react";
 import { useDeleteShipment } from "@/hooks/use-shipments";
 import { toast } from "sonner";
@@ -23,9 +24,9 @@ export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
 
     return (
         <div className="flex items-center gap-x-2">
-            <ShipmentForm mode="edit" id={row.original.id} orderNumber={row.original.orderNumber} customerCodeId={row.original.customerCodeId} customerShipperId={row.original.customerShipperId} isActive={row.original.isActive} />
+            <ShipmentForm mode="edit" id={row.original.id} orderNumber={row.original.orderNumber} customerCodeId={row.original.customerCodeId} customerShipperId={row.original.customerShipperId} status={row.original.status} isActive={row.original.isActive} />
 
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(next) => { if (deleteShipment.isPending) return; setOpen(next) }}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
@@ -37,19 +38,22 @@ export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
                         Are you sure you want to delete this shipment? This action cannot be undone and will delete all related data.
                     </DialogDescription>
                     <DialogFooter>
-                        <Button variant="destructive" onClick={() => {
-                            deleteShipment.mutate(row.original.id ?? "", {
-                                onSuccess: () => {
-                                    setOpen(false)
-                                },
-                                onError: (error: Error) => {
-                                    console.log("Error: ", error)
-                                    toast.warning(error.message)
-                                }
-                            })
-                        }}>Delete</Button>
+                        <DeleteConfirmButton
+                            isPending={deleteShipment.isPending}
+                            onClick={() => {
+                                deleteShipment.mutate(row.original.id ?? "", {
+                                    onSuccess: () => {
+                                        setOpen(false)
+                                    },
+                                    onError: (error: Error) => {
+                                        console.log("Error: ", error)
+                                        toast.warning(error.message)
+                                    }
+                                })
+                            }}
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deleteShipment.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

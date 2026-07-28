@@ -20,6 +20,7 @@ import {
   tableHeaderCell,
   tableHeaderRow,
   tableRowClass,
+  tableShell,
 } from "@/lib/design"
 import type { TableFilterConfig } from "@/lib/data-table-filters"
 import {
@@ -99,7 +100,7 @@ export function ServerEntityDataTable<TData, TValue>({
         onApply={onApply}
       />
 
-      <div className="overflow-hidden rounded-md border border-border">
+      <div className={tableShell}>
         <Table>
           <TableHeader className="[&_tr]:border-0">
             {table.getHeaderGroups().map((headerGroup) => (

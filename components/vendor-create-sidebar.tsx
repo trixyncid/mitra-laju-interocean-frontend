@@ -4,7 +4,7 @@ import { IconBuilding, IconMapPin, IconUsers } from "@tabler/icons-react"
 
 export function VendorCreateSidebar() {
   return (
-    <div className="overflow-hidden rounded-[3rem] border border-border bg-card shadow-ambient-hover">
+    <div className="overflow-hidden rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl">
       <div className="bg-gradient-to-br from-primary via-[var(--mli-primary-container)] to-primary px-6 py-8 text-primary-foreground">
         <p className="text-xs font-semibold tracking-[0.08em] text-primary-foreground/70 uppercase">
           New vendor
@@ -18,7 +18,7 @@ export function VendorCreateSidebar() {
 
       <div className="space-y-5 px-6 py-6">
         <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
             <IconBuilding className="size-4" />
           </div>
           <div className="space-y-1">
@@ -32,7 +32,7 @@ export function VendorCreateSidebar() {
         </div>
 
         <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
             <IconUsers className="size-4" />
           </div>
           <div className="space-y-1">
@@ -46,7 +46,7 @@ export function VendorCreateSidebar() {
         </div>
 
         <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
             <IconMapPin className="size-4" />
           </div>
           <div className="space-y-1">

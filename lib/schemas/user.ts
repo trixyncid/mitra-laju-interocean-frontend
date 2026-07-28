@@ -1,17 +1,16 @@
 import { emailSchema, passwordSchema, requiredString } from "./common"
-import { USER_ROLES } from "@/lib/permissions"
 import { z } from "zod"
 
 export const userNameSchema = requiredString("Name")
 export const userEmailSchema = emailSchema
 export const userPasswordSchema = passwordSchema
-export const userRoleSchema = z.enum(USER_ROLES)
+export const userRoleSchema = z.string().min(1)
 
 export const createUserFormSchema = z.object({
   name: userNameSchema,
   email: userEmailSchema,
   password: userPasswordSchema,
-  role: userRoleSchema,
+  roleId: userRoleSchema,
 })
 
 export const profileNameSchema = userNameSchema

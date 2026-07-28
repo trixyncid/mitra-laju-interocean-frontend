@@ -6,7 +6,7 @@ import { IconLink, IconLinkOff } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { useUpdateSelling } from "@/hooks/use-sellings"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
 import { shipmentSelectionSchema } from "@/lib/schemas/link"
@@ -17,9 +17,11 @@ import { fieldError } from "@/lib/form-field"
 export default function LinkSellingShipmentForm({
     sellingId,
     shipmentId,
+    trigger,
 }: {
     sellingId: string
     shipmentId: string | undefined
+    trigger?: ReactNode
 }) {
     const [open, setOpen] = useState(false)
 
@@ -55,11 +57,13 @@ export default function LinkSellingShipmentForm({
     })
 
     return (
-        <Dialog open={open} onOpenChange={setOpen} modal={false}>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="icon">
-                    <IconLink className="size-4" />
-                </Button>
+                {trigger ?? (
+                    <Button variant="outline" size="icon-sm" aria-label="Link shipment">
+                        <IconLink className="size-4" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent
                 onInteractOutside={(e) => {

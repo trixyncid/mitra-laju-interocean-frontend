@@ -26,7 +26,7 @@ import {
 import {
   ACTIVE_STATUS_OPTIONS,
 } from "@/lib/data-table-filters"
-import { tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass } from "@/lib/design"
+import { tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
 
 interface DataTableProps {
   columns: ColumnDef<Shipment>[]
@@ -96,7 +96,7 @@ export function DataTable({
         filters={{
           status: {
             id: "status",
-            label: "Status",
+            label: "Record Status",
             options: ACTIVE_STATUS_OPTIONS,
             getValue: () => undefined,
           },
@@ -110,7 +110,7 @@ export function DataTable({
         onApply={onApply}
       />
 
-      <div className="overflow-hidden rounded-md border border-border">
+      <div className={tableShell}>
         <Table>
           <TableHeader className="[&_tr]:border-0">
             {table.getHeaderGroups().map((headerGroup) => (

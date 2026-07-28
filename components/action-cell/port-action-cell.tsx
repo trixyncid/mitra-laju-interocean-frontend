@@ -7,6 +7,7 @@ import { useDeletePort } from "@/hooks/use-ports";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogDescription, DialogFooter, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 
@@ -20,7 +21,7 @@ export default function PortActionCell({ row }: { row: Row<Port> }) {
     return (
         <div className="flex items-center gap-x-2">
             <PortForm mode="edit" portName={row.original.portName} portCountry={row.original.portCountry} isActive={row.original.isActive} id={row.original.id} />
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(next) => { if (deletePort.isPending) return; setOpen(next) }}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                 </DialogTrigger>
@@ -32,15 +33,18 @@ export default function PortActionCell({ row }: { row: Row<Port> }) {
                         Are you sure you want to delete this port? This action cannot be undone.
                     </DialogDescription>
                     <DialogFooter>
-                        <Button variant="destructive" onClick={() => {
-                            deletePort.mutate(row.original.id ?? "", {
-                                onSuccess: () => {
-                                    setOpen(false)
-                                }
-                            })
-                        }}>Delete</Button>
+                        <DeleteConfirmButton
+                            isPending={deletePort.isPending}
+                            onClick={() => {
+                                deletePort.mutate(row.original.id ?? "", {
+                                    onSuccess: () => {
+                                        setOpen(false)
+                                    }
+                                })
+                            }}
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deletePort.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

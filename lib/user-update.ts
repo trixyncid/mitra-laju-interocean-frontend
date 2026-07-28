@@ -1,10 +1,10 @@
-import type { UserRole } from "@/lib/permissions"
 import type { UpdateUserPayload } from "@/services/users.service"
 
 type UserSnapshot = {
   name: string
   email: string
-  role?: UserRole | string
+  role?: string
+  roleId?: string
   emailVerified?: boolean
   isActive?: boolean
 }
@@ -22,12 +22,10 @@ export function buildUserUpdatePayload(
   if (next.email !== undefined && next.email.trim() !== current.email) {
     payload.email = next.email.trim()
   }
-  if (next.role !== undefined && next.role !== current.role) {
-    const parsed =
-      typeof next.role === "string"
-        ? (next.role as UserRole)
-        : next.role
-    payload.role = parsed
+  if (next.roleId !== undefined && next.roleId !== current.roleId) {
+    payload.roleId = next.roleId
+  } else if (next.role !== undefined && next.role !== current.role) {
+    payload.role = next.role
   }
   if (next.emailVerified !== undefined && next.emailVerified !== current.emailVerified) {
     payload.emailVerified = next.emailVerified

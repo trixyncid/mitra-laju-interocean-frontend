@@ -2,6 +2,7 @@
 
 import { format, subDays } from "date-fns"
 import { useMemo, useState } from "react"
+import { motion } from "motion/react"
 
 import { DashboardKpiCards } from "@/components/dashboard/dashboard-kpi-cards"
 import { DashboardRankings } from "@/components/dashboard/dashboard-rankings"
@@ -19,7 +20,6 @@ import {
   type TableDateRange,
 } from "@/components/ui/date-range-picker"
 import { useDashboard } from "@/hooks/use-dashboard"
-import { localDate } from "@/lib/utils"
 
 function getDefaultDashboardDateRange(): TableDateRange {
   const end = new Date()
@@ -54,19 +54,15 @@ export default function DashboardHomePage() {
     )
   }
 
-  const periodLabel = data?.dateRange
-    ? `${localDate(data.dateRange.startDate)} – ${localDate(data.dateRange.endDate)}`
-    : dateRange.from && dateRange.to
-      ? `${format(new Date(`${dateRange.from}T12:00:00`), "dd MMM yyyy")} – ${format(new Date(`${dateRange.to}T12:00:00`), "dd MMM yyyy")}`
-      : "selected period"
-
   return (
-    <DashboardPage>
+    <DashboardPage atmosphere>
       <DashboardPageHeader
-        title="Dashboard"
-        description={`Overview for ${periodLabel}. KPI totals use net selling and costing amounts (after VAT & PPH23); customer selling rankings use gross selling amounts per the API.`}
+        className="mb-8 lg:mb-10"
+        title="Operations overview"
+        description="Net figures are after VAT & PPH23."
         action={
           <DateRangePicker
+            layout="inline"
             label="Period"
             value={dateRange}
             onChange={(next) => {
@@ -85,14 +81,32 @@ export default function DashboardHomePage() {
       {isLoading || !data ? (
         <DashboardSkeleton />
       ) : (
-        <div className="mt-8 min-w-0 space-y-8">
-          <DashboardKpiCards data={data} />
+        <div className="mt-8 min-w-0 space-y-6 lg:space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <DashboardKpiCards data={data} />
+          </motion.div>
 
-          <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2"
+          >
             <DashboardShipmentChart data={data} />
             <DashboardShipmentVolumeChart data={data} />
-          </div>
-          <DashboardRankings data={data} />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.14, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <DashboardRankings data={data} />
+          </motion.div>
         </div>
       )}
     </DashboardPage>

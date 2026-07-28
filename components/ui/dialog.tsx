@@ -38,7 +38,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-[rgba(0,32,70,0.45)] backdrop-blur-md supports-[backdrop-filter]:bg-[rgba(0,32,70,0.32)]",
         className
       )}
       {...props}
@@ -46,10 +46,22 @@ function DialogOverlay({
   )
 }
 
+function isPortaledOverlayTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false
+  return Boolean(
+    target.closest(
+      '[data-slot="combobox-content"], [data-slot="select-content"], [data-radix-select-content], [data-radix-popper-content-wrapper]'
+    )
+  )
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onInteractOutside,
+  onFocusOutside,
+  onPointerDownOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -60,10 +72,28 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[2rem] border p-8 shadow-ambient duration-200 outline-none sm:max-w-lg",
+          "bg-[rgba(247,249,251,0.96)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-[rgba(214,227,255,0.55)] p-8 shadow-[0_16px_48px_rgba(27,54,93,0.18)] backdrop-blur-xl duration-200 outline-none sm:max-w-lg",
           className
         )}
         {...props}
+        onInteractOutside={(event) => {
+          if (isPortaledOverlayTarget(event.target)) {
+            event.preventDefault()
+          }
+          onInteractOutside?.(event)
+        }}
+        onFocusOutside={(event) => {
+          if (isPortaledOverlayTarget(event.target)) {
+            event.preventDefault()
+          }
+          onFocusOutside?.(event)
+        }}
+        onPointerDownOutside={(event) => {
+          if (isPortaledOverlayTarget(event.target)) {
+            event.preventDefault()
+          }
+          onPointerDownOutside?.(event)
+        }}
       >
         {children}
         {showCloseButton && (

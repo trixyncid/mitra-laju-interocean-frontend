@@ -37,7 +37,7 @@ export const columns: ColumnDef<Costing>[] = [
     header: ({ column }) => sortHeader(column, "Shipment Order Number"),
     ...textSort,
     cell: ({ row }) => {
-      return <div className={clsx("px-3 py-1 rounded-full w-fit text-xs", row.original.shipmentOrderNumber === "" ? "bg-[var(--mli-error-container)] text-[var(--mli-on-error-container)]" : "")}>{ row.original.shipmentOrderNumber === "" ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div> : row.original.shipmentOrderNumber }</div>
+      return <div className={clsx("px-3 py-1 rounded-md w-fit text-xs", row.original.shipmentOrderNumber === "" ? "bg-[var(--mli-error-container)] text-[var(--mli-on-error-container)]" : "")}>{ row.original.shipmentOrderNumber === "" ? <div className="flex items-center gap-x-2"><IconLinkOff className="h-3 w-3 animate-pulse" /> Unlinked</div> : row.original.shipmentOrderNumber }</div>
     }
   },
   {

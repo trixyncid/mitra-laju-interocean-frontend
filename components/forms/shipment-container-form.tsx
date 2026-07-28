@@ -1,6 +1,7 @@
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 import { useForm } from "@tanstack/react-form";
 import { TextField } from "../ui/text-field";
 import { FormLabel } from "../ui/form-label"
@@ -169,7 +170,7 @@ export default function ShipmentContainerForm({
             </Dialog>
 
             { mode === "edit" ? (
-                <Dialog open={openDelete} onOpenChange={setOpenDelete}>
+                <Dialog open={openDelete} onOpenChange={(next) => { if (deleteShipmentOperationalContainer.isPending) return; setOpenDelete(next) }}>
                     <DialogTrigger asChild>
                         <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                     </DialogTrigger>
@@ -181,15 +182,18 @@ export default function ShipmentContainerForm({
                             Are you sure you want to delete this shipment container? This action cannot be undone.
                         </DialogDescription>
                         <DialogFooter>
-                            <Button variant="destructive" onClick={() => {
-                                deleteShipmentOperationalContainer.mutate({
-                                    shipmentId: shipmentId ?? "",
-                                    shipmentOperationalId: shipmentOperationalId ?? "",
-                                    id: id ?? "",
-                                })
-                            }}>Delete</Button>
+                            <DeleteConfirmButton
+                                isPending={deleteShipmentOperationalContainer.isPending}
+                                onClick={() => {
+                                    deleteShipmentOperationalContainer.mutate({
+                                        shipmentId: shipmentId ?? "",
+                                        shipmentOperationalId: shipmentOperationalId ?? "",
+                                        id: id ?? "",
+                                    })
+                                }}
+                            />
                             <DialogClose asChild>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button variant="secondary" disabled={deleteShipmentOperationalContainer.isPending}>Cancel</Button>
                             </DialogClose>
                         </DialogFooter>
                     </DialogContent>

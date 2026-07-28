@@ -1,13 +1,13 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { TextField } from "@/components/ui/text-field"
 import { fieldError } from "@/lib/form-field"
 import { contactNameSchema, phoneNumberSchema } from "@/lib/schemas/contact"
 import { zodOnChange } from "@/lib/zod-form"
-import { Switch } from "@/components/ui/switch"
 import { useCreateCustomerContact, useUpdateCustomerContact, useDeleteCustomerContact } from "@/hooks/use-customers"
 import { IconPlus, IconTrash, IconPencil } from "@tabler/icons-react"
 import { useForm } from "@tanstack/react-form"
@@ -22,7 +22,9 @@ export default function CustomerContactForm({
     phoneNumber,
     email,
     isActive,
-    locationId
+    locationId,
+    trigger,
+    hideDelete = false,
 }: {
     id?: string
     mode: "edit" | "create",
@@ -33,6 +35,8 @@ export default function CustomerContactForm({
     email: string | undefined
     isActive: boolean | undefined
     locationId: string
+    trigger?: React.ReactNode
+    hideDelete?: boolean
 }) {
     const [open, setOpen] = useState(false)
     const [ deleteOpen, setDeleteOpen ] = useState(false)
@@ -69,12 +73,21 @@ export default function CustomerContactForm({
         }
     })
 
+    const defaultTrigger =
+        mode === "edit" ? (
+            <Button variant="outline" size="icon-sm" aria-label="Edit contact"><IconPencil /></Button>
+        ) : (
+            <Button variant="outline" size="sm"><IconPlus /> Contact</Button>
+        )
+
     return (
         <div className="flex flex-row items-center gap-x-2">
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="sm"><IconPencil /></Button>: <Button variant="outline" size="sm"><IconPlus /> Contact</Button>}
-                </DialogTrigger>
+                {trigger === null ? null : (
+                    <DialogTrigger asChild>
+                        {trigger ?? defaultTrigger}
+                    </DialogTrigger>
+                )}
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{ mode === "edit" ? "Edit Contact" : "Add New Contact"}</DialogTitle>
@@ -146,24 +159,43 @@ export default function CustomerContactForm({
                             >
                                 {( field ) => (
                                     <div className="my-3">
-                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                        <ActiveStatusField
+                                            id={field.name}
+                                            value={field.state.value === true}
+                                            onChange={(checked) => field.handleChange(checked)}
+                                            description="Inactive contacts stay in history but are hidden from new selections."
+                                        />
                                     </div>
                                 )}
                             </form.Field> : null}
                         </div>
                         <DialogFooter>
-                            <Button type="submit">{ mode === "edit" ? "Save Changes" : "Create"}</Button>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    mode === "create"
+                                        ? createCustomerContact.isPending
+                                        : updateCustomerContact.isPending
+                                }
+                            >
+                                {mode === "edit"
+                                    ? updateCustomerContact.isPending
+                                        ? "Updating..."
+                                        : "Save Changes"
+                                    : createCustomerContact.isPending
+                                      ? "Creating..."
+                                      : "Create"}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
             {
-                mode === "create" ? <></> : 
-                <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                mode === "create" || hideDelete ? null :
+                <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteCustomerContact.isPending) return; setDeleteOpen(next) }}>
                     <DialogTrigger asChild>
-                        <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
+                        <Button variant="outline" size="icon-sm" aria-label="Delete contact"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
@@ -173,16 +205,19 @@ export default function CustomerContactForm({
                             Are you sure you want to delete this contact? This action cannot be undone.
                         </DialogDescription>
                         <DialogFooter>
-                            <Button variant="destructive" onClick={() => {
-                                deleteCustomerContact.mutate({ contactId: id ?? "" }, {
-                                    onSuccess: () => {
-                                        setDeleteOpen(false)
-                                        form.reset()
-                                    }
-                                })
-                            }}>Delete</Button>
+                            <DeleteConfirmButton
+                                isPending={deleteCustomerContact.isPending}
+                                onClick={() => {
+                                    deleteCustomerContact.mutate({ contactId: id ?? "" }, {
+                                        onSuccess: () => {
+                                            setDeleteOpen(false)
+                                            form.reset()
+                                        }
+                                    })
+                                }}
+                            />
                             <DialogClose asChild>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button variant="secondary" disabled={deleteCustomerContact.isPending}>Cancel</Button>
                             </DialogClose>
                         </DialogFooter>
                     </DialogContent>

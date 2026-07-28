@@ -23,8 +23,8 @@ export function costingCurrencyRateForCodeSchema(currencyCode: string) {
 
   return costingCurrencyRateSchema
 }
-export const costingContainerSchema = selectNotDashSchema("Container")
+export const costingContainerSchema = z.string().optional()
 export const costingVatSchema = requiredPercentageSchema("VAT")
 export const costingPph23Schema = requiredPercentageSchema("PPH 23")
-export const costingVendorInvoiceSchema = requiredString("Vendor Invoice Number")
+export const costingVendorInvoiceSchema = z.string().optional()
 export const costingVendorSchema = selectNotDashSchema("Vendor")

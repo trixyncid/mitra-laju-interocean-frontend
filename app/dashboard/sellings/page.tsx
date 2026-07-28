@@ -28,7 +28,7 @@ export default function SellingPage() {
             page,
             pageSize,
             search: applied.search || undefined,
-            status: applied.status as "all" | "paid" | "unpaid",
+            status: applied.status as "all" | "PAID" | "UNPAID",
             from: applied.dateRange.from,
             to: applied.dateRange.to,
         }),

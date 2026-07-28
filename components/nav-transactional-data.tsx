@@ -9,6 +9,9 @@ import {
   SidebarMenu,
 } from "@/components/ui/sidebar"
 
+const sectionLabelClass =
+  "mb-1.5 h-auto px-3 text-[10px] font-semibold tracking-[0.16em] text-[#91baff]/75 uppercase"
+
 export function NavTransactionalData({
   items,
 }: {
@@ -19,9 +22,11 @@ export function NavTransactionalData({
   }[]
 }) {
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Transactional Data</SidebarGroupLabel>
-      <SidebarMenu>
+    <SidebarGroup className="group-data-[collapsible=icon]:hidden py-2">
+      <SidebarGroupLabel className={sectionLabelClass}>
+        Transactions
+      </SidebarGroupLabel>
+      <SidebarMenu className="gap-1">
         {items.map((item) => (
           <NavSidebarLink
             key={item.name}

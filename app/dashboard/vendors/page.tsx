@@ -44,7 +44,7 @@ export default function VendorMasterDataPage() {
   if (error) return <ErrorPage message={error.message} />
 
   return (
-    <DashboardPage>
+    <DashboardPage atmosphere>
       <DashboardPageHeader
         title="Vendor Management"
         description="View and manage vendors based on vendor code, name, NPWP, and status."

@@ -5,10 +5,10 @@ import { useForm } from "@tanstack/react-form"
 import { useRouter } from "next/navigation"
 
 import type { User } from "@/app/dashboard/users/columns"
-import { USER_ROLES, formatRoleLabel, type UserRole } from "@/lib/permissions"
+import { formatRoleLabel } from "@/lib/permissions"
+import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { Button } from "@/components/ui/button"
 import { FormLabel } from "@/components/ui/form-label"
-import { Label } from "@/components/ui/label"
 import { TextField } from "@/components/ui/text-field"
 import {
   Select,
@@ -17,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { useCreateUser, useUpdateUser } from "@/hooks/use-users"
+import { useRolesOptions } from "@/hooks/use-roles"
 import { buildUserUpdatePayload } from "@/lib/user-update"
 import { fieldError } from "@/lib/form-field"
 import { userEmailSchema, userNameSchema } from "@/lib/schemas/user"
@@ -28,8 +28,7 @@ import {
   zodOnChange,
 } from "@/lib/zod-form"
 import { toast } from "sonner"
-
-const roles = USER_ROLES
+import { Skeleton } from "@/components/ui/skeleton"
 
 function FormField({
   label,
@@ -67,6 +66,7 @@ export default function UserForm({
   const router = useRouter()
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
+  const { data: roles, isLoading: rolesLoading } = useRolesOptions()
 
   const form = useForm({
     defaultValues: {
@@ -75,17 +75,21 @@ export default function UserForm({
       email: user?.email ?? "",
       password: "",
       confirmPassword: "",
-      role: (user?.role ?? "viewer") as UserRole,
+      roleId: user?.roleId ?? user?.roleRef?.id ?? "",
       isActive: user?.isActive ?? true,
     },
     onSubmit: async ({ value }) => {
+      if (!value.roleId) {
+        toast.error("Please select a role")
+        return
+      }
       if (mode === "create") {
         createUser.mutate(
           {
             name: value.name,
             email: value.email,
             password: value.password,
-            role: value.role,
+            roleId: value.roleId,
           },
           {
             onSuccess: (data) => {
@@ -97,7 +101,7 @@ export default function UserForm({
         const payload = buildUserUpdatePayload(user, {
           name: value.name,
           email: value.email,
-          role: value.role,
+          roleId: value.roleId,
           isActive: value.isActive,
         })
         if (!payload) {
@@ -219,24 +223,28 @@ export default function UserForm({
           </>
         ) : null}
 
-        <form.Field name="role">
+        <form.Field name="roleId">
           {(field) => (
             <FormField label="Role" required field={field}>
-              <Select
-                value={field.state.value}
-                onValueChange={(value) => field.handleChange(value as UserRole)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {formatRoleLabel(role)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {rolesLoading ? (
+                <Skeleton className="h-9 w-full" />
+              ) : (
+                <Select
+                  value={field.state.value}
+                  onValueChange={(value) => field.handleChange(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(roles ?? []).map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name || formatRoleLabel(role.slug)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </FormField>
           )}
         </form.Field>
@@ -244,20 +252,18 @@ export default function UserForm({
         {mode === "edit" ? (
           <form.Field name="isActive">
             {(field) => (
-              <div className="flex items-center gap-3">
-                <Switch
-                  id={field.name}
-                  checked={field.state.value}
-                  onCheckedChange={(checked) => field.handleChange(checked)}
-                />
-                <Label htmlFor={field.name}>Active account</Label>
-              </div>
+              <ActiveStatusField
+                id={field.name}
+                value={field.state.value === true}
+                onChange={(checked) => field.handleChange(checked)}
+                description="Inactive accounts cannot sign in. Sessions are revoked when deactivated."
+              />
             )}
           </form.Field>
         ) : null}
 
         <div className="flex flex-wrap gap-3 pt-2">
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending || rolesLoading}>
             {mode === "edit"
               ? isPending
                 ? "Saving..."

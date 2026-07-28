@@ -5,8 +5,10 @@ import { formatDate } from "@/lib/utils"
 import { IconArrowRight } from "@tabler/icons-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
+import { ShipmentLifecycleChip } from "@/components/ui/status-chip"
 import {
   dateSort,
+  numberSort,
   sortHeader,
   textSort,
 } from "@/lib/data-table"
@@ -19,6 +21,9 @@ export type LinkedShipment = {
   customerShipper: string
   departureCountry: string
   arrivalCountry: string
+  status: "ONGOING" | "COMPLETED"
+  costingTotal: number
+  sellingTotal: number
 }
 
 export const columns: ColumnDef<LinkedShipment>[] = [
@@ -43,6 +48,32 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     ...textSort,
   },
   {
+    accessorKey: "costingTotal",
+    header: ({ column }) => sortHeader(column, "Costing"),
+    ...numberSort,
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.costingTotal.toLocaleString("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        })}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "sellingTotal",
+    header: ({ column }) => sortHeader(column, "Selling"),
+    ...numberSort,
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.sellingTotal.toLocaleString("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        })}
+      </span>
+    ),
+  },
+  {
     id: "route",
     accessorFn: (row) => `${row.departureCountry} ${row.arrivalCountry}`,
     header: ({ column }) => sortHeader(column, "Route"),
@@ -56,10 +87,18 @@ export const columns: ColumnDef<LinkedShipment>[] = [
             <p className="text-sm text-muted-foreground">{ row.original.arrivalCountry }</p>
           </div>
         ) : (
-          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-full w-fit">Unavailable</p>
+          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-md w-fit">Unavailable</p>
         )
       )
     },
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => sortHeader(column, "Status"),
+    ...textSort,
+    cell: ({ row }) => (
+      <ShipmentLifecycleChip status={row.original.status} />
+    )
   },
   {
     accessorKey: "eta",
@@ -72,7 +111,7 @@ export const columns: ColumnDef<LinkedShipment>[] = [
             <p className="text-sm text-muted-foreground">{ formatDate(row.original.eta) }</p>
           </div>
         ) : (
-          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-full w-fit">Unavailable</p>
+          <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-md w-fit">Unavailable</p>
         )
       )
     }

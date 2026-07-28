@@ -37,14 +37,14 @@ export default function UserManagementPage() {
     }),
     [page, pageSize, applied]
   )
-  const { isPending: isSessionPending, isAdmin, isRedirecting } = useRequireAdmin()
+  const { isPending: isSessionPending, canManageUsers, isRedirecting } = useRequireAdmin()
   const { data, isLoading, error } = useUsers(params)
   const users = data?.items ?? []
   const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
 
-  if (isSessionPending || isRedirecting || !isAdmin) {
+  if (isSessionPending || isRedirecting || !canManageUsers) {
     return (
-      <DashboardPage>
+      <DashboardPage atmosphere>
         <DashboardPageCard>
           <TableSkeleton />
         </DashboardPageCard>
@@ -57,7 +57,7 @@ export default function UserManagementPage() {
   }
 
   return (
-    <DashboardPage>
+    <DashboardPage atmosphere>
       <DashboardPageHeader
         title="User Management"
         description="Create, update, and deactivate application users. Deactivated users cannot sign in; their existing data is preserved."

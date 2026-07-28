@@ -4,10 +4,9 @@ import { useForm } from "@tanstack/react-form"
 import { useRouter } from "next/navigation"
 
 import type { Customer } from "@/app/dashboard/customers/columns"
+import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { TextField } from "@/components/ui/text-field"
-import { Switch } from "@/components/ui/switch"
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers"
 import { fieldError } from "@/lib/form-field"
 import { customerCodeSchema, customerNameSchema } from "@/lib/schemas/customer"
@@ -178,14 +177,12 @@ export default function CustomerForm({
         {mode === "edit" ? (
           <form.Field name="isActive">
             {(field) => (
-              <div className="flex items-center gap-3">
-                <Switch
-                  id={field.name}
-                  checked={field.state.value}
-                  onCheckedChange={(checked) => field.handleChange(checked)}
-                />
-                <Label htmlFor={field.name}>Active customer</Label>
-              </div>
+              <ActiveStatusField
+                id={field.name}
+                value={field.state.value === true}
+                onChange={(checked) => field.handleChange(checked)}
+                description="Inactive customers stay in history but are hidden from new selections."
+              />
             )}
           </form.Field>
         ) : null}

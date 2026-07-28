@@ -25,102 +25,43 @@ Other scripts: `bun run build`, `bun run lint`, `bun test lib/permissions.test.t
 | Session / login | `lib/auth-client.ts`, `components/forms/login-form.tsx` |
 | API client | `lib/api-client.ts` |
 
-## Roles
+## Roles & permissions
 
-The session user carries a `role` string. Legacy `"user"` is treated as `viewer`. Missing role defaults to `viewer`.
+Permissions are loaded from the backend (`GET /me/permissions` and session `permissions` / `roleDetails`). The UI no longer hardcodes a role matrix.
 
-| Role | Description |
-|------|-------------|
-| `viewer` | Read-only on shipments, costings, and sellings |
-| `costing_admin` | Full CRUD on costings only |
-| `domestic_admin` | Shipments (DOMESTIC) + costings read/write |
-| `export_admin` | Shipments (EXPORT) + costings read/write |
-| `operational_admin` | Shipments (all types) + costings read/write |
-| `admin` | Full access |
-| `superadmin` | Full access |
+- **Modules:** `DASHBOARD`, `CUSTOMER`, `VENDOR`, `PORT`, `VESSEL`, `SHIPMENT`, `COSTING`, `SELLING`, `USER`, `ROLE`
+- **Actions:** `view` | `create` | `edit` | `delete`
+- **System roles:** `admin` / `superadmin` always have full access and can manage roles at `/dashboard/roles`
+- **Seeded roles** (`viewer`, `costing_admin`, `domestic_admin`, `export_admin`, `operational_admin`) keep prior behavior via DB seed
 
-## Screen access (sidebar & routes)
+### Screen access
 
-Access is enforced in two places:
+1. **Sidebar** — items shown when the user has `view` on that module (`components/app-sidebar.tsx`).
+2. **Route guard** — redirects when `canAccessRoute` fails (`components/dashboard-route-guard.tsx`).
+3. **Write gates** — `PermissionGate` / `*WriteGate` check create/edit/delete (or write-any) as needed.
 
-1. **Sidebar** — nav items hidden when `canRead(role, resource)` is false (`components/app-sidebar.tsx`).
-2. **Route guard** — direct URL visits redirect to the role home path when `canAccessRoute` fails (`components/dashboard-route-guard.tsx`).
+**Profile** (`/dashboard/profile`) is available to every signed-in user. **Roles** (`/dashboard/roles`) is admin/superadmin only.
 
-**Profile** (`/dashboard/profile`) is available to every signed-in user.
+Landing path after login uses the first module the user can view (`lib/role-home.ts`), with admin → `/dashboard`.
 
-### Navigation visibility
+### Shipment type limits
 
-| Screen / route | viewer | costing_admin | domestic_admin | export_admin | operational_admin | admin / superadmin |
-|----------------|:------:|:-------------:|:--------------:|:------------:|:-----------------:|:------------------:|
-| **Dashboard** (`/dashboard`) — analytics KPIs & charts | — | — | — | — | — | ✓ |
-| **Customers** (`/dashboard/customers`) | — | — | — | — | — | ✓ |
-| **Vendors** (`/dashboard/vendors`) | — | — | — | — | — | ✓ |
-| **Ports** (`/dashboard/ports`) | — | — | — | — | — | ✓ |
-| **Vessels** (`/dashboard/vessels`) | — | — | — | — | — | ✓ |
-| **Shipments** (`/dashboard/shipments`) | ✓ read | — | ✓ | ✓ | ✓ | ✓ |
-| **Costings** (`/dashboard/costings`) | ✓ read | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **Sellings** (`/dashboard/sellings`) | ✓ read | — | — | — | — | ✓ |
-| **Users** (`/dashboard/users`) — Admin Panel | — | — | — | — | — | ✓ |
-| **Profile** (`/dashboard/profile`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-✓ = visible in sidebar and routable. — = hidden; visiting the URL redirects to the role home page.
-
-Detail routes (e.g. `/dashboard/shipments/[id]`, `/dashboard/costings/[id]`) inherit the parent resource permission.
-
-### Login landing page
-
-After sign-in, users are sent to their role home (`lib/role-home.ts`):
-
-| Role | Landing path |
-|------|----------------|
-| `admin`, `superadmin` | `/dashboard` |
-| `viewer` | `/dashboard/shipments` |
-| `costing_admin` | `/dashboard/costings` |
-| `domestic_admin`, `export_admin`, `operational_admin` | `/dashboard/shipments` |
-
-## Write access (buttons & forms)
-
-Read access controls pages; **write** access controls create/edit/delete actions via `PermissionGate`, `*WriteGate` components, and action cells.
-
-| Resource | viewer | costing_admin | domestic_admin | export_admin | operational_admin | admin / superadmin |
-|----------|:------:|:-------------:|:--------------:|:------------:|:-----------------:|:------------------:|
-| Master data (customers, vendors, ports, vessels) | — | — | — | — | — | ✓ |
-| Shipments (booking record) | — | — | ✓* | ✓* | ✓ | ✓ |
-| Shipment operational, containers, attachments | — | — | ✓* | ✓* | ✓ | ✓ |
-| Costings | — | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Sellings | — | — | — | — | — | ✓ |
-| Users | — | — | — | — | — | ✓ |
-
-\*Shipment operational **write** is limited by `shipmentType` on the operational record (see below).
-
-### Shipment type limits (operational write)
-
-When editing shipment operationals, containers, or attachments, write UI is gated by `canWriteShipmentType(role, shipmentType)`:
-
-| Role | Allowed `shipmentType` values |
-|------|------------------------------|
-| `domestic_admin` | `DOMESTIC` only |
-| `export_admin` | `EXPORT` only |
-| `operational_admin` | `EXPORT`, `IMPORT`, `DOMESTIC` |
-| `admin`, `superadmin` | All types |
-| `viewer`, `costing_admin` | No shipment write |
-
-Creating a new operational on a shipment without a type yet is allowed when the role has general shipment write (`canWrite("shipments")`).
+Each role may define `allowedShipmentTypes`. Empty = all types. Write UI uses `canWriteShipmentType`.
 
 ### Costing form dependencies
 
-Roles that can write costings may load vendor/shipment/container lists for dropdowns even without master-data page access (`canReadVendorsForCosting`, `canReadShipmentsForCosting`, `canReadContainers` in `lib/permissions.ts`). API calls still require matching backend permissions.
+Roles that can write costings may load vendor/shipment/container lists for dropdowns even without master-data page access (`canReadVendorsForCosting`, etc.). API calls still require matching backend permissions.
 
 ## User accounts (`isActive`)
 
-User management is admin-only. Users can be **deactivated** (`isActive: false`); the list shows active users only. Deactivation is a soft delete (sessions revoked on the backend). See [README-Backend.md — Users](./README-Backend.md#users).
+User management is gated by the `user` module (seeded for admin/superadmin). Users can be **deactivated** (`isActive: false`). Deactivation is a soft delete (sessions revoked on the backend).
 
 ## How to change permissions
 
-1. Update matrices in `lib/permissions.ts` (`canRead`, `canWrite`, `canWriteShipmentType`, `allowedShipmentTypes`).
-2. Adjust `lib/role-home.ts` if the post-login landing path should change.
-3. Run `bun test lib/permissions.test.ts`.
-4. Keep this README and [README-Backend.md](./README-Backend.md) in sync.
+1. Prefer **Admin → Role** in the UI (`/dashboard/roles`) to edit the permission matrix.
+2. Or call the backend Roles API (`POST/PUT /roles`).
+3. Run `bun test lib/permissions.test.ts` for helper smoke tests.
+4. Keep this README and the backend README Authorization section in sync.
 
 ## Related docs
 

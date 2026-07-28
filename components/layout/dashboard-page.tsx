@@ -1,16 +1,27 @@
 import { cn } from "@/lib/utils"
 import { pageCard, pageHeader, pageMain, pageShell } from "@/lib/design"
+import { DashboardAtmosphere } from "@/components/layout/dashboard-atmosphere"
 
 export function DashboardPage({
   children,
   className,
+  atmosphere = false,
 }: {
   children: React.ReactNode
   className?: string
+  atmosphere?: boolean
 }) {
   return (
-    <div className={cn(pageShell, className)}>
-      <main className={pageMain}>{children}</main>
+    <div
+      className={cn(
+        pageShell,
+        atmosphere &&
+          "relative isolate flex min-h-full flex-1 flex-col overflow-x-clip bg-transparent",
+        className
+      )}
+    >
+      {atmosphere ? <DashboardAtmosphere /> : null}
+      <main className={cn(pageMain, atmosphere && "flex-1")}>{children}</main>
     </div>
   )
 }
@@ -46,5 +57,13 @@ export function DashboardPageCard({
   children: React.ReactNode
   className?: string
 }) {
-  return <section className={cn(pageCard, className)}>{children}</section>
+  return (
+    <section className={cn(pageCard, "relative overflow-hidden", className)}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
+      />
+      <div className="relative">{children}</div>
+    </section>
+  )
 }

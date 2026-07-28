@@ -1,19 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
+import { DeleteConfirmButton } from "../ui/delete-confirm-button"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { CountryCombobox } from "@/components/country-combobox"
+import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { TextField } from "../ui/text-field"
 import { useForm } from "@tanstack/react-form"
-import { Label } from "../ui/label"
 import { fieldError } from "@/lib/form-field"
 import {
   shipperNameSchema,
 } from "@/lib/schemas/shipper"
 import { zodOnChange } from "@/lib/zod-form"
-import { Switch } from "../ui/switch"
 import { useCreateCustomerShipper, useDeleteCustomerShipper, useUpdateCustomerShipper } from "@/hooks/use-customers"
 
 export default function CustomerShipperForm({
@@ -23,7 +23,13 @@ export default function CustomerShipperForm({
     phoneNumber,
     country,
     isActive,
-    customerId
+    customerId,
+    trigger,
+    hideDeleteTrigger = false,
+    open: openProp,
+    onOpenChange,
+    deleteOpen: deleteOpenProp,
+    onDeleteOpenChange,
 }: {
     mode: "edit" | "create",
     id: string | undefined,
@@ -32,9 +38,20 @@ export default function CustomerShipperForm({
     country: string | undefined,
     isActive: boolean | undefined
     customerId: string
+    trigger?: React.ReactNode
+    hideDeleteTrigger?: boolean
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    deleteOpen?: boolean
+    onDeleteOpenChange?: (open: boolean) => void
 }) {
-    const [ open, setOpen ] = useState(false)
-    const [ deleteOpen, setDeleteOpen ] = useState(false)
+    const [ uncontrolledOpen, setUncontrolledOpen ] = useState(false)
+    const [ uncontrolledDeleteOpen, setUncontrolledDeleteOpen ] = useState(false)
+
+    const open = openProp ?? uncontrolledOpen
+    const setOpen = onOpenChange ?? setUncontrolledOpen
+    const deleteOpen = deleteOpenProp ?? uncontrolledDeleteOpen
+    const setDeleteOpen = onDeleteOpenChange ?? setUncontrolledDeleteOpen
 
     const createShipper = useCreateCustomerShipper()
     const updateShipper = useUpdateCustomerShipper()
@@ -74,14 +91,43 @@ export default function CustomerShipperForm({
         }
     })
 
+    useEffect(() => {
+        if (!open) return
+        form.reset({
+            id: id ?? "",
+            name: name ?? "",
+            phoneNumber: phoneNumber ?? "",
+            country: country ?? "",
+            isActive: isActive ?? true,
+        })
+        // form API is stable; reset when the dialog opens or entity values change
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- form.reset
+    }, [open, id, name, phoneNumber, country, isActive])
+
+    const defaultTrigger =
+        mode === "edit" ? (
+            <Button variant="outline" size="sm">Edit</Button>
+        ) : (
+            <Button variant="outline" size="sm"><IconPlus /> Shipper</Button>
+        )
+
     return (
         <div className="flex flex-row items-center gap-x-2">
             {/* Create/Edit Shipper Dialog */}
-            <Dialog open={open} onOpenChange={setOpen} modal={false}>
-                <DialogTrigger asChild>
-                    { mode === "edit" ? <Button variant="outline" size="sm">Edit</Button>: <Button variant="outline" size="sm"><IconPlus /> Shipper</Button>}
-                </DialogTrigger>
-                <DialogContent>
+            <Dialog open={open} onOpenChange={setOpen}>
+                {trigger === null ? null : (
+                    <DialogTrigger asChild>
+                        {trigger ?? defaultTrigger}
+                    </DialogTrigger>
+                )}
+                <DialogContent
+                    onInteractOutside={(e) => {
+                        const target = e.target as Element
+                        if (target.closest('[data-slot="combobox-content"]')) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle>{ mode === "edit" ? "Edit Shipper" : "Create New Shipper"}</DialogTitle>
                         <DialogDescription>
@@ -144,8 +190,12 @@ export default function CustomerShipperForm({
                                 mode === "edit" ? <form.Field name="isActive">
                                     {( field ) => (
                                         <div className="my-3">
-                                            <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                            <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                            <ActiveStatusField
+                                                id={field.name}
+                                                value={field.state.value === true}
+                                                onChange={(checked) => field.handleChange(checked)}
+                                                description="Inactive shippers stay in history but are hidden when creating new shipments."
+                                            />
                                         </div>
                                     )}
                                 </form.Field> : null
@@ -160,12 +210,14 @@ export default function CustomerShipperForm({
             
             {/* Delete Shipper Dialog */}
             {
-                mode === "create" ? <></> 
+                mode === "create" ? null
                 :
-                <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
-                    </DialogTrigger>
+                <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteShipper.isPending) return; setDeleteOpen(next) }}>
+                    {hideDeleteTrigger ? null : (
+                        <DialogTrigger asChild>
+                                <Button variant="outline" size="icon-sm" aria-label="Delete shipper"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>
+                        </DialogTrigger>
+                    )}
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Delete Shipper</DialogTitle>
@@ -174,15 +226,18 @@ export default function CustomerShipperForm({
                             Are you sure you want to delete this shipper? It will remove all locations and contacts associated with this shipper. This action cannot be undone.
                         </DialogDescription>
                         <DialogFooter>
-                            <Button variant="destructive" onClick={() => {
-                                deleteShipper.mutate({ customerId, shipperId: id ?? "" }, {
-                                    onSuccess: () => {
-                                        setDeleteOpen(false)
-                                    }
-                                })
-                            }}>Delete</Button>
+                            <DeleteConfirmButton
+                                isPending={deleteShipper.isPending}
+                                onClick={() => {
+                                    deleteShipper.mutate({ customerId, shipperId: id ?? "" }, {
+                                        onSuccess: () => {
+                                            setDeleteOpen(false)
+                                        }
+                                    })
+                                }}
+                            />
                             <DialogClose asChild>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button variant="secondary" disabled={deleteShipper.isPending}>Cancel</Button>
                             </DialogClose>
                         </DialogFooter>
                     </DialogContent>

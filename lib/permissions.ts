@@ -1,17 +1,18 @@
-export const USER_ROLES = [
-  "viewer",
-  "costing_admin",
-  "domestic_admin",
-  "export_admin",
-  "operational_admin",
-  "admin",
-  "superadmin",
-] as const
-
-export type UserRole = (typeof USER_ROLES)[number]
-
 export type ShipmentType = "EXPORT" | "IMPORT" | "DOMESTIC"
 
+export type AppModule =
+  | "DASHBOARD"
+  | "CUSTOMER"
+  | "VENDOR"
+  | "PORT"
+  | "VESSEL"
+  | "SHIPMENT"
+  | "COSTING"
+  | "SELLING"
+  | "USER"
+  | "ROLE"
+
+/** @deprecated Prefer AppModule — kept for call-site compatibility. */
 export type AppResource =
   | "dashboard"
   | "masterData"
@@ -19,175 +20,269 @@ export type AppResource =
   | "costings"
   | "sellings"
   | "users"
+  | "roles"
 
-const FULL_ACCESS_ROLES: UserRole[] = ["admin", "superadmin"]
+export type PermissionAction = "view" | "create" | "edit" | "delete"
 
-export function parseUserRole(role: unknown): UserRole | undefined {
-  if (typeof role !== "string") return undefined
-  if (role === "user") return "viewer"
-  return USER_ROLES.includes(role as UserRole) ? (role as UserRole) : undefined
+export type ModulePermissionFlags = {
+  canView: boolean
+  canCreate: boolean
+  canEdit: boolean
+  canDelete: boolean
 }
 
-export function formatRoleLabel(role: string): string {
-  const parsed = parseUserRole(role)
-  if (!parsed) return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-  const labels: Record<UserRole, string> = {
-    viewer: "Viewer",
-    costing_admin: "Costing Admin",
-    domestic_admin: "Domestic Admin",
-    export_admin: "Export Admin",
-    operational_admin: "Operational Admin",
-    admin: "Admin",
-    superadmin: "Superadmin",
-  }
-  return labels[parsed]
+export type RoleDetails = {
+  id: string | null
+  slug: string
+  name: string
+  isSystem: boolean
+  allowedShipmentTypes: ShipmentType[]
 }
 
-/** README default role when session has no role (e.g. legacy accounts). */
-export function getEffectiveRole(role: UserRole | undefined): UserRole {
-  return role ?? "viewer"
+export type MyPermissions = {
+  role: RoleDetails
+  permissions: Partial<Record<AppModule, ModulePermissionFlags>>
 }
 
-export function isAdminRole(role: UserRole | undefined): boolean {
+export type UserRole = string
+
+const RESOURCE_TO_MODULE: Record<Exclude<AppResource, "masterData">, AppModule> = {
+  dashboard: "DASHBOARD",
+  shipments: "SHIPMENT",
+  costings: "COSTING",
+  sellings: "SELLING",
+  users: "USER",
+  roles: "ROLE",
+}
+
+const MASTER_MODULES: AppModule[] = ["CUSTOMER", "VENDOR", "PORT", "VESSEL"]
+
+export function isAdminRole(role: string | undefined | null): boolean {
   return role === "admin" || role === "superadmin"
 }
 
-export function canRead(role: UserRole | undefined, resource: AppResource): boolean {
-  if (!role) return false
-  if (isAdminRole(role)) return true
-
-  switch (resource) {
-    case "dashboard":
-      return false
-    case "masterData":
-      return false
-    case "shipments":
-      return (
-        role === "viewer" ||
-        role === "domestic_admin" ||
-        role === "export_admin" ||
-        role === "operational_admin"
-      )
-    case "costings":
-      return (
-        role === "viewer" ||
-        role === "costing_admin" ||
-        role === "domestic_admin" ||
-        role === "export_admin" ||
-        role === "operational_admin"
-      )
-    case "sellings":
-      return role === "viewer" || isAdminRole(role)
-    case "users":
-      return false
-    default:
-      return false
-  }
+export function parseUserRole(role: unknown): string | undefined {
+  if (typeof role !== "string" || role.length === 0) return undefined
+  if (role === "user") return "viewer"
+  return role
 }
 
-export function canWrite(role: UserRole | undefined, resource: AppResource): boolean {
-  if (!role) return false
-  if (isAdminRole(role)) return true
-
-  switch (resource) {
-    case "dashboard":
-      return false
-    case "masterData":
-      return false
-    case "shipments":
-      return (
-        role === "domestic_admin" ||
-        role === "export_admin" ||
-        role === "operational_admin"
-      )
-    case "costings":
-      return (
-        role === "costing_admin" ||
-        role === "domestic_admin" ||
-        role === "export_admin" ||
-        role === "operational_admin"
-      )
-    case "sellings":
-      return false
-    case "users":
-      return false
-    default:
-      return false
-  }
+export function getEffectiveRole(role: string | undefined): string {
+  return role ?? "viewer"
 }
 
-export function allowedShipmentTypes(role: UserRole | undefined): ShipmentType[] | "all" {
-  if (!role || isAdminRole(role) || role === "viewer") return "all"
-  if (role === "domestic_admin") return ["DOMESTIC"]
-  if (role === "export_admin") return ["EXPORT"]
-  if (role === "operational_admin") return ["EXPORT", "IMPORT", "DOMESTIC"]
-  return []
+export function formatRoleLabel(role: string): string {
+  return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-export function canWriteShipmentType(
-  role: UserRole | undefined,
-  shipmentType: ShipmentType | string | undefined
+function flagsFor(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  module: AppModule
+): ModulePermissionFlags {
+  return (
+    permissions?.[module] ?? {
+      canView: false,
+      canCreate: false,
+      canEdit: false,
+      canDelete: false,
+    }
+  )
+}
+
+export function can(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  module: AppModule,
+  action: PermissionAction,
+  roleSlug?: string | null
 ): boolean {
-  if (!role || !shipmentType) return false
-  if (!canWrite(role, "shipments")) return false
-  if (isAdminRole(role) || role === "operational_admin") return true
-
-  const type = shipmentType as ShipmentType
-  if (role === "domestic_admin") return type === "DOMESTIC"
-  if (role === "export_admin") return type === "EXPORT"
-  return false
+  if (isAdminRole(roleSlug ?? undefined)) return true
+  const flags = flagsFor(permissions, module)
+  switch (action) {
+    case "view":
+      return flags.canView
+    case "create":
+      return flags.canCreate
+    case "edit":
+      return flags.canEdit
+    case "delete":
+      return flags.canDelete
+    default:
+      return false
+  }
 }
 
-export function getRouteResource(pathname: string): AppResource | "profile" | null {
-  if (pathname === "/dashboard/profile") return "profile"
-  if (pathname === "/dashboard" || pathname.startsWith("/dashboard?")) return "dashboard"
-  if (pathname.startsWith("/dashboard/users")) return "users"
-  if (
-    pathname.startsWith("/dashboard/customers") ||
-    pathname.startsWith("/dashboard/vendors") ||
-    pathname.startsWith("/dashboard/ports") ||
-    pathname.startsWith("/dashboard/vessels")
-  ) {
-    return "masterData"
+export function canViewModule(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  module: AppModule,
+  roleSlug?: string | null
+): boolean {
+  return can(permissions, module, "view", roleSlug)
+}
+
+export function canWriteModule(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  module: AppModule,
+  roleSlug?: string | null
+): boolean {
+  return (
+    can(permissions, module, "create", roleSlug) ||
+    can(permissions, module, "edit", roleSlug) ||
+    can(permissions, module, "delete", roleSlug)
+  )
+}
+
+/** Legacy resource helpers used across existing UI. */
+export function canReadResource(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  resource: AppResource,
+  roleSlug?: string | null
+): boolean {
+  if (isAdminRole(roleSlug ?? undefined)) return true
+  if (resource === "masterData") {
+    return MASTER_MODULES.some((m) => canViewModule(permissions, m, roleSlug))
   }
-  if (pathname.startsWith("/dashboard/shipments")) return "shipments"
-  if (pathname.startsWith("/dashboard/costings")) return "costings"
-  if (pathname.startsWith("/dashboard/sellings")) return "sellings"
+  return canViewModule(permissions, RESOURCE_TO_MODULE[resource], roleSlug)
+}
+
+export function canWriteResource(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  resource: AppResource,
+  roleSlug?: string | null
+): boolean {
+  if (isAdminRole(roleSlug ?? undefined)) return true
+  if (resource === "masterData") {
+    return MASTER_MODULES.some((m) => canWriteModule(permissions, m, roleSlug))
+  }
+  return canWriteModule(permissions, RESOURCE_TO_MODULE[resource], roleSlug)
+}
+
+export function allowedShipmentTypesFromRole(
+  role: RoleDetails | null | undefined,
+  roleSlug?: string | null
+): ShipmentType[] | "all" {
+  if (isAdminRole(roleSlug ?? role?.slug)) return "all"
+  const types = role?.allowedShipmentTypes ?? []
+  if (types.length === 0) return "all"
+  return types
+}
+
+export function canWriteShipmentTypeWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  role: RoleDetails | null | undefined,
+  shipmentType: ShipmentType | string | undefined,
+  roleSlug?: string | null
+): boolean {
+  if (!shipmentType) return false
+  if (isAdminRole(roleSlug ?? role?.slug)) return true
+  if (!canWriteModule(permissions, "SHIPMENT", roleSlug)) return false
+  const allowed = allowedShipmentTypesFromRole(role, roleSlug)
+  if (allowed === "all") return true
+  return allowed.includes(shipmentType as ShipmentType)
+}
+
+export function getRouteModule(
+  pathname: string
+): AppModule | "profile" | null {
+  if (pathname === "/dashboard/profile") return "profile"
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard?")) return "DASHBOARD"
+  if (pathname.startsWith("/dashboard/users")) return "USER"
+  if (pathname.startsWith("/dashboard/roles")) return "ROLE"
+  if (pathname.startsWith("/dashboard/customers")) return "CUSTOMER"
+  if (pathname.startsWith("/dashboard/vendors")) return "VENDOR"
+  if (pathname.startsWith("/dashboard/ports")) return "PORT"
+  if (pathname.startsWith("/dashboard/vessels")) return "VESSEL"
+  if (pathname.startsWith("/dashboard/shipments")) return "SHIPMENT"
+  if (pathname.startsWith("/dashboard/costings")) return "COSTING"
+  if (pathname.startsWith("/dashboard/sellings")) return "SELLING"
   return null
 }
 
-/** Vendors list for costing forms. */
-export function canReadVendorsForCosting(role: UserRole | undefined): boolean {
-  const r = getEffectiveRole(role)
+/** @deprecated Prefer getRouteModule */
+export function getRouteResource(
+  pathname: string
+): AppResource | "profile" | null {
+  const module = getRouteModule(pathname)
+  if (module === null) return null
+  if (module === "profile") return "profile"
+  if (
+    module === "CUSTOMER" ||
+    module === "VENDOR" ||
+    module === "PORT" ||
+    module === "VESSEL"
+  ) {
+    return "masterData"
+  }
+  const reverse: Partial<Record<AppModule, AppResource>> = {
+    DASHBOARD: "dashboard",
+    SHIPMENT: "shipments",
+    COSTING: "costings",
+    SELLING: "sellings",
+    USER: "users",
+    ROLE: "roles",
+  }
+  return reverse[module] ?? null
+}
+
+export function canAccessRouteWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  pathname: string,
+  roleSlug?: string | null
+): boolean {
+  const module = getRouteModule(pathname)
+  if (module === null || module === "profile") return true
+  return canViewModule(permissions, module, roleSlug)
+}
+
+export function canReadVendorsForCostingWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  roleSlug?: string | null
+): boolean {
   return (
-    isAdminRole(r) ||
-    canRead(r, "masterData") ||
-    canWrite(r, "costings")
+    isAdminRole(roleSlug) ||
+    canViewModule(permissions, "VENDOR", roleSlug) ||
+    canWriteModule(permissions, "COSTING", roleSlug)
   )
 }
 
-/** Shipments list for linking costings. */
-export function canReadShipmentsForCosting(role: UserRole | undefined): boolean {
-  const r = getEffectiveRole(role)
+export function canReadShipmentsForCostingWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  roleSlug?: string | null
+): boolean {
   return (
-    isAdminRole(r) ||
-    canRead(r, "shipments") ||
-    canWrite(r, "costings")
+    isAdminRole(roleSlug) ||
+    canViewModule(permissions, "SHIPMENT", roleSlug) ||
+    canWriteModule(permissions, "COSTING", roleSlug)
   )
 }
 
-/** Global containers list (`GET /containers`). */
-export function canReadContainers(role: UserRole | undefined): boolean {
-  const r = getEffectiveRole(role)
-  if (isAdminRole(r) || canWrite(r, "costings")) return true
-  return canRead(r, "shipments") || canWrite(r, "shipments")
+export function canReadContainersWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  roleSlug?: string | null
+): boolean {
+  return (
+    isAdminRole(roleSlug) ||
+    canWriteModule(permissions, "COSTING", roleSlug) ||
+    canViewModule(permissions, "SHIPMENT", roleSlug) ||
+    canWriteModule(permissions, "SHIPMENT", roleSlug)
+  )
 }
 
-export function canAccessRoute(role: UserRole | undefined, pathname: string): boolean {
-  const effectiveRole = getEffectiveRole(role)
-  const resource = getRouteResource(pathname)
-  if (resource === null) return true
-  if (resource === "profile") return true
-  return canRead(effectiveRole, resource)
+/** Prefer first module the user can view. */
+export function getHomePathFromPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  roleSlug?: string | null
+): string {
+  if (isAdminRole(roleSlug)) return "/dashboard"
+  const order: { module: AppModule; path: string }[] = [
+    { module: "DASHBOARD", path: "/dashboard" },
+    { module: "SHIPMENT", path: "/dashboard/shipments" },
+    { module: "COSTING", path: "/dashboard/costings" },
+    { module: "SELLING", path: "/dashboard/sellings" },
+    { module: "CUSTOMER", path: "/dashboard/customers" },
+    { module: "USER", path: "/dashboard/users" },
+  ]
+  for (const item of order) {
+    if (canViewModule(permissions, item.module, roleSlug)) return item.path
+  }
+  return "/dashboard/profile"
 }
-

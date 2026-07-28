@@ -41,7 +41,7 @@ export default function PortMasterDataPage() {
     if (error) return <ErrorPage />
 
     return (
-        <DashboardPage>
+        <DashboardPage atmosphere>
             <DashboardPageHeader
                 title="Port Management"
                 description="View and manage global port destinations based on country and port name."

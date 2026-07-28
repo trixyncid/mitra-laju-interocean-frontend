@@ -2,23 +2,45 @@
 
 import { use } from "react"
 import Link from "next/link"
-import clsx from "clsx"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { IconArrowLeft, IconLinkOff } from "@tabler/icons-react"
-import { useSellingById, useUpdateSelling } from "@/hooks/use-sellings"
-import { useUpdateCosting } from "@/hooks/use-costings"
+import {
+    IconArrowLeft,
+    IconCash,
+    IconLink,
+    IconLinkOff,
+    IconPencil,
+    IconReceipt,
+    IconShip,
+    IconTags,
+    IconTrendingDown,
+    IconTrendingUp,
+} from "@tabler/icons-react"
+import { Dot } from "lucide-react"
+import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
-import { sellingNetAmount, localDate, amountCalculation } from "@/lib/utils"
+
+import { Button } from "@/components/ui/button"
 import SellingForm from "@/components/forms/selling-form"
 import LinkSellingCostingForm from "@/components/forms/link-selling-costing-form"
+import LinkSellingShipmentForm from "@/components/forms/link-selling-shipment-form"
+import { useSellingById, useUpdateSelling } from "@/hooks/use-sellings"
+import { useUpdateCosting } from "@/hooks/use-costings"
+import { amountCalculation, cn, localDate, sellingNetAmount } from "@/lib/utils"
 import SellingLoading from "@/components/loading/selling-loading"
-import { toast } from "sonner"
-import { DashboardPage } from "@/components/layout/dashboard-page"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
 import { SellingWriteGate } from "@/components/write-gates"
 import ErrorPage from "@/components/error-page"
-import { PaymentStatusChip } from "@/components/ui/status-chip"
+import {
+    PaymentStatusChip,
+    UnlinkedChip,
+    WarningChip,
+} from "@/components/ui/status-chip"
+import {
+    brandLink,
+    brandText,
+    glassInset,
+    glassPanel,
+    glassShine,
+} from "@/lib/design"
 
 type LinkedCosting = {
     id: string
@@ -28,10 +50,135 @@ type LinkedCosting = {
     currency: number
     vatPercentage: number
     pph23Percentage: number
-    vendor: { vendorName: string }
+    vendor: { vendorName: string } | null
 }
 
-export default function SellingDetailPage({ params }: { params: Promise<{ sellingId: string }> }) {
+function SectionIntro({
+    title,
+    description,
+    action,
+}: {
+    title: string
+    description: string
+    action?: React.ReactNode
+}) {
+    return (
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+                <h2 className="text-headline-md font-semibold tracking-tight">{title}</h2>
+                <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+            </div>
+            {action ? <div className="shrink-0">{action}</div> : null}
+        </div>
+    )
+}
+
+function OverviewField({
+    label,
+    children,
+    className,
+}: {
+    label: string
+    children: React.ReactNode
+    className?: string
+}) {
+    return (
+        <div className={cn("space-y-1.5", className)}>
+            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                {label}
+            </p>
+            <div className="text-sm font-medium text-foreground">{children}</div>
+        </div>
+    )
+}
+
+function EmptyState({
+    icon: Icon,
+    title,
+    description,
+    action,
+}: {
+    icon: React.ComponentType<{ className?: string }>
+    title: string
+    description: string
+    action?: React.ReactNode
+}) {
+    return (
+        <div
+            className={cn(
+                glassInset,
+                "flex flex-col items-center justify-center gap-3 px-6 py-14 text-center"
+            )}
+        >
+            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+                <Icon className="size-6" />
+            </div>
+            <div className="space-y-1">
+                <p className="font-semibold text-foreground">{title}</p>
+                <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+            </div>
+            {action ? <div className="pt-1">{action}</div> : null}
+        </div>
+    )
+}
+
+function SummaryRow({
+    label,
+    value,
+    muted,
+    emphasize,
+}: {
+    label: string
+    value: React.ReactNode
+    muted?: boolean
+    emphasize?: boolean
+}) {
+    return (
+        <div
+            className={cn(
+                "flex items-start justify-between gap-4 border-b border-[rgba(214,227,255,0.35)] py-3 last:border-b-0",
+                emphasize && "pt-4"
+            )}
+        >
+            <p
+                className={cn(
+                    "text-sm",
+                    emphasize ? "font-medium text-foreground" : "text-muted-foreground"
+                )}
+            >
+                {label}
+            </p>
+            <div
+                className={cn(
+                    "text-right text-sm font-medium tabular-nums",
+                    muted ? "text-muted-foreground" : "text-foreground",
+                    emphasize && "text-base font-semibold"
+                )}
+            >
+                {value}
+            </div>
+        </div>
+    )
+}
+
+function formatIdr(value: number) {
+    return value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
+}
+
+function costingTotal(costing: LinkedCosting) {
+    return amountCalculation(
+        costing.price,
+        costing.currency,
+        costing.vatPercentage,
+        costing.pph23Percentage
+    )
+}
+
+export default function SellingDetailPage({
+    params,
+}: {
+    params: Promise<{ sellingId: string }>
+}) {
     const { sellingId } = use(params)
 
     const { data: selling, isLoading, error } = useSellingById(sellingId)
@@ -41,231 +188,521 @@ export default function SellingDetailPage({ params }: { params: Promise<{ sellin
 
     if (isLoading) return <SellingLoading />
     if (error) return <ErrorPage message={error.message} />
-    if (!selling) return <ErrorPage title="Selling not found" message="Unable to load this selling." />
+    if (!selling) {
+        return (
+            <ErrorPage
+                title="Selling not found"
+                message="Unable to load this selling."
+            />
+        )
+    }
 
-    const totalFromCostings =
-        selling.costings?.reduce(
-            (acc: number, c: LinkedCosting) =>
-                acc + amountCalculation(c.price, c.currency, c.vatPercentage, c.pph23Percentage),
-            0
-        ) ?? 0
-
-    const net = sellingNetAmount(selling.amount ?? 0, selling.vatPercentage ?? 0, selling.pph23Percentage ?? 0)
+    const costings = (selling.costings ?? []) as LinkedCosting[]
+    const gross = Number(selling.amount) || 0
+    const vatPercentage = Number(selling.vatPercentage) || 0
+    const pph23Percentage = Number(selling.pph23Percentage) || 0
+    const net = sellingNetAmount(gross, vatPercentage, pph23Percentage)
+    const totalFromCostings = costings.reduce(
+        (acc, costing) => acc + costingTotal(costing),
+        0
+    )
+    const revenue = net - totalFromCostings
+    const marginPercent = net > 0 ? (revenue / net) * 100 : null
+    const isPaid = selling.status === "PAID"
+    const shipment = selling.shipment
+    const linkedShipmentId = shipment?.id ?? undefined
+    const updatedByName =
+        typeof selling.updatedBy === "string"
+            ? selling.updatedBy
+            : "name" in selling.updatedBy
+              ? selling.updatedBy.name
+              : undefined
+    const isProfitable = revenue >= 0
 
     return (
-        <DashboardPage>
-            <Button asChild variant="ghost" className="text-muted-foreground mb-2">
-                <Link href="/dashboard/sellings">
-                    <IconArrowLeft /> Back to sellings
-                </Link>
-            </Button>
-
-            {/* Header */}
-            <div className="mb-6 flex items-start justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">Selling — {selling?.sellingNumber}</h1>
-                    <p className="text-muted-foreground text-sm">
-                        Last modified on {localDate(selling?.updatedAt)} by {selling?.updatedBy?.name}
-                    </p>
-                </div>
-                <SellingWriteGate>
-                    <div className="flex items-center gap-x-2">
-                        <Button
-                            size="sm"
-                            onClick={() => {
-                                updateSelling.mutate({
-                                    id: sellingId,
-                                    selling: { status: selling?.status === "unpaid" ? "paid" : "unpaid" }
-                                }, {
-                                    onSuccess: () => toast.success("Status updated"),
-                                    onError: (err: Error) => toast.error(err.message)
-                                })
-                            }}
-                            disabled={updateSelling.isPending}
-                        >
-                            {updateSelling.isPending ? "Updating..." : selling?.status === "unpaid" ? "Mark as Paid" : "Mark as Unpaid"}
-                        </Button>
-                        <SellingForm
-                            mode="edit"
-                            id={sellingId}
-                            sellingNumber={selling.sellingNumber}
-                            description={selling.description}
-                            amount={selling.amount}
-                            vatPercentage={selling.vatPercentage}
-                            pph23Percentage={selling.pph23Percentage}
-                        />
-                    </div>
-                </SellingWriteGate>
+        <DashboardPage atmosphere>
+            <div className="mb-6">
+                <Button asChild variant="ghost" className="text-muted-foreground">
+                    <Link href="/dashboard/sellings">
+                        <IconArrowLeft className="size-5" />
+                        Back to sellings
+                    </Link>
+                </Button>
             </div>
 
-            <div className="flex items-start gap-x-4">
-                {/* Left column */}
-                <div className="min-w-0 flex-1 space-y-4 lg:w-[75%]">
+            <section className={cn(glassPanel, "relative mb-8 overflow-hidden")}>
+                <div aria-hidden className={glassShine} />
 
-                    {/* Selling Details */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-x-2">
-                                SELLING DETAILS
-                                <PaymentStatusChip paid={selling?.status === "paid"} />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 gap-x-4">
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label className="text-xs text-muted-foreground">SELLING NUMBER</Label>
-                                        <p className="font-semibold text-blue-600">{selling?.sellingNumber}</p>
+                <div className="relative space-y-8 p-6 lg:p-8">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+                            <div
+                                className={cn(
+                                    glassInset,
+                                    "flex size-14 shrink-0 items-center justify-center sm:size-16"
+                                )}
+                            >
+                                <IconCash className="size-8 text-[var(--mli-primary-container)] sm:size-9" />
+                            </div>
+
+                            <div className="min-w-0 space-y-3">
+                                <div className="space-y-2">
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                        <h1 className="text-headline-lg tracking-tight">
+                                            {selling.sellingNumber}
+                                        </h1>
+                                        <PaymentStatusChip paid={isPaid} />
                                     </div>
-                                    <div>
-                                        <Label className="text-xs text-muted-foreground">DESCRIPTION</Label>
-                                        <p className="font-semibold">{selling?.description}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-xs text-muted-foreground">LINKED SHIPMENT</Label>
-                                        {selling?.shipment === null ? (
-                                            <div className="flex items-center gap-x-1 text-muted-foreground">
-                                                <IconLinkOff className="size-3.5" />
-                                                <p className="text-sm">Not linked</p>
-                                            </div>
-                                        ) : (
-                                            <p className="font-semibold text-blue-600">{selling?.shipment?.orderNumber}</p>
+                                    <p
+                                        className={cn(
+                                            "font-mono text-sm font-medium tracking-wide",
+                                            brandText
                                         )}
-                                    </div>
+                                    >
+                                        Selling invoice
+                                    </p>
                                 </div>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label className="text-xs text-muted-foreground">VAT</Label>
-                                        <p className="font-semibold">{selling?.vatPercentage}%</p>
+
+                                <p className="max-w-2xl text-sm text-muted-foreground">
+                                    {selling.description || "No description provided."}
+                                </p>
+
+                                <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+                                    <span>
+                                        Updated{" "}
+                                        {selling.updatedAt
+                                            ? localDate(selling.updatedAt)
+                                            : "—"}
+                                        {updatedByName ? ` by ${updatedByName}` : ""}
+                                    </span>
+                                    {selling.createdAt ? (
+                                        <>
+                                            <Dot className="hidden size-4 sm:inline" />
+                                            <span>
+                                                Created {localDate(selling.createdAt)}
+                                            </span>
+                                        </>
+                                    ) : null}
+                                </p>
+                            </div>
+                        </div>
+
+                        <SellingWriteGate>
+                            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                <Button
+                                    size="sm"
+                                    variant={isPaid ? "outline" : "default"}
+                                    onClick={() => {
+                                        updateSelling.mutate(
+                                            {
+                                                id: sellingId,
+                                                selling: {
+                                                    status: isPaid ? "UNPAID" : "PAID",
+                                                },
+                                            },
+                                            {
+                                                onSuccess: () =>
+                                                    toast.success(
+                                                        isPaid
+                                                            ? "Selling marked as unpaid"
+                                                            : "Selling marked as paid"
+                                                    ),
+                                                onError: (err: Error) =>
+                                                    toast.error(err.message),
+                                            }
+                                        )
+                                    }}
+                                    disabled={updateSelling.isPending}
+                                >
+                                    {updateSelling.isPending
+                                        ? "Updating..."
+                                        : isPaid
+                                          ? "Mark as Unpaid"
+                                          : "Mark as Paid"}
+                                </Button>
+                                <SellingForm
+                                    mode="edit"
+                                    id={sellingId}
+                                    sellingNumber={selling.sellingNumber}
+                                    description={selling.description}
+                                    amount={selling.amount}
+                                    vatPercentage={selling.vatPercentage}
+                                    pph23Percentage={selling.pph23Percentage}
+                                    trigger={
+                                        <Button size="sm" variant="outline">
+                                            <IconPencil className="size-4" />
+                                            Edit
+                                        </Button>
+                                    }
+                                />
+                            </div>
+                        </SellingWriteGate>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Net amount
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums break-words sm:text-2xl">
+                                {formatIdr(net)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                After VAT & PPH 23
+                            </p>
+                        </div>
+
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Revenue
+                            </p>
+                            <p
+                                className={cn(
+                                    "flex items-center gap-2 text-xl font-semibold tracking-tight tabular-nums break-words sm:text-2xl",
+                                    isProfitable
+                                        ? "text-[var(--mli-on-success-container)]"
+                                        : "text-[var(--mli-on-error-container)]"
+                                )}
+                            >
+                                {isProfitable ? (
+                                    <IconTrendingUp className="size-5 shrink-0" />
+                                ) : (
+                                    <IconTrendingDown className="size-5 shrink-0" />
+                                )}
+                                {formatIdr(revenue)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {marginPercent != null
+                                    ? `${marginPercent.toFixed(1)}% of net`
+                                    : "Net minus linked costings"}
+                            </p>
+                        </div>
+
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Linked costings
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums sm:text-2xl">
+                                {costings.length}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {formatIdr(totalFromCostings)} total cost
+                            </p>
+                        </div>
+
+                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Tax rates
+                            </p>
+                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums sm:text-2xl">
+                                {vatPercentage}% / {pph23Percentage}%
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                VAT / PPH 23
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="min-w-0 space-y-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Selling details"
+                            description="Core invoice fields and tax configuration for this selling."
+                        />
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            <OverviewField label="Selling number">
+                                <span className={cn(brandText, "font-mono tracking-wide")}>
+                                    {selling.sellingNumber}
+                                </span>
+                            </OverviewField>
+                            <OverviewField label="Payment status">
+                                <PaymentStatusChip paid={isPaid} />
+                            </OverviewField>
+                            <OverviewField label="VAT">
+                                {vatPercentage !== 0 ? (
+                                    `${vatPercentage}%`
+                                ) : (
+                                    <WarningChip>Not applicable</WarningChip>
+                                )}
+                            </OverviewField>
+                            <OverviewField label="PPH 23">
+                                {`${pph23Percentage}%`}
+                            </OverviewField>
+                            <OverviewField label="Description" className="sm:col-span-2">
+                                {selling.description || "—"}
+                            </OverviewField>
+                        </div>
+                    </DashboardPageCard>
+
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Linked shipment"
+                            description="Connect this selling to the operational shipment it belongs to."
+                            action={
+                                <SellingWriteGate>
+                                    <LinkSellingShipmentForm
+                                        sellingId={sellingId}
+                                        shipmentId={linkedShipmentId}
+                                        trigger={
+                                            <Button variant="outline" size="sm">
+                                                <IconLink className="size-4" />
+                                                {linkedShipmentId
+                                                    ? "Change shipment"
+                                                    : "Link shipment"}
+                                            </Button>
+                                        }
+                                    />
+                                </SellingWriteGate>
+                            }
+                        />
+                        {linkedShipmentId ? (
+                            <div
+                                className={cn(
+                                    glassInset,
+                                    "flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                                )}
+                            >
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+                                        <IconShip className="size-5" />
                                     </div>
-                                    <div>
-                                        <Label className="text-xs text-muted-foreground">PPH 23</Label>
-                                        <p className="font-semibold">{selling?.pph23Percentage}%</p>
+                                    <div className="min-w-0 space-y-1">
+                                        <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                            Shipment order
+                                        </p>
+                                        <Link
+                                            href={`/dashboard/shipments/${linkedShipmentId}`}
+                                            className={cn(brandLink, "font-mono text-base")}
+                                        >
+                                            {shipment?.orderNumber ?? "View shipment"}
+                                        </Link>
+                                        <p className="text-xs text-muted-foreground">
+                                            Open linked shipment detail
+                                        </p>
                                     </div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        ) : (
+                            <EmptyState
+                                icon={IconShip}
+                                title="No shipment linked"
+                                description="Link a shipment so this selling stays connected to the right job."
+                                action={
+                                    <SellingWriteGate>
+                                        <LinkSellingShipmentForm
+                                            sellingId={sellingId}
+                                            shipmentId={undefined}
+                                            trigger={
+                                                <Button variant="outline" size="sm">
+                                                    <IconLink className="size-4" />
+                                                    Link shipment
+                                                </Button>
+                                            }
+                                        />
+                                    </SellingWriteGate>
+                                }
+                            />
+                        )}
+                    </DashboardPageCard>
 
-                    {/* Linked Costings */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                                <span>LINKED COSTINGS</span>
-                                <LinkSellingCostingForm sellingId={sellingId} />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {!selling?.costings || selling.costings.length === 0 ? (
-                                <div className="flex items-center gap-x-2 text-muted-foreground">
-                                    <IconLinkOff className="size-4 animate-pulse" />
-                                    <p className="text-sm">No costings linked to this selling yet.</p>
-                                </div>
-                            ) : (
-                                <table className="w-full text-left">
-                                    <thead className="text-muted-foreground border-b bg-muted text-xs">
-                                        <tr>
-                                            <th className="py-2 px-4">COSTING #</th>
-                                            <th className="py-2 px-4">DESCRIPTION</th>
-                                            <th className="py-2 px-4">VENDOR</th>
-                                            <th className="py-2 px-4">AMOUNT (Rp)</th>
-                                            <th className="py-2 px-4"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {selling.costings.map((costing: LinkedCosting) => (
-                                            <tr key={costing.id} className="border-b last:border-0">
-                                                <td className="py-2 px-4 font-medium">{costing.costingNumber}</td>
-                                                <td className="py-2 px-4 text-sm">{costing.description}</td>
-                                                <td className="py-2 px-4 text-sm">{costing.vendor?.vendorName}</td>
-                                                <td className="py-2 px-4 text-sm">
-                                                    {amountCalculation(costing.price, costing.currency, costing.vatPercentage, costing.pph23Percentage)
-                                                        .toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
-                                                </td>
-                                                <td className="py-2 px-4">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Linked costings"
+                            description="Vendor charges applied against this selling. Revenue is net amount minus these costs."
+                            action={
+                                <SellingWriteGate>
+                                    <LinkSellingCostingForm sellingId={sellingId} />
+                                </SellingWriteGate>
+                            }
+                        />
+                        {costings.length === 0 ? (
+                            <EmptyState
+                                icon={IconReceipt}
+                                title="No costings linked"
+                                description="Add vendor costings to track true revenue for this selling."
+                                action={
+                                    <SellingWriteGate>
+                                        <LinkSellingCostingForm sellingId={sellingId} />
+                                    </SellingWriteGate>
+                                }
+                            />
+                        ) : (
+                            <ul className="space-y-3">
+                                {costings.map((costing) => {
+                                    const amount = costingTotal(costing)
+                                    return (
+                                        <li
+                                            key={costing.id}
+                                            className={cn(
+                                                glassInset,
+                                                "flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                                            )}
+                                        >
+                                            <div className="flex min-w-0 items-start gap-3">
+                                                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+                                                    <IconTags className="size-5" />
+                                                </div>
+                                                <div className="min-w-0 space-y-1">
+                                                    <Link
+                                                        href={`/dashboard/costings/${costing.id}`}
+                                                        className={cn(
+                                                            brandLink,
+                                                            "font-mono text-sm tracking-wide"
+                                                        )}
+                                                    >
+                                                        {costing.costingNumber}
+                                                    </Link>
+                                                    <p className="truncate text-sm text-foreground">
+                                                        {costing.description}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {costing.vendor?.vendorName ??
+                                                            "No vendor"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex shrink-0 items-center justify-between gap-3 self-end sm:self-center sm:justify-end">
+                                                <p className="text-sm font-semibold tabular-nums text-foreground">
+                                                    {formatIdr(amount)}
+                                                </p>
+                                                <SellingWriteGate>
                                                     <Button
                                                         variant="outline"
                                                         size="icon"
-                                                        className="text-[var(--mli-on-error-container)] hover:text-red-600 hover:bg-[var(--mli-error-container)]"
+                                                        className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)] hover:text-red-600"
                                                         disabled={updateCosting.isPending}
+                                                        aria-label={`Unlink ${costing.costingNumber}`}
                                                         onClick={() => {
                                                             updateCosting.mutate(
-                                                                { id: costing.id, costing: { sellingId: null } },
+                                                                {
+                                                                    id: costing.id,
+                                                                    costing: {
+                                                                        sellingId: null,
+                                                                    },
+                                                                },
                                                                 {
                                                                     onSuccess: () => {
-                                                                        queryClient.invalidateQueries({ queryKey: ["sellings", sellingId] })
-                                                                        toast.success("Costing unlinked")
+                                                                        queryClient.invalidateQueries(
+                                                                            {
+                                                                                queryKey: [
+                                                                                    "sellings",
+                                                                                    sellingId,
+                                                                                ],
+                                                                            }
+                                                                        )
+                                                                        toast.success(
+                                                                            "Costing unlinked"
+                                                                        )
                                                                     },
-                                                                    onError: (err: Error) => toast.error(err.message),
+                                                                    onError: (
+                                                                        err: Error
+                                                                    ) =>
+                                                                        toast.error(
+                                                                            err.message
+                                                                        ),
                                                                 }
                                                             )
                                                         }}
                                                     >
                                                         <IconLinkOff className="size-3.5" />
                                                     </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                </SellingWriteGate>
+                                            </div>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </DashboardPageCard>
+                </div>
+
+                <aside className="lg:sticky lg:top-6">
+                    <DashboardPageCard>
+                        <SectionIntro
+                            title="Amount summary"
+                            description="How net selling and linked costs produce revenue."
+                        />
+
+                        <div
+                            className={cn(
+                                glassInset,
+                                "mb-5 space-y-1 px-5 py-5 text-center"
                             )}
-                        </CardContent>
-                    </Card>
-                </div>
+                        >
+                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                Revenue
+                            </p>
+                            <p
+                                className={cn(
+                                    "text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl",
+                                    isProfitable
+                                        ? brandText
+                                        : "text-[var(--mli-on-error-container)]"
+                                )}
+                            >
+                                {formatIdr(revenue)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {isProfitable ? "Positive margin" : "Cost exceeds net"}
+                            </p>
+                        </div>
 
-                {/* Right column — Amount Summary */}
-                <div className="w-full shrink-0 lg:w-[25%]">
-                    <Card>
-                        <CardContent>
-                            <div className="mb-4 pt-2">
-                                <h1 className="font-bold">AMOUNT SUMMARY</h1>
+                        <div>
+                            <SummaryRow
+                                label="Gross selling amount"
+                                value={formatIdr(gross)}
+                            />
+                            <SummaryRow
+                                label="VAT"
+                                value={
+                                    vatPercentage !== 0 ? (
+                                        `${vatPercentage}%`
+                                    ) : (
+                                        <WarningChip>Not applicable</WarningChip>
+                                    )
+                                }
+                            />
+                            <SummaryRow
+                                label="PPH 23"
+                                value={`${pph23Percentage}%`}
+                            />
+                            <SummaryRow
+                                label="Net selling amount"
+                                value={formatIdr(net)}
+                            />
+                            <SummaryRow
+                                label="Linked costings"
+                                value={formatIdr(totalFromCostings)}
+                                muted={costings.length === 0}
+                            />
+                            <SummaryRow
+                                label="Revenue"
+                                value={
+                                    <span
+                                        className={
+                                            isProfitable
+                                                ? undefined
+                                                : "text-[var(--mli-on-error-container)]"
+                                        }
+                                    >
+                                        {formatIdr(revenue)}
+                                    </span>
+                                }
+                                emphasize
+                            />
+                        </div>
+
+                        {costings.length === 0 ? (
+                            <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                                <UnlinkedChip />
+                                <span>Link costings to refine revenue.</span>
                             </div>
-
-                            <div className="mb-4">
-                                <h4 className="text-sm text-muted-foreground text-center">Net Selling Amount (Rp)</h4>
-                                <h2 className="font-bold text-2xl text-center text-blue-600">
-                                    { net.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
-                                </h2>
-                            </div>
-
-                            <div className="border rounded-md">
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p className="text-sm">Gross Selling Amount</p>
-                                    <p className="font-semibold text-sm">
-                                        { (Number(selling?.amount)).toLocaleString("id-ID", { style: "currency", currency: "IDR" }) }
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p className="text-sm">Costing Amount</p>
-                                    <p className="font-semibold text-sm">
-                                        {totalFromCostings.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p className="text-sm">VAT</p>
-                                    <p className={clsx("text-sm", selling?.vatPercentage === 0 ? "px-2 py-0.5 bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)] rounded-full" : "font-semibold")}>
-                                        {selling?.vatPercentage !== 0 ? `${selling?.vatPercentage}%` : "Not applicable"}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p className="text-sm">PPH 23</p>
-                                    <p className="font-semibold text-sm">{selling?.pph23Percentage}%</p>
-                                </div>
-
-                                {/* Revenue */}
-                                <div className="flex items-center justify-between py-3 px-2 border-b">
-                                    <p className="text-sm">Revenue</p>
-                                    <p className={clsx(`font-semibold text-sm`, net - totalFromCostings > 0 ? "text-secondary-foreground" : "text-[var(--mli-on-error-container)]")}>
-                                        {(net - totalFromCostings).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        ) : null}
+                    </DashboardPageCard>
+                </aside>
             </div>
         </DashboardPage>
     )

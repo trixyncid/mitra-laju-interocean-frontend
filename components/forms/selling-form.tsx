@@ -16,7 +16,7 @@ import {
   sellingVatSchema,
 } from "@/lib/schemas/selling"
 import { zodOnChange } from "@/lib/zod-form"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useCreateSelling, useUpdateSelling } from "@/hooks/use-sellings"
 import { toast } from "sonner"
 
@@ -28,6 +28,7 @@ export default function SellingForm({
     amount,
     vatPercentage,
     pph23Percentage,
+    trigger,
 }: {
     mode: "edit" | "create"
     id: string | undefined
@@ -36,6 +37,7 @@ export default function SellingForm({
     amount: number | undefined
     vatPercentage: number | undefined
     pph23Percentage: number | undefined
+    trigger?: ReactNode
 }) {
     const [open, setOpen] = useState(false)
 
@@ -91,10 +93,16 @@ export default function SellingForm({
         <div>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    {mode === "edit"
-                        ? <Button size="icon" variant="outline"><IconPencil /></Button>
-                        : <Button><IconPlus /> Add Selling</Button>
-                    }
+                    {trigger ??
+                        (mode === "edit" ? (
+                            <Button size="icon-sm" variant="outline" aria-label="Edit selling">
+                                <IconPencil />
+                            </Button>
+                        ) : (
+                            <Button>
+                                <IconPlus /> Add Selling
+                            </Button>
+                        ))}
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>

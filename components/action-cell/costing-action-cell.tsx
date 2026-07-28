@@ -22,7 +22,7 @@ export default function CostingActionCell({ row }: { row: Row<Costing> }) {
         price={row.original.price}
         currency={row.original.currency}
         currencyCode={row.original.currencyCode ?? "IDR"}
-        containerId={row.original.containerId}
+        containerNumber={row.original.containerNumber ?? undefined}
         vatPercentage={row.original.vatPercentage}
         pph23Percentage={row.original.pph23Percentage}
         vendorInvoiceNumber={row.original.vendorInvoiceNumber}

@@ -28,7 +28,7 @@ export default function CostingPage() {
             page,
             pageSize,
             search: applied.search || undefined,
-            status: applied.status as "all" | "paid" | "unpaid",
+            status: applied.status as "all" | "PAID" | "UNPAID",
             from: applied.dateRange.from,
             to: applied.dateRange.to,
         }),
@@ -55,7 +55,7 @@ export default function CostingPage() {
                         price={undefined}
                         currencyCode={undefined}
                         currency={undefined}
-                        containerId={undefined}
+                        containerNumber={undefined}
                         vatPercentage={undefined}
                         pph23Percentage={undefined}
                         vendorInvoiceNumber={undefined}

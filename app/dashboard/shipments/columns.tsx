@@ -6,7 +6,7 @@ import { IconArrowRight } from "@tabler/icons-react"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { Info } from "lucide-react"
-import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { ShipmentLifecycleChip, WarningChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
 import {
   actionColumn,
@@ -21,6 +21,7 @@ export type Shipment = {
     customerCodeId: string
     customerShipperId: string
     orderNumber: string
+    status: "ONGOING" | "COMPLETED"
     customerCode?: { customerName: string, customerCode: string }
     customerShipper?: { name: string }
     shipmentOperational?: {
@@ -104,10 +105,10 @@ export const columns: ColumnDef<Shipment>[] = [
         cell: ({ row }) => <span className={secondaryText}>{formatDate(row.original.updatedAt as string)}</span>
     },
     {
-        accessorKey: "isActive",
-        header: ({ column }) => sortHeader(column, "Status"),
+        accessorKey: "status",
+        header: ({ column }) => sortHeader(column, "Shipment Status"),
         ...sortDescFirst,
-        cell: ({ row }) => <StatusChip active={row.original.isActive} />,
+        cell: ({ row }) => <ShipmentLifecycleChip status={row.original.status} />,
         enableGlobalFilter: false,
     },
     {

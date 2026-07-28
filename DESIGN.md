@@ -50,45 +50,45 @@ colors:
   surface-variant: '#e0e3e5'
 typography:
   headline-xl:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 48px
     fontWeight: '700'
     lineHeight: 56px
     letterSpacing: -0.02em
   headline-lg:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 32px
     fontWeight: '600'
     lineHeight: 40px
     letterSpacing: -0.01em
   headline-lg-mobile:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 24px
     fontWeight: '600'
     lineHeight: 32px
   headline-md:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 24px
     fontWeight: '600'
     lineHeight: 32px
   body-lg:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 18px
     fontWeight: '400'
     lineHeight: 28px
   body-md:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 16px
     fontWeight: '400'
     lineHeight: 24px
   label-md:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 14px
     fontWeight: '500'
     lineHeight: 20px
     letterSpacing: 0.01em
   label-sm:
-    fontFamily: Inter
+    fontFamily: IBM Plex Sans
     fontSize: 12px
     fontWeight: '600'
     lineHeight: 16px
@@ -125,7 +125,7 @@ A range of "Cool Neutrals" derived from the navy base provides the foundation fo
 - **Contrast:** Text colors transition from deep navy for headlines to a mid-range slate for body text to maintain hierarchy without harshness.
 
 ## Typography
-Inter is utilized as a single-family system to ensure a systematic and utilitarian feel. Hierarchy is established through significant weight variance and generous line heights. 
+IBM Plex Sans is utilized as a single-family system for enterprise clarity with a slightly industrial character suited to logistics. Hierarchy is established through significant weight variance and generous line heights. 
 
 To achieve the "airy" feel, headlines use negative letter-spacing for a tighter, more modern lockup, while smaller labels use increased letter-spacing for legibility. Body text is prioritized for readability with a minimum size of 16px to ensure accessibility across all touchpoints.
 

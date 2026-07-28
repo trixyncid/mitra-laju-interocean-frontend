@@ -928,7 +928,7 @@ List all costings (includes vendor, shipment relations).
   "shipmentId": "uuid",
   "price": "1500000.00",
   "currency": "1.00",
-  "containerId": "uuid",
+  "containerNumber": "TCKU1234567",
   "vatPercentage": "11.00",
   "pph23Percentage": "2.00",
   "vendorInvoiceNumber": "INV-VENDOR-001",
@@ -944,7 +944,7 @@ List all costings (includes vendor, shipment relations).
 ```
 
 #### `GET /costings/:id`
-Get a single costing by ID (includes container, attachments, selling).
+Get a single costing by ID (includes attachments, selling).
 
 #### `POST /costings`
 Create a new costing.
@@ -957,7 +957,7 @@ Create a new costing.
   "shipmentId": "uuid-of-shipment",
   "price": 1500000,
   "currency": 1,
-  "containerId": "uuid-of-container",
+  "containerNumber": "TCKU1234567",
   "vatPercentage": 11,
   "pph23Percentage": 2,
   "vendorInvoiceNumber": "INV-VENDOR-001",
@@ -973,7 +973,7 @@ Create a new costing.
 | `shipmentId` | string (UUID) | No | |
 | `price` | number | Yes | Stored as `DECIMAL(12,2)` |
 | `currency` | number | Yes | Exchange rate multiplier |
-| `containerId` | string (UUID) | Yes | |
+| `containerNumber` | string | No | Free-text container number |
 | `vatPercentage` | number | Yes | e.g. `11` for 11% |
 | `pph23Percentage` | number | Yes | e.g. `2` for 2% |
 | `vendorInvoiceNumber` | string | Yes | |
@@ -1408,7 +1408,7 @@ Selling
 |---|---|---|---|
 | Shipment | ShipmentOperational | 1-to-1 (optional) | One shipment has at most one operational record |
 | ShipmentOperational | ShipmentOperationalContainer | 1-to-many | Deleted when operational is deleted |
-| ShipmentOperationalContainer | Costing | 1-to-many | Container used in costing |
+| Shipment | Costing | 1-to-many | Costings linked to a shipment |
 | Costing | CostingAttachment | 1-to-many | |
 | Selling | Shipment | many-to-1 (optional) | |
 | Selling | Costing | 1-to-many | FK `sellingId` on Costing |

@@ -8,6 +8,7 @@ import Link from "next/link"
 import { PaymentStatusChip, UnlinkedChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { IconTrash } from "@tabler/icons-react"
 import { useDeleteSelling } from "@/hooks/use-sellings"
@@ -36,6 +37,7 @@ export type Selling = {
     shipmentId: string | null
     shipment: { orderNumber: string | null, id: string | null } | null
     costings?: { id: string, description: string }[]
+    createdAt?: string
     updatedBy?: string
     updatedAt?: string
 }
@@ -53,9 +55,9 @@ function SellingActionCell({ row }: { row: Row<Selling> }) {
                 sellingId={row.original.id}
                 shipmentId={row.original.shipmentId ?? undefined}
             />
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(next) => { if (deleteSelling.isPending) return; setOpen(next) }}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon-sm" aria-label="Delete selling">
                         <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
                     </Button>
                 </DialogTrigger>
@@ -67,19 +69,17 @@ function SellingActionCell({ row }: { row: Row<Selling> }) {
                         Are you sure you want to delete this selling entry? This action cannot be undone.
                     </DialogDescription>
                     <DialogFooter>
-                        <Button
-                            variant="destructive"
+                        <DeleteConfirmButton
+                            isPending={deleteSelling.isPending}
                             onClick={() => {
                                 deleteSelling.mutate(row.original.id, {
                                     onSuccess: () => setOpen(false),
                                     onError: (error: Error) => toast.warning(error.message)
                                 })
                             }}
-                        >
-                            Delete
-                        </Button>
+                        />
                         <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button variant="secondary" disabled={deleteSelling.isPending}>Cancel</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>
@@ -139,7 +139,7 @@ export const columns: ColumnDef<Selling>[] = [
         accessorKey: "status",
         header: ({ column }) => sortHeader(column, "Status"),
         ...textSort,
-        cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "paid"} />
+        cell: ({ row }) => <PaymentStatusChip paid={row.original.status === "PAID"} />
     },
     {
         id: "updatedBy",

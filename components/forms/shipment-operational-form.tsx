@@ -5,7 +5,6 @@ import { useForm } from "@tanstack/react-form"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { IconPlus } from "@tabler/icons-react"
-import { Label } from "../ui/label"
 import { TextField } from "../ui/text-field"
 import { DatePicker } from "@/components/ui/date-picker"
 import { SearchableCombobox, type SearchableComboboxOption } from "@/components/searchable-combobox"
@@ -26,7 +25,6 @@ import type { CustomerLocationOption } from "@/services/customers.service"
 import { useCreateShipmentOperational, useUpdateShipmentOperational } from "@/hooks/use-shipments"
 import { Vessel } from "@/app/dashboard/vessels/columns"
 import { useVessels } from "@/hooks/use-vessels"
-import { toast } from "sonner"
 import { usePermissions } from "@/hooks/use-permissions"
 import type { ShipmentType } from "@/lib/permissions"
 
@@ -64,8 +62,6 @@ export default function ShipmentOperationalForm({
     bookingNumber,
     customerCodeId,
     customerShipperId,
-    customerChargeAmount,
-    status
 }: {
     id: string | undefined,
     eta: string | undefined
@@ -81,8 +77,6 @@ export default function ShipmentOperationalForm({
     bookingNumber: string | undefined,
     customerCodeId: string,
     customerShipperId: string | undefined,
-    customerChargeAmount: number | undefined
-    status: string | undefined
 }) {
     const [open, setOpen] = useState(false)
     const { canWrite, canWriteShipmentType, allowedShipmentTypes } = usePermissions()
@@ -224,11 +218,12 @@ export default function ShipmentOperationalForm({
 
     return (
         <div className="flex items-center gap-x-2">
-            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     { mode === "edit" ? <Button variant="outline">Edit Shipment Operational</Button> : <Button><IconPlus /> Add Shipment Operational</Button>}
                 </DialogTrigger>
                 <DialogContent
+                    className="flex max-h-[min(92dvh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
                     onInteractOutside={(e) => {
                         const target = e.target as Element
                         if (target.closest('[data-slot="combobox-content"]')) {
@@ -236,41 +231,57 @@ export default function ShipmentOperationalForm({
                         }
                     }}
                 >
-                    <DialogHeader>
-                        <DialogTitle>{ mode === "edit" ? "Edit Shipment Operational" : "Add Shipment Operational"}</DialogTitle>
+                    <DialogHeader className="shrink-0 border-b border-[rgba(214,227,255,0.4)] px-6 py-5 pr-12">
+                        <DialogTitle>
+                            {mode === "edit"
+                                ? "Edit Shipment Operational"
+                                : "Add Shipment Operational"}
+                        </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        form.handleSubmit()
-                    }}>
-                        <div>
-                            <form.Field name="shipmentType" validators={{ onChange: zodOnChange(shipmentTypeFieldSchema) }}>
-                                {(field) => (
-                                    <div className="my-3">
+                    <form
+                        className="flex min-h-0 flex-1 flex-col"
+                        onSubmit={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            form.handleSubmit()
+                        }}
+                    >
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <form.Field
+                                    name="shipmentType"
+                                    validators={{
+                                        onChange: zodOnChange(shipmentTypeFieldSchema),
+                                    }}
+                                >
+                                    {(field) => (
                                         <SearchableCombobox
                                             id={field.name}
                                             label="Shipment Type"
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             items={shipmentTypeItems}
                                             error={fieldError(field.state.meta.errors)}
                                             required
                                             placeholder="Search shipment type..."
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field name="vesselId" validators={{ onChange: zodOnChange(vesselIdSchema) }}>
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="vesselId"
+                                    validators={{ onChange: zodOnChange(vesselIdSchema) }}
+                                >
+                                    {(field) => (
                                         <SearchableCombobox
                                             id={field.name}
                                             label="Vessel"
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             items={vesselItems}
                                             error={fieldError(field.state.meta.errors)}
                                             required
@@ -278,22 +289,23 @@ export default function ShipmentOperationalForm({
                                             placeholder="Search vessel..."
                                             emptyMessage="No vessels found."
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field
-                                name="portDepartureId"
-                                validators={{ onChange: zodOnChange(portDepartureIdSchema) }}
-                            >
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="portDepartureId"
+                                    validators={{
+                                        onChange: zodOnChange(portDepartureIdSchema),
+                                    }}
+                                >
+                                    {(field) => (
                                         <SearchableCombobox
                                             id={field.name}
                                             label="Port of Loading"
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             items={portItems}
                                             error={fieldError(field.state.meta.errors)}
                                             required
@@ -301,22 +313,23 @@ export default function ShipmentOperationalForm({
                                             placeholder="Search port of loading..."
                                             emptyMessage="No ports found."
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field
-                                name="portDestinationId"
-                                validators={{ onChange: zodOnChange(portDestinationIdSchema) }}
-                            >
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="portDestinationId"
+                                    validators={{
+                                        onChange: zodOnChange(portDestinationIdSchema),
+                                    }}
+                                >
+                                    {(field) => (
                                         <SearchableCombobox
                                             id={field.name}
                                             label="Port of Discharge"
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             items={portItems}
                                             error={fieldError(field.state.meta.errors)}
                                             required
@@ -324,22 +337,23 @@ export default function ShipmentOperationalForm({
                                             placeholder="Search port of discharge..."
                                             emptyMessage="No ports found."
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field
-                                name="loadingLocationId"
-                                validators={{ onChange: zodOnChange(loadingLocationIdSchema) }}
-                            >
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="loadingLocationId"
+                                    validators={{
+                                        onChange: zodOnChange(loadingLocationIdSchema),
+                                    }}
+                                >
+                                    {(field) => (
                                         <SearchableCombobox
                                             id={field.name}
                                             label="Loading Location (Stuffing)"
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             items={loadingLocationItems}
                                             error={fieldError(field.state.meta.errors)}
                                             isLoading={locationsLoading}
@@ -356,22 +370,23 @@ export default function ShipmentOperationalForm({
                                                     : undefined
                                             }
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field
-                                name="unloadingLocationId"
-                                validators={{ onChange: zodOnChange(unloadingLocationIdSchema) }}
-                            >
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="unloadingLocationId"
+                                    validators={{
+                                        onChange: zodOnChange(unloadingLocationIdSchema),
+                                    }}
+                                >
+                                    {(field) => (
                                         <SearchableCombobox
                                             id={field.name}
                                             label="Unloading Location (Unstuffing)"
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             items={unloadingLocationItems}
                                             error={fieldError(field.state.meta.errors)}
                                             isLoading={locationsLoading}
@@ -387,65 +402,59 @@ export default function ShipmentOperationalForm({
                                                     : "No customer locations found."
                                             }
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field
-                                name="eta"
-                            >
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field name="eta">
+                                    {(field) => (
                                         <DatePicker
                                             label="ETA"
                                             id={field.name}
                                             value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            onValueChange={(nextValue) =>
+                                                field.handleChange(nextValue)
+                                            }
                                             error={fieldError(field.state.meta.errors)}
                                             placeholder="Pick ETA"
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <div>
-                            <form.Field
-                                name="blNumber"
-                            >
-                                {(field) => (
-                                    <div className="my-3">
+                                    )}
+                                </form.Field>
+
+                                <form.Field name="blNumber">
+                                    {(field) => (
                                         <TextField
                                             label="BL Number"
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            onChange={(e) =>
+                                                field.handleChange(e.target.value)
+                                            }
                                             error={fieldError(field.state.meta.errors)}
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
+                                    )}
+                                </form.Field>
+
+                                <form.Field name="bookingNumber">
+                                    {(field) => (
+                                        <div className="sm:col-span-2">
+                                            <TextField
+                                                label="Booking Number"
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onChange={(e) =>
+                                                    field.handleChange(e.target.value)
+                                                }
+                                                error={fieldError(field.state.meta.errors)}
+                                            />
+                                        </div>
+                                    )}
+                                </form.Field>
+                            </div>
                         </div>
-                        <div>
-                            <form.Field
-                                name="bookingNumber"
-                            >
-                                {(field) => (
-                                    <div className="my-3">
-                                        <TextField
-                                            label="Booking Number"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                            error={fieldError(field.state.meta.errors)}
-                                        />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <DialogFooter>
+
+                        <DialogFooter className="shrink-0 border-t border-[rgba(214,227,255,0.4)] px-6 py-4">
                             <Button
                                 type="submit"
                                 disabled={
@@ -466,22 +475,6 @@ export default function ShipmentOperationalForm({
                     </form>
                 </DialogContent>
             </Dialog>
-
-            {
-                mode === "edit" && customerChargeAmount !== 0 && customerChargeAmount !== null
-                ?
-                <Button type="button" size="sm" onClick={() => {
-                    updateShipmentOperational.mutate({
-                        shipmentId: shipmentId ?? "",
-                        id: id ?? "",
-                        shipmentOperational: { status: status === "paid" ? "unpaid" : "paid" },
-                    }, {
-                        onSuccess: () => {
-                            toast.success("Shipment operational payment status updated successfully")
-                        }
-                    })
-                }} disabled={updateShipmentOperational.isPending}>{ updateShipmentOperational.isPending ? "Updating..." : status === "paid" ? "Mark as Unpaid" : "Mark as Paid"}</Button>
-                : null}
         </div>
         
     )

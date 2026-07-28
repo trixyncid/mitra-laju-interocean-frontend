@@ -29,7 +29,7 @@ export function DataTableColumnHeader<TData, TValue>({
       variant="ghost"
       size="sm"
       className={cn(
-        "-ml-3 h-8 cursor-pointer gap-1.5 px-3 font-medium hover:bg-muted/80",
+        "-ml-3 h-8 cursor-pointer gap-1.5 px-3 font-medium hover:bg-[rgba(247,249,251,0.7)]",
         className
       )}
       onClick={() => column.toggleSorting()}

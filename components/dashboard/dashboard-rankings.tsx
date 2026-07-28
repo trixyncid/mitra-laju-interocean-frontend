@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass } from "@/lib/design"
+import { glassPanel, tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -40,24 +40,30 @@ function RankingTable({
   rows: React.ReactNode
 }) {
   return (
-    <Card className="h-full min-w-0 overflow-hidden">
-      <CardHeader>
+    <Card className={cn(glassPanel, "relative h-full min-w-0 gap-0 overflow-hidden p-5 shadow-none lg:p-6")}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
+      />
+      <CardHeader className="pb-3">
         <CardTitle className="text-lg">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className={tableHeaderRow}>
-              {headers.map((header) => (
-                <TableHead key={header} className={tableHeaderCell}>
-                  {header}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>{rows}</TableBody>
-        </Table>
+        <div className={tableShell}>
+          <Table>
+            <TableHeader>
+              <TableRow className={tableHeaderRow}>
+                {headers.map((header) => (
+                  <TableHead key={header} className={tableHeaderCell}>
+                    {header}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>{rows}</TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -94,11 +100,30 @@ function RankingLink({
   return (
     <Link
       href={href}
-      className="block truncate font-medium text-primary hover:underline"
+      className="block truncate font-medium text-[var(--mli-primary-container)] hover:underline"
       title={title}
     >
       {children}
     </Link>
+  )
+}
+
+function RankBadge({ index }: { index: number }) {
+  return (
+    <span
+      className={cn(
+        "flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold",
+        index === 0
+          ? "bg-[var(--mli-primary-container)] text-primary-foreground"
+          : index === 1
+            ? "bg-[var(--chart-1)] text-primary-foreground"
+            : index === 2
+              ? "bg-[var(--chart-2)] text-primary-foreground"
+              : "bg-[rgba(232,238,246,0.85)] text-muted-foreground"
+      )}
+    >
+      {index + 1}
+    </span>
   )
 }
 
@@ -107,7 +132,7 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
   const canOpenMasterData = canRead("masterData")
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
       <RankingTable
         title="Top customers by shipments"
         description="Customers with the most active shipments in this period"
@@ -120,9 +145,7 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
               <TableRow key={customer.customerId} className={tableRowClass}>
                 <TableCell className={tableCellClass}>
                   <div className="flex items-center gap-2">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                      {index + 1}
-                    </span>
+                    <RankBadge index={index} />
                     <RankingLink
                       href={`/dashboard/customers/${customer.customerId}`}
                       canNavigate={canOpenMasterData}
@@ -156,9 +179,7 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
               <TableRow key={customer.customerId} className={tableRowClass}>
                 <TableCell className={tableCellClass}>
                   <div className="flex items-center gap-2">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                      {index + 1}
-                    </span>
+                    <RankBadge index={index} />
                     <RankingLink
                       href={`/dashboard/customers/${customer.customerId}`}
                       canNavigate={canOpenMasterData}
@@ -192,9 +213,7 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
               <TableRow key={vendor.vendorId} className={tableRowClass}>
                 <TableCell className={tableCellClass}>
                   <div className="flex items-center gap-2">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                      {index + 1}
-                    </span>
+                    <RankBadge index={index} />
                     <RankingLink
                       href={`/dashboard/vendors/${vendor.vendorId}`}
                       canNavigate={canOpenMasterData}
@@ -228,9 +247,7 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
               <TableRow key={vendor.vendorId} className={tableRowClass}>
                 <TableCell className={tableCellClass}>
                   <div className="flex items-center gap-2">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                      {index + 1}
-                    </span>
+                    <RankBadge index={index} />
                     <RankingLink
                       href={`/dashboard/vendors/${vendor.vendorId}`}
                       canNavigate={canOpenMasterData}

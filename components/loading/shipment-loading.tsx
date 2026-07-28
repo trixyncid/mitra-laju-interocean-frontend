@@ -1,35 +1,39 @@
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "../ui/skeleton"
+import { DashboardPage } from "@/components/layout/dashboard-page"
 
 export default function ShipmentLoading() {
     return (
-        <div className="px-4 lg:px-6">
-            <Skeleton className="w-50 h-5 mb-8" />
+        <DashboardPage atmosphere>
+            <Skeleton className="mb-6 h-9 w-44 rounded-md border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.35)]" />
 
-            <div className="flex flex-row items-center justify-between gap-x-4">
-                <div>
-                    <Skeleton className="w-75 h-8 mb-2" />
-                    <Skeleton className="w-100 h-5" />
+            <div className="overflow-hidden rounded-lg border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-6 lg:p-8">
+                <div className="flex items-start gap-4">
+                    <Skeleton className="size-16 shrink-0 rounded-md bg-[rgba(214,227,255,0.4)]" />
+                    <div className="min-w-0 flex-1 space-y-3">
+                        <Skeleton className="h-8 w-2/3 max-w-md rounded-md bg-[rgba(214,227,255,0.4)]" />
+                        <Skeleton className="h-4 w-52 rounded-md bg-[rgba(214,227,255,0.35)]" />
+                        <Skeleton className="h-4 w-72 max-w-full rounded-md bg-[rgba(214,227,255,0.3)]" />
+                    </div>
                 </div>
 
-                <div className="flex flex-row items-start justify-between gap-x-4">
-                    <Skeleton className="w-50 h-5" />
-                    <Skeleton className="w-10 h-5" />
-                </div>
-            </div>
-
-            <div className="flex flex-row items-start justify-between gap-x-4 my-8">
-                {/* Right */}
-                <div className="w-[70%]">
-                    <Skeleton className="h-50 w-full" />
-                    <Skeleton className="h-30 w-full my-4" />
-                    <Skeleton className="h-50 w-full my-4" />
-                    <Skeleton className="h-50 w-full my-4" />
-                </div>
-
-                <div className="w-[30%]">
-                    <Skeleton className="h-60 w-full" />
+                <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <Skeleton
+                            key={index}
+                            className="h-28 rounded-md border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]"
+                        />
+                    ))}
                 </div>
             </div>
-        </div>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
+                <div className="min-w-0 space-y-6">
+                    <Skeleton className="h-56 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
+                    <Skeleton className="h-40 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
+                    <Skeleton className="h-48 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
+                </div>
+                <Skeleton className="h-64 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
+            </div>
+        </DashboardPage>
     )
 }

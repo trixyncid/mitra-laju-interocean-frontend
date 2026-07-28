@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client"
+import { openFetchedUrl } from "@/lib/open-attachment"
 import type { Costing, CostingDetail } from "@/app/dashboard/costings/columns"
 
 export type CreateCostingInput = {
@@ -9,10 +10,10 @@ export type CreateCostingInput = {
     price: number
     currencyCode?: string
     currency?: number
-    containerId?: string
+    containerNumber?: string | null
     vatPercentage: number
     pph23Percentage: number
-    vendorInvoiceNumber: string
+    vendorInvoiceNumber?: string | null
     vendorId: string
     shipmentId?: string
     sellingId?: string
@@ -28,7 +29,7 @@ export type CostingListParams = {
     page: number
     pageSize: number
     search?: string
-    status?: "all" | "paid" | "unpaid"
+    status?: "all" | "PAID" | "UNPAID"
     from?: string
     to?: string
 }
@@ -93,8 +94,11 @@ export const costingService = {
         return response
     },
     viewCostingAttachment: async (costingId: string, id: string) => {
-        const response = await apiClient.get<{ url: string }>(`/costings/${costingId}/attachments/${id}`)
-        
-        window.open(response.url, "_blank");
+        await openFetchedUrl(async () => {
+            const response = await apiClient.get<{ url: string }>(
+                `/costings/${costingId}/attachments/${id}`
+            )
+            return response.url
+        })
     }
 }

@@ -5,7 +5,7 @@ import { CustomerCombobox } from "@/components/customer-combobox";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { FormLabel } from "@/components/ui/form-label";
 import { FieldDescription } from "@/components/ui/field";
-import { Label } from "@/components/ui/label";
+import { ActiveStatusField } from "@/components/forms/active-status-field";
 import { fieldError } from "@/lib/form-field";
 import {
   customerCodeIdSchema,
@@ -15,7 +15,6 @@ import { zodOnChange } from "@/lib/zod-form";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useGetShippersByCustomerCodeId } from "@/hooks/use-customers";
 import { useCreateShipment, useUpdateShipment } from "@/hooks/use-shipments";
-import { Switch } from "@/components/ui/switch";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { Pencil } from "lucide-react";
@@ -39,6 +38,7 @@ export default function ShipmentForm({
     orderNumber,
     customerCodeId,
     customerShipperId,
+    status,
     isActive
 }: {
     id: string | undefined,
@@ -46,6 +46,7 @@ export default function ShipmentForm({
     orderNumber: string | undefined,
     customerCodeId: string | undefined,
     customerShipperId: string | undefined
+    status: "ONGOING" | "COMPLETED" | undefined
     isActive: boolean | undefined
 }) {
     const createShipment = useCreateShipment()
@@ -61,6 +62,7 @@ export default function ShipmentForm({
             id: id ?? "",
             customerCodeId: customerCodeId ?? "",
             customerShipperId: customerShipperId ?? "-",
+            status: status ?? "ONGOING",
             isActive: isActive ?? true,
         },
         onSubmit: async ({ value }) => {
@@ -70,6 +72,7 @@ export default function ShipmentForm({
                     year: selectedYear,
                     customerCodeId: value.customerCodeId,
                     customerShipperId: value.customerShipperId,
+                    status: value.status,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -85,6 +88,7 @@ export default function ShipmentForm({
                     shipment: {
                         customerCodeId: value.customerCodeId,
                         customerShipperId: value.customerShipperId,
+                        status: value.status,
                         isActive: value.isActive,
                     }
                 }, {
@@ -104,11 +108,18 @@ export default function ShipmentForm({
 
     return (
         <div>
-            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     {mode === "edit" ? <Button variant="outline" size="icon"><Pencil /></Button> : <Button><IconPlus /> Add Shipment</Button>}
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                    onInteractOutside={(e) => {
+                        const target = e.target as Element
+                        if (target.closest('[data-slot="combobox-content"]')) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle>{mode === "edit" ? "Edit Shipment" : "Create New Shipment"}</DialogTitle>
                     </DialogHeader>
@@ -194,6 +205,37 @@ export default function ShipmentForm({
                                 )}
                             </form.Field>
                             <form.Field
+                                name="status"
+                            >
+                                {(field) => (
+                                    <div className="my-3">
+                                        <FormLabel htmlFor={field.name} className="my-2" required>
+                                            Shipment Status
+                                        </FormLabel>
+                                        <Select
+                                            value={field.state.value}
+                                            onValueChange={(value) =>
+                                                field.handleChange(
+                                                    value as "ONGOING" | "COMPLETED"
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select shipment status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="ONGOING">Ongoing</SelectItem>
+                                                <SelectItem value="COMPLETED">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldDescription className="mt-2">
+                                            Tracks shipment lifecycle separately from whether the
+                                            record is active in the system.
+                                        </FieldDescription>
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field
                                 name="customerShipperId"
                                 validators={{
                                     onChange: zodOnChange(customerShipperIdSchema),
@@ -234,8 +276,12 @@ export default function ShipmentForm({
                             >
                                 {(field) => (
                                     <div className="my-3">
-                                        <Switch id={field.name} checked={field.state.value === true} onCheckedChange={(checked) => field.handleChange(checked)} />
-                                        <Label htmlFor={field.name} className="my-2">Is Active</Label>
+                                        <ActiveStatusField
+                                            id={field.name}
+                                            value={field.state.value === true}
+                                            onChange={(checked) => field.handleChange(checked)}
+                                            description="Inactive shipments stay in history but are hidden from active workflows."
+                                        />
                                     </div>
                                 )}
                             </form.Field> : null}

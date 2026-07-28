@@ -15,11 +15,11 @@ import {
 import { useRequireAdmin } from "@/hooks/use-require-admin"
 
 export default function NewUserPage() {
-  const { isPending, isAdmin, isRedirecting } = useRequireAdmin()
+  const { isPending, canManageUsers, isRedirecting } = useRequireAdmin()
 
-  if (isPending || isRedirecting || !isAdmin) {
+  if (isPending || isRedirecting || !canManageUsers) {
     return (
-      <DashboardPage>
+      <DashboardPage atmosphere>
         <DashboardPageCard>
           <TableSkeleton />
         </DashboardPageCard>
@@ -28,7 +28,7 @@ export default function NewUserPage() {
   }
 
   return (
-    <DashboardPage>
+    <DashboardPage atmosphere>
       <DashboardPageHeader
         title="Add Staff"
         description="Create a new staff account with role and login credentials."

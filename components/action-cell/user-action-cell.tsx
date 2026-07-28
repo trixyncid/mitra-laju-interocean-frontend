@@ -7,6 +7,7 @@ import { IconPencil, IconUserOff } from "@tabler/icons-react"
 
 import type { User } from "@/app/dashboard/users/columns"
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import {
   Dialog,
   DialogClose,
@@ -33,7 +34,13 @@ export default function UserActionCell({ row }: { row: Row<User> }) {
           <IconPencil />
         </Link>
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (deleteUser.isPending) return
+          setOpen(next)
+        }}
+      >
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon" disabled={isSelf}>
             <IconUserOff className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
@@ -49,19 +56,21 @@ export default function UserActionCell({ row }: { row: Row<User> }) {
               : `Deactivate ${row.original.name}? They will be signed out and removed from this list. Their existing records are not deleted.`}
           </DialogDescription>
           <DialogFooter>
-            <Button
-              variant="destructive"
+            <DeleteConfirmButton
+              isPending={deleteUser.isPending}
               disabled={isSelf}
+              idleLabel="Deactivate"
+              pendingLabel="Deactivating..."
               onClick={() => {
                 deleteUser.mutate(row.original.id, {
                   onSuccess: () => setOpen(false),
                 })
               }}
-            >
-              Deactivate
-            </Button>
+            />
             <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
+              <Button variant="secondary" disabled={deleteUser.isPending}>
+                Cancel
+              </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

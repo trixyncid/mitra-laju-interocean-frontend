@@ -4,10 +4,9 @@ import { useForm } from "@tanstack/react-form"
 import { useRouter } from "next/navigation"
 
 import type { Vendor } from "@/app/dashboard/vendors/columns"
+import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { TextField } from "@/components/ui/text-field"
-import { Switch } from "@/components/ui/switch"
 import { useCreateVendor, useUpdateVendor } from "@/hooks/use-vendors"
 import { fieldError } from "@/lib/form-field"
 import { vendorCodeSchema, vendorNameSchema } from "@/lib/schemas/vendor"
@@ -160,14 +159,12 @@ export default function VendorForm({
         {mode === "edit" ? (
           <form.Field name="isActive">
             {(field) => (
-              <div className="flex items-center gap-3">
-                <Switch
-                  id={field.name}
-                  checked={field.state.value}
-                  onCheckedChange={(checked) => field.handleChange(checked)}
-                />
-                <Label htmlFor={field.name}>Active vendor</Label>
-              </div>
+              <ActiveStatusField
+                id={field.name}
+                value={field.state.value === true}
+                onChange={(checked) => field.handleChange(checked)}
+                description="Inactive vendors stay in history but are hidden from new selections."
+              />
             )}
           </form.Field>
         ) : null}

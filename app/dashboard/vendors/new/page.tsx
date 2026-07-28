@@ -16,7 +16,7 @@ import { PermissionGate } from "@/components/permission-gate"
 export default function NewVendorPage() {
   return (
     <PermissionGate resource="masterData" write>
-      <DashboardPage>
+      <DashboardPage atmosphere>
         <DashboardPageHeader
           title="Add Vendor"
           description="Create a new vendor profile with code, name, and tax details."
