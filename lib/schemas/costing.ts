@@ -8,7 +8,7 @@ import { z } from "zod"
 import { costingCurrencyRequiresRate } from "@/lib/costing-currencies"
 
 export const costingNumberSchema = requiredString("Costing Number")
-export const costingDescriptionSchema = requiredString("Description")
+export const costingDescriptionSchema = z.string()
 export const costingPriceSchema = requiredFormNumberSchema("Price")
 export const costingCurrencyCodeSchema = z.enum(["IDR", "USD"], {
   message: "Currency is required",

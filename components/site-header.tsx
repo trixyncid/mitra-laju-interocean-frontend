@@ -21,9 +21,14 @@ export function SiteHeader() {
           </h1>
         </div>
         <div className="ml-auto hidden items-center gap-2 sm:flex">
-          <span className="rounded-md border border-[rgba(214,227,255,0.5)] bg-[rgba(247,249,251,0.65)] px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground">
-            Twin Stack Labs
-          </span>
+          <a
+            href="https://trixync.id"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md border border-[rgba(214,227,255,0.5)] bg-[rgba(247,249,251,0.65)] px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground transition-colors hover:border-[rgba(214,227,255,0.8)] hover:text-foreground"
+          >
+            Trixync
+          </a>
         </div>
       </div>
     </header>

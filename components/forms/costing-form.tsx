@@ -272,7 +272,6 @@ export default function CostingForm({
                                                 <div className="sm:col-span-2">
                                                     <TextField
                                                         label="Description"
-                                                        required
                                                         id={field.name}
                                                         name={field.name}
                                                         value={field.state.value}
