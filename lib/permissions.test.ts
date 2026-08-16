@@ -27,6 +27,7 @@ const viewerPerms: MyPermissions["permissions"] = {
   VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  CONTAINER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
 }
 
 const domesticPerms: MyPermissions["permissions"] = {
@@ -37,6 +38,7 @@ const domesticPerms: MyPermissions["permissions"] = {
   VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  CONTAINER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
 }
 
 const domesticRole: RoleDetails = {

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table"
 import { glassPanel, tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
 import { cn } from "@/lib/utils"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 import { usePermissions } from "@/hooks/use-permissions"
 
 function formatIdr(value: number | string) {
@@ -167,6 +168,8 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
         }
       />
 
+      {FINANCIAL_MODULES_ENABLED ? (
+      <>
       <RankingTable
         title="Top customers by selling amount"
         description="Highest total selling amounts linked to each customer"
@@ -268,6 +271,8 @@ export function DashboardRankings({ data }: { data: DashboardData }) {
           )
         }
       />
+      </>
+      ) : null}
     </div>
   )
 }

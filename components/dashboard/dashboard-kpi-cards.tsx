@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { glassPanelInteractive } from "@/lib/design"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 import { cn } from "@/lib/utils"
 
 function parseAmount(value: string | number) {
@@ -61,37 +62,41 @@ export function DashboardKpiCards({ data }: { data: DashboardData }) {
       accent: "text-[var(--chart-1)]",
       tint: "from-[var(--chart-1)]/10 to-transparent",
     },
-    {
-      label: "Total selling",
-      description: "Sum of net selling amounts in period",
-      ...formatIdrKpi(data.totalNetSelling),
-      icon: IconCoin,
-      accent: "text-[var(--chart-1)]",
-      tint: "from-[var(--chart-1)]/10 to-transparent",
-    },
-    {
-      label: "Total costing",
-      description: "Sum of net vendor costing amounts in period",
-      ...formatIdrKpi(data.totalNetCosting),
-      icon: IconReceipt,
-      accent: "text-[var(--chart-2)]",
-      tint: "from-[var(--chart-2)]/10 to-transparent",
-    },
-    {
-      label: "Net revenue",
-      description: "Total selling minus total costing",
-      ...formatIdrKpi(data.netRevenue),
-      icon: IconTrendingUp,
-      accent:
-        netRevenue >= 0
-          ? "text-secondary-foreground"
-          : "text-[var(--mli-on-error-container)]",
-      tint:
-        netRevenue >= 0
-          ? "from-[var(--mli-primary-container)]/12 to-transparent"
-          : "from-[var(--mli-error-container)] to-transparent",
-    },
-  ] as const
+    ...(FINANCIAL_MODULES_ENABLED
+      ? [
+          {
+            label: "Total selling",
+            description: "Sum of net selling amounts in period",
+            ...formatIdrKpi(data.totalNetSelling),
+            icon: IconCoin,
+            accent: "text-[var(--chart-1)]",
+            tint: "from-[var(--chart-1)]/10 to-transparent",
+          },
+          {
+            label: "Total costing",
+            description: "Sum of net vendor costing amounts in period",
+            ...formatIdrKpi(data.totalNetCosting),
+            icon: IconReceipt,
+            accent: "text-[var(--chart-2)]",
+            tint: "from-[var(--chart-2)]/10 to-transparent",
+          },
+          {
+            label: "Net revenue",
+            description: "Total selling minus total costing",
+            ...formatIdrKpi(data.netRevenue),
+            icon: IconTrendingUp,
+            accent:
+              netRevenue >= 0
+                ? "text-secondary-foreground"
+                : "text-[var(--mli-on-error-container)]",
+            tint:
+              netRevenue >= 0
+                ? "from-[var(--mli-primary-container)]/12 to-transparent"
+                : "from-[var(--mli-error-container)] to-transparent",
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

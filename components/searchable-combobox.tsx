@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+import { QuickAddButton } from "@/components/forms/quick-add-button"
+
 import {
   Combobox,
   ComboboxContent,
@@ -38,6 +40,8 @@ type SearchableComboboxProps = {
   emptyMessage?: string
   disabled?: boolean
   isLoading?: boolean
+  quickAddLabel?: string
+  onQuickAdd?: () => void
 }
 
 function ensureSelectedOption(
@@ -62,6 +66,8 @@ export function SearchableCombobox({
   emptyMessage = "No options found.",
   disabled = false,
   isLoading = false,
+  quickAddLabel = "Add new",
+  onQuickAdd,
 }: SearchableComboboxProps) {
   const anchor = useComboboxAnchor()
   const [open, setOpen] = useState(false)
@@ -140,6 +146,21 @@ export function SearchableCombobox({
                 </ComboboxItem>
               )}
             </ComboboxList>
+            {onQuickAdd ? (
+              <div
+                className="shrink-0 border-t border-[rgba(214,227,255,0.4)]"
+                onMouseDown={(event) => event.preventDefault()}
+                onPointerDown={(event) => event.preventDefault()}
+              >
+                <QuickAddButton
+                  label={quickAddLabel}
+                  onClick={() => {
+                    setOpen(false)
+                    queueMicrotask(onQuickAdd)
+                  }}
+                />
+              </div>
+            ) : null}
           </ComboboxContent>
         </Combobox>
         {error ? (

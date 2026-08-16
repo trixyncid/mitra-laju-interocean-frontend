@@ -26,7 +26,8 @@ import LinkShipmentCostingForm, {
 import LinkShipmentSellingForm, {
     UnlinkShipmentSellingButton,
 } from "@/components/forms/link-shipment-selling-form"
-import { useShipmentById } from "@/hooks/use-shipments"
+import { usePermissions } from "@/hooks/use-permissions"
+import { useShipmentById, useUpdateShipment } from "@/hooks/use-shipments"
 import {
     amountCalculation,
     cn,
@@ -40,12 +41,15 @@ import { shipmentsService } from "@/services/shipments.service"
 import ShipmentLoading from "@/components/loading/shipment-loading"
 import { PermissionGate } from "@/components/permission-gate"
 import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
+import { ShipmentStatusControl } from "@/components/ui/shipment-status-control"
 import {
     PaymentStatusChip,
     ShipmentLifecycleChip,
     TbdChip,
     WarningChip,
 } from "@/components/ui/status-chip"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import type { ShipmentStatus } from "@/lib/shipment-status"
 import ErrorPage from "@/components/error-page"
 import type { ShipmentLinkedSelling } from "@/lib/types/entity-details"
 import {
@@ -67,7 +71,10 @@ export type ShipmentOperationalContainer = {
     id?: string
     containerNumber: string
     sealNumber: string
-    size: string
+    containerSizeId: string
+    containerTypeId: string
+    containerSize?: { id: string; name: string }
+    containerType?: { id: string; name: string }
     isActive: boolean
     updatedAt: string
     updatedBy: { name: string }
@@ -84,19 +91,18 @@ export type ShipmentOperationalAttachment = {
     updatedBy: { name: string }
 }
 
-const SIZE_MAPPING = {
-    RF_20: "20 RF",
-    RF_40: "40 RF",
-    DRY_20: "20 DRY",
-    DRY_40: "40 DRY",
-} as const
+function formatContainerLookup(item?: { name: string } | null) {
+    return item?.name || "—"
+}
 
-const SETUP_STEPS = [
-    "Route & vessel",
-    "Containers",
-    "Documents",
-    "Linked costings & sellings",
-] as const
+const SETUP_STEPS = FINANCIAL_MODULES_ENABLED
+    ? ([
+          "Route & vessel",
+          "Containers",
+          "Documents",
+          "Linked costings & sellings",
+      ] as const)
+    : (["Route & vessel", "Containers", "Documents"] as const)
 
 function MetricTile({
     label,
@@ -216,6 +222,8 @@ export default function ShipmentDetailPage({
 }) {
     const { shipmentId } = use(params)
     const { data, isLoading, error } = useShipmentById(shipmentId)
+    const updateShipment = useUpdateShipment()
+    const { canWrite, canWriteShipmentType } = usePermissions()
 
     if (isLoading) return <ShipmentLoading />
     if (error) return <ErrorPage message={error.message} />
@@ -258,6 +266,9 @@ export default function ShipmentDetailPage({
             mode="edit"
             id={operational.id}
             shipmentId={data.id}
+            orderNumber={data.orderNumber}
+            status={data.status}
+            isActive={data.isActive}
             shipmentType={operational.shipmentType}
             portDepartureId={operational.portDepartureId}
             portDestinationId={operational.portDestinationId}
@@ -298,6 +309,9 @@ export default function ShipmentDetailPage({
         totalCustomerCharge > 0 ? (grossProfit / totalCustomerCharge) * 100 : null
 
     const firstContainerNumber = containers[0]?.containerNumber
+    const canEditStatus = operational?.shipmentType
+        ? canWriteShipmentType(operational.shipmentType)
+        : canWrite("shipments")
 
     return (
         <DashboardPage atmosphere>
@@ -381,6 +395,23 @@ export default function ShipmentDetailPage({
                         </div>
 
                         <div className="flex flex-col items-start gap-3 lg:items-end">
+                            {canEditStatus ? (
+                                <div className="w-full min-w-[160px] sm:w-44">
+                                    <p className="mb-1.5 text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase lg:text-right">
+                                        Status
+                                    </p>
+                                    <ShipmentStatusControl
+                                        value={data.status}
+                                        disabled={updateShipment.isPending}
+                                        onValueChange={(status: ShipmentStatus) => {
+                                            updateShipment.mutate({
+                                                id: data.id,
+                                                shipment: { status },
+                                            })
+                                        }}
+                                    />
+                                </div>
+                            ) : null}
                             {hasOperational ? (
                                 <>
                                     <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -392,14 +423,18 @@ export default function ShipmentDetailPage({
                                             {attachments.length} document
                                             {attachments.length === 1 ? "" : "s"}
                                         </CountPill>
-                                        <CountPill>
-                                            {data.costings.length} costing
-                                            {data.costings.length === 1 ? "" : "s"}
-                                        </CountPill>
-                                        <CountPill>
-                                            {sellings.length} selling
-                                            {sellings.length === 1 ? "" : "s"}
-                                        </CountPill>
+                                        {FINANCIAL_MODULES_ENABLED ? (
+                                            <>
+                                                <CountPill>
+                                                    {data.costings.length} costing
+                                                    {data.costings.length === 1 ? "" : "s"}
+                                                </CountPill>
+                                                <CountPill>
+                                                    {sellings.length} selling
+                                                    {sellings.length === 1 ? "" : "s"}
+                                                </CountPill>
+                                            </>
+                                        ) : null}
                                     </div>
                                     {editOperationalForm}
                                 </>
@@ -448,7 +483,11 @@ export default function ShipmentDetailPage({
                         <EmptyState
                             icon={IconRoute}
                             title="Add shipment operational details"
-                            description="Set the route, vessel, and shipment type to unlock containers, documents, and linked costings and sellings."
+                            description={
+                                FINANCIAL_MODULES_ENABLED
+                                    ? "Set the route, vessel, and shipment type to unlock containers, documents, and linked costings and sellings."
+                                    : "Set the route, vessel, and shipment type to unlock containers and documents."
+                            }
                             action={createOperationalForm}
                         />
                         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 px-4 pb-2">
@@ -474,7 +513,13 @@ export default function ShipmentDetailPage({
                     </DashboardPageCard>
                 </div>
             ) : (
-                <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
+                <div
+                    className={cn(
+                        "mt-8 grid gap-6 lg:items-start",
+                        FINANCIAL_MODULES_ENABLED &&
+                            "lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]"
+                    )}
+                >
                     <div className="min-w-0 space-y-6">
                         <DashboardPageCard>
                             <SectionIntro
@@ -659,7 +704,7 @@ export default function ShipmentDetailPage({
                         <DashboardPageCard>
                             <SectionIntro
                                 title="Container details"
-                                description="Container numbers, seals, and sizes linked to this shipment."
+                                description="Container numbers, seals, sizes, and types linked to this shipment."
                                 action={
                                     <PermissionGate
                                         resource="shipments"
@@ -670,7 +715,8 @@ export default function ShipmentDetailPage({
                                             mode="create"
                                             containerNumber={undefined}
                                             sealNumber={undefined}
-                                            size={undefined}
+                                            containerSizeId={undefined}
+                                            containerTypeId={undefined}
                                             shipmentOperationalId={operational.id}
                                             shipmentId={data.id}
                                             id={undefined}
@@ -693,7 +739,8 @@ export default function ShipmentDetailPage({
                                                 mode="create"
                                                 containerNumber={undefined}
                                                 sealNumber={undefined}
-                                                size={undefined}
+                                                containerSizeId={undefined}
+                                                containerTypeId={undefined}
                                                 shipmentOperationalId={operational.id}
                                                 shipmentId={data.id}
                                                 id={undefined}
@@ -713,6 +760,7 @@ export default function ShipmentDetailPage({
                                                     Seal number
                                                 </th>
                                                 <th className={tableHeaderCell}>Size</th>
+                                                <th className={tableHeaderCell}>Type</th>
                                                 <th className={tableHeaderCell}>
                                                     Last modified by
                                                 </th>
@@ -738,11 +786,10 @@ export default function ShipmentDetailPage({
                                                             {container.sealNumber}
                                                         </td>
                                                         <td className={tableCellClass}>
-                                                            {
-                                                                SIZE_MAPPING[
-                                                                    container.size as keyof typeof SIZE_MAPPING
-                                                                ]
-                                                            }
+                                                            {formatContainerLookup(container.containerSize)}
+                                                        </td>
+                                                        <td className={tableCellClass}>
+                                                            {formatContainerLookup(container.containerType)}
                                                         </td>
                                                         <td className={tableCellClass}>
                                                             {container.updatedBy.name}
@@ -770,7 +817,14 @@ export default function ShipmentDetailPage({
                                                                     sealNumber={
                                                                         container.sealNumber
                                                                     }
-                                                                    size={container.size}
+                                                                    containerSizeId={
+                                                                        container.containerSizeId ??
+                                                                        container.containerSize?.id
+                                                                    }
+                                                                    containerTypeId={
+                                                                        container.containerTypeId ??
+                                                                        container.containerType?.id
+                                                                    }
                                                                     shipmentOperationalId={
                                                                         operational.id
                                                                     }
@@ -788,6 +842,8 @@ export default function ShipmentDetailPage({
                             )}
                         </DashboardPageCard>
 
+                        {FINANCIAL_MODULES_ENABLED ? (
+                        <>
                         <DashboardPageCard>
                             <SectionIntro
                                 title="Linked costings"
@@ -1090,8 +1146,11 @@ export default function ShipmentDetailPage({
                                 </div>
                             )}
                         </DashboardPageCard>
+                        </>
+                        ) : null}
                     </div>
 
+                    {FINANCIAL_MODULES_ENABLED ? (
                     <aside className="lg:sticky lg:top-6">
                         <DashboardPageCard>
                             <SectionIntro
@@ -1143,6 +1202,7 @@ export default function ShipmentDetailPage({
                             </div>
                         </DashboardPageCard>
                     </aside>
+                    ) : null}
                 </div>
             )}
         </DashboardPage>

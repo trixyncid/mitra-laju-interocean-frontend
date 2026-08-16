@@ -46,9 +46,8 @@ export const vesselsService = {
         const response = await apiClient.get(`/vessels/${id}`);
         return response;
     },
-    create: async (vessel: Vessel) => {
-        const response = await apiClient.post("/vessels", vessel);
-        return response;
+    create: async (vessel: Vessel): Promise<Vessel> => {
+        return apiClient.post<Vessel>("/vessels", vessel);
     },
     update: async (id: string, vessel: Partial<Vessel>) => {
         const response = await apiClient.put(`/vessels/${id}`, vessel);

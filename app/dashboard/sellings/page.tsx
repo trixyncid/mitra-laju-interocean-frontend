@@ -41,7 +41,7 @@ export default function SellingPage() {
     if (error) return <ErrorPage message={error.message} />
 
     return (
-        <DashboardPage>
+        <DashboardPage atmosphere>
             <DashboardPageHeader
                 title="Selling Entries"
                 description="Manage all selling entries and link them to shipments."

@@ -15,13 +15,14 @@ import {
   sortHeader,
   textSort,
 } from "@/lib/data-table"
+import type { ShipmentStatus } from "@/lib/shipment-status"
 
 export type Shipment = {
     id?: string
     customerCodeId: string
     customerShipperId: string
     orderNumber: string
-    status: "ONGOING" | "COMPLETED"
+    status: ShipmentStatus
     customerCode?: { customerName: string, customerCode: string }
     customerShipper?: { name: string }
     shipmentOperational?: {
@@ -45,6 +46,13 @@ export const columns: ColumnDef<Shipment>[] = [
                 <Info className="size-3.5 text-muted-foreground" />
             </div>
         )
+    },
+    {
+        accessorKey: "status",
+        header: ({ column }) => sortHeader(column, "Status"),
+        ...sortDescFirst,
+        cell: ({ row }) => <ShipmentLifecycleChip status={row.original.status} />,
+        enableGlobalFilter: false,
     },
     {
         id: "customerCode",
@@ -103,13 +111,6 @@ export const columns: ColumnDef<Shipment>[] = [
         header: ({ column }) => sortHeader(column, "Modified At"),
         ...dateSort,
         cell: ({ row }) => <span className={secondaryText}>{formatDate(row.original.updatedAt as string)}</span>
-    },
-    {
-        accessorKey: "status",
-        header: ({ column }) => sortHeader(column, "Shipment Status"),
-        ...sortDescFirst,
-        cell: ({ row }) => <ShipmentLifecycleChip status={row.original.status} />,
-        enableGlobalFilter: false,
     },
     {
         ...actionColumn,

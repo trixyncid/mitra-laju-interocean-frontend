@@ -42,9 +42,8 @@ export const portsService = {
             pagination,
         }
     },
-    create: async (port: Port) => {
-        const response = await apiClient.post("/ports", port);
-        return response;
+    create: async (port: Port): Promise<Port> => {
+        return apiClient.post<Port>("/ports", port);
     },
     update: async (id: string, port: Partial<Port>) => {
         const response = await apiClient.put(`/ports/${id}`, port);

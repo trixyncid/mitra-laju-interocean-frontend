@@ -1,3 +1,4 @@
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 import {
   getEffectiveRole,
   getHomePathFromPermissions,
@@ -35,6 +36,8 @@ export function getRoleHomePath(roleOrUser: unknown): string {
 
   // Fallback when permissions are not yet on the session object.
   if (role === "admin" || role === "superadmin") return "/dashboard"
-  if (role === "costing_admin") return "/dashboard/costings"
+  if (role === "costing_admin") {
+    return FINANCIAL_MODULES_ENABLED ? "/dashboard/costings" : "/dashboard/shipments"
+  }
   return "/dashboard/shipments"
 }

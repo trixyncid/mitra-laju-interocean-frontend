@@ -70,5 +70,6 @@ export const requiredSelectionSchema = (message: string) =>
   z.string().min(1, message)
 
 export const containerSizeSchema = selectRequiredSchema("Container Size")
+export const containerTypeSchema = selectRequiredSchema("Container Type")
 
 export const shipmentTypeSchema = selectRequiredSchema("Shipment Type")

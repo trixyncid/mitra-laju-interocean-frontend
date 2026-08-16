@@ -1,12 +1,15 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
+import { IconPlus } from "@tabler/icons-react"
+
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
-import ShipmentForm from "@/components/forms/shipment-form"
 import { useShipments } from "@/hooks/use-shipments"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import ErrorPage from "@/components/error-page"
+import { Button } from "@/components/ui/button"
 import {
     DashboardPage,
     DashboardPageCard,
@@ -53,21 +56,18 @@ export default function ShipmentPage() {
     if (error) return <ErrorPage message={error.message} />
 
     return (
-        <DashboardPage>
+        <DashboardPage atmosphere>
             <DashboardPageHeader
                 title="Shipment Management"
                 description={`${pagination.total} shipments. View and manage shipments, operational data, and linked transactions.`}
                 action={
                     <PermissionGate resource="shipments" write>
-                        <ShipmentForm
-                            mode="create"
-                            id={undefined}
-                            orderNumber={undefined}
-                            customerCodeId={undefined}
-                            customerShipperId={undefined}
-                            status={undefined}
-                            isActive={undefined}
-                        />
+                        <Button asChild>
+                            <Link href="/dashboard/shipments/new">
+                                <IconPlus className="size-4" />
+                                Add Shipment
+                            </Link>
+                        </Button>
                     </PermissionGate>
                 }
             />

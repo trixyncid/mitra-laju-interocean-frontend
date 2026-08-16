@@ -13,6 +13,7 @@ import {
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import { Separator } from "@/components/ui/separator"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { glassShine, metadataCardShell, metadataIconWell } from "@/lib/design"
 import { localDate } from "@/lib/utils"
 
@@ -56,7 +57,10 @@ export function VendorMetadataCard({ vendor }: { vendor: Vendor }) {
         <p className="text-xs font-semibold tracking-[0.08em] text-primary-foreground/70 uppercase">
           Vendor overview
         </p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight">{vendor.vendorName}</h2>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <h2 className="text-xl font-semibold tracking-tight">{vendor.vendorName}</h2>
+          <ShipmentTypeTags types={vendor.shipmentTypes} tone="onPrimary" />
+        </div>
         <p className="mt-2 font-mono text-sm tracking-wide text-primary-foreground/80">
           {vendor.vendorCode}
         </p>

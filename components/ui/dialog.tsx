@@ -50,7 +50,7 @@ function isPortaledOverlayTarget(target: EventTarget | null) {
   if (!(target instanceof Element)) return false
   return Boolean(
     target.closest(
-      '[data-slot="combobox-content"], [data-slot="select-content"], [data-radix-select-content], [data-radix-popper-content-wrapper]'
+      '[data-slot="combobox-content"], [data-slot="select-content"], [data-slot="popover-content"], [data-radix-select-content], [data-radix-popper-content-wrapper]'
     )
   )
 }

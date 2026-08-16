@@ -3,6 +3,7 @@ import type { Customer } from "@/app/dashboard/customers/columns"
 import type { Selling } from "@/app/dashboard/sellings/columns"
 import type { Shipment } from "@/app/dashboard/shipments/columns"
 import type { Vendor } from "@/app/dashboard/vendors/columns"
+import type { ShipmentStatus } from "@/lib/shipment-status"
 
 export type CustomerContact = {
   id: string
@@ -40,7 +41,7 @@ export type CustomerShipper = {
 export type CustomerShipment = {
   id: string
   orderNumber: string
-  status: "ONGOING" | "COMPLETED"
+  status: ShipmentStatus
   customerCode: { customerName: string; customerCode: string }
   customerShipper: { name: string }
   shipmentOperational: {
@@ -124,7 +125,10 @@ export type ShipmentOperationalContainer = {
   id?: string
   containerNumber: string
   sealNumber: string
-  size: string
+  containerSizeId: string
+  containerTypeId: string
+  containerSize?: { id: string; name: string }
+  containerType?: { id: string; name: string }
   isActive: boolean
   updatedAt: string
   updatedBy: { name: string }

@@ -74,9 +74,8 @@ export const customersService = {
         const response = await apiClient.delete(`/customers/${id}`);
         return response;
     },
-    createShipper: async (customerId: string, shipper: unknown) => {
-        const response = await apiClient.post(`/customers/${customerId}/shippers`, shipper);
-        return response;
+    createShipper: async (customerId: string, shipper: unknown): Promise<CustomerShipperOption> => {
+        return apiClient.post<CustomerShipperOption>(`/customers/${customerId}/shippers`, shipper);
     },
     updateShipper: async (customerId: string, shipperId: string, shipper: unknown) => {
         const response = await apiClient.put(`/customers/${customerId}/shippers/${shipperId}`, shipper);

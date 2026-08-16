@@ -86,7 +86,7 @@ export default function LoginPage() {
               <span className="block text-white/70">clarity and control.</span>
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-white/55">
-              Sign in to manage shipments, costings, and partners across your
+              Sign in to manage shipments and partners across your
               freight network.
             </p>
           </motion.div>

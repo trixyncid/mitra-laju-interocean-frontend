@@ -1,4 +1,9 @@
-import { shipmentsService, type ShipmentListParams } from "@/services/shipments.service";
+import {
+    shipmentsService,
+    type CreateShipmentInput,
+    type CreateShipmentOperationalInput,
+    type ShipmentListParams,
+} from "@/services/shipments.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Shipment } from "@/app/dashboard/shipments/columns";
@@ -32,6 +37,55 @@ export const useCreateShipment = () => {
             toast.error(error.message);
         },
     });
+}
+
+export const useCreateShipmentWithOperational = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            shipment,
+            operational,
+        }: {
+            shipment: CreateShipmentInput
+            operational: Omit<CreateShipmentOperationalInput, "shipmentId">
+        }) => {
+            const created = await shipmentsService.create(shipment)
+            if (!created?.id) {
+                throw new Error("Shipment was created but no ID was returned.")
+            }
+
+            try {
+                await shipmentsService.createShipmentOperational(created.id, {
+                    ...operational,
+                    shipmentId: created.id,
+                })
+                return { shipment: created, operationalCreated: true as const }
+            } catch (error) {
+                return {
+                    shipment: created,
+                    operationalCreated: false as const,
+                    operationalError:
+                        error instanceof Error
+                            ? error.message
+                            : "Unable to save operational details.",
+                }
+            }
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["shipments"] })
+            if (data.operationalCreated) {
+                toast.success("Shipment created successfully")
+                return
+            }
+            toast.warning(
+                `Shipment created, but operational details could not be saved. ${data.operationalError}`
+            )
+        },
+        onError: (error: Error) => {
+            toast.error(error.message)
+        },
+    })
 }
 
 export const useUpdateShipment = () => {
@@ -74,6 +128,36 @@ export const useCreateShipmentOperational = (shipmentId: string) => {
             toast.error(error.message);
         },
     });
+}
+
+export const useUpdateShipmentWithOperational = (shipmentId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            shipment,
+            operationalId,
+            operational,
+        }: {
+            shipment: Partial<Shipment>
+            operationalId: string
+            operational: unknown
+        }) => {
+            await shipmentsService.update(shipmentId, shipment)
+            await shipmentsService.updateShipmentOperational(
+                shipmentId,
+                operationalId,
+                operational
+            )
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["shipments"] })
+            toast.success("Shipment updated successfully")
+        },
+        onError: (error: Error) => {
+            toast.error(error.message)
+        },
+    })
 }
 
 export const useUpdateShipmentOperational = (shipmentId: string) => {

@@ -19,7 +19,7 @@ export default function NewCustomerPage() {
       <DashboardPage atmosphere>
         <DashboardPageHeader
           title="Add Customer"
-          description="Create a new customer profile with code, name, and tax details."
+          description="Create a new customer profile with code, name, shipment type, and tax details."
           action={
             <Button variant="outline" asChild>
               <Link href="/dashboard/customers">

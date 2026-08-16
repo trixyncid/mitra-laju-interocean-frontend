@@ -68,21 +68,51 @@ export function ShipmentLifecycleChip({
   status,
   className,
 }: {
-  status: "ONGOING" | "COMPLETED" | string
+  status: string
   className?: string
 }) {
-  const ongoing = status === "ONGOING"
+  const normalized = (status ?? "").toUpperCase()
+  const styles =
+    normalized === "ONGOING"
+      ? {
+          chip: chipActive(),
+          dot: "text-[var(--mli-on-success-container)]",
+        }
+      : normalized === "FINISHED"
+        ? {
+            chip: chipInfo(),
+            dot: "text-secondary-foreground",
+          }
+        : normalized === "BACKUP"
+          ? {
+              chip: chipWarning(),
+              dot: "text-[var(--mli-on-warning-container)]",
+            }
+          : {
+              chip: chipTbd(),
+              dot: "text-primary",
+            }
+
+  const label =
+    normalized === "ONGOING"
+      ? "Ongoing"
+      : normalized === "FINISHED"
+        ? "Finished"
+        : normalized === "BACKUP"
+          ? "Backup"
+          : normalized === "DRAFT"
+            ? "Draft"
+            : formatFallback(status)
+
   return (
-    <span className={cn(ongoing ? chipActive() : chipInfo(), className)}>
-      <Dot
-        className={cn(
-          "-ml-1 size-4",
-          ongoing
-            ? "text-[var(--mli-on-success-container)]"
-            : "text-secondary-foreground"
-        )}
-      />
-      {ongoing ? "Ongoing" : "Completed"}
+    <span className={cn(styles.chip, className)}>
+      <Dot className={cn("-ml-1 size-4", styles.dot)} />
+      {label}
     </span>
   )
+}
+
+function formatFallback(status: string) {
+  if (!status) return "—"
+  return status.charAt(0) + status.slice(1).toLowerCase()
 }

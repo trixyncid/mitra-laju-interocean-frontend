@@ -19,7 +19,7 @@ export default function NewVendorPage() {
       <DashboardPage atmosphere>
         <DashboardPageHeader
           title="Add Vendor"
-          description="Create a new vendor profile with code, name, and tax details."
+          description="Create a new vendor profile with code, name, shipment type, and tax details."
           action={
             <Button variant="outline" asChild>
               <Link href="/dashboard/vendors">

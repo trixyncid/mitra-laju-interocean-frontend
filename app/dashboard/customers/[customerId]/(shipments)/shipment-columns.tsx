@@ -6,12 +6,14 @@ import { IconArrowRight } from "@tabler/icons-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
 import { ShipmentLifecycleChip } from "@/components/ui/status-chip"
+import type { ShipmentStatus } from "@/lib/shipment-status"
 import {
   dateSort,
   numberSort,
   sortHeader,
   textSort,
 } from "@/lib/data-table"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 
 export type LinkedShipment = {
   id: string
@@ -21,7 +23,7 @@ export type LinkedShipment = {
   customerShipper: string
   departureCountry: string
   arrivalCountry: string
-  status: "ONGOING" | "COMPLETED"
+  status: ShipmentStatus
   costingTotal: number
   sellingTotal: number
 }
@@ -38,6 +40,14 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     }
   },
   {
+    accessorKey: "status",
+    header: ({ column }) => sortHeader(column, "Status"),
+    ...textSort,
+    cell: ({ row }) => (
+      <ShipmentLifecycleChip status={row.original.status} />
+    )
+  },
+  {
     accessorKey: "customerCode",
     header: ({ column }) => sortHeader(column, "Customer"),
     ...textSort,
@@ -47,32 +57,36 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     header: ({ column }) => sortHeader(column, "Shipper"),
     ...textSort,
   },
-  {
-    accessorKey: "costingTotal",
-    header: ({ column }) => sortHeader(column, "Costing"),
-    ...numberSort,
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
-        {row.original.costingTotal.toLocaleString("id-ID", {
-          style: "currency",
-          currency: "IDR",
-        })}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "sellingTotal",
-    header: ({ column }) => sortHeader(column, "Selling"),
-    ...numberSort,
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
-        {row.original.sellingTotal.toLocaleString("id-ID", {
-          style: "currency",
-          currency: "IDR",
-        })}
-      </span>
-    ),
-  },
+  ...(FINANCIAL_MODULES_ENABLED
+    ? ([
+        {
+          accessorKey: "costingTotal",
+          header: ({ column }) => sortHeader(column, "Costing"),
+          ...numberSort,
+          cell: ({ row }) => (
+            <span className="text-sm text-muted-foreground">
+              {row.original.costingTotal.toLocaleString("id-ID", {
+                style: "currency",
+                currency: "IDR",
+              })}
+            </span>
+          ),
+        },
+        {
+          accessorKey: "sellingTotal",
+          header: ({ column }) => sortHeader(column, "Selling"),
+          ...numberSort,
+          cell: ({ row }) => (
+            <span className="text-sm text-muted-foreground">
+              {row.original.sellingTotal.toLocaleString("id-ID", {
+                style: "currency",
+                currency: "IDR",
+              })}
+            </span>
+          ),
+        },
+      ] as ColumnDef<LinkedShipment>[])
+    : []),
   {
     id: "route",
     accessorFn: (row) => `${row.departureCountry} ${row.arrivalCountry}`,
@@ -91,14 +105,6 @@ export const columns: ColumnDef<LinkedShipment>[] = [
         )
       )
     },
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => sortHeader(column, "Status"),
-    ...textSort,
-    cell: ({ row }) => (
-      <ShipmentLifecycleChip status={row.original.status} />
-    )
   },
   {
     accessorKey: "eta",

@@ -5,23 +5,33 @@ import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 import { useForm } from "@tanstack/react-form";
 import { TextField } from "../ui/text-field";
 import { FormLabel } from "../ui/form-label"
-import { Label } from "../ui/label";
 import { fieldError } from "@/lib/form-field";
 import {
   containerNumberSchema,
   containerSizeSchema,
+  containerTypeSchema,
   sealNumberSchema,
 } from "@/lib/schemas/shipment-container";
 import { zodOnChange } from "@/lib/zod-form";
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "../ui/select";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useCreateShipmentOperationalContainer, useDeleteShipmentOperationalContainer, useUpdateShipmentOperationalContainer } from "@/hooks/use-shipments";
+import { useContainerLookups } from "@/hooks/use-container-lookups";
+import type { ContainerLookup } from "@/app/dashboard/containers/columns";
+
+function optionsFor(
+    items: ContainerLookup[],
+    selectedId: string | undefined
+) {
+    return items.filter((item) => item.isActive || item.id === selectedId)
+}
 
 export default function ShipmentContainerForm({
     mode,
     containerNumber,
     sealNumber,
-    size,
+    containerSizeId,
+    containerTypeId,
     shipmentOperationalId,
     shipmentId,
     id
@@ -29,7 +39,8 @@ export default function ShipmentContainerForm({
     mode: "edit" | "create",
     containerNumber: string | undefined,
     sealNumber: string | undefined,
-    size: string | undefined,
+    containerSizeId: string | undefined,
+    containerTypeId: string | undefined,
     shipmentOperationalId?: string | undefined,
     shipmentId?: string | undefined,
     id?: string | undefined,
@@ -41,6 +52,26 @@ export default function ShipmentContainerForm({
     const updateShipmentOperationalContainer = useUpdateShipmentOperationalContainer(shipmentId ?? "")
     const deleteShipmentOperationalContainer = useDeleteShipmentOperationalContainer(shipmentId ?? "")
 
+    const { data: sizesData, isLoading: sizesLoading } = useContainerLookups(
+        "size",
+        { page: 1, pageSize: 100, status: "all" },
+        open
+    )
+    const { data: typesData, isLoading: typesLoading } = useContainerLookups(
+        "type",
+        { page: 1, pageSize: 100, status: "all" },
+        open
+    )
+
+    const sizeOptions = useMemo(
+        () => optionsFor(sizesData?.items ?? [], containerSizeId),
+        [sizesData?.items, containerSizeId]
+    )
+    const typeOptions = useMemo(
+        () => optionsFor(typesData?.items ?? [], containerTypeId),
+        [typesData?.items, containerTypeId]
+    )
+
     const form = useForm({
         defaultValues: {
             id: id ?? "",
@@ -48,7 +79,8 @@ export default function ShipmentContainerForm({
             shipmentId: shipmentId ?? "",
             containerNumber: containerNumber ?? "",
             sealNumber: sealNumber ?? "",
-            size: size ?? "",
+            containerSizeId: containerSizeId ?? "",
+            containerTypeId: containerTypeId ?? "",
         },
         onSubmit: ({ value }) => {
             if (mode === "create") {
@@ -70,7 +102,8 @@ export default function ShipmentContainerForm({
                     shipmentOperationalContainer: {
                         containerNumber: value.containerNumber,
                         sealNumber: value.sealNumber,
-                        size: value.size,
+                        containerSizeId: value.containerSizeId,
+                        containerTypeId: value.containerTypeId,
                     },
                 }, {
                     onSuccess: () => {
@@ -138,19 +171,52 @@ export default function ShipmentContainerForm({
                                     </div>
                                 )}
                             </form.Field>
-                            <form.Field name="size" validators={{ onChange: zodOnChange(containerSizeSchema) }}>
+                            <form.Field name="containerSizeId" validators={{ onChange: zodOnChange(containerSizeSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
                                         <FormLabel htmlFor={field.name} className="my-2" required>Container Size</FormLabel>
-                                        <Select value={field.state.value} onValueChange={(value) => field.handleChange(value)}>
+                                        <Select
+                                            value={field.state.value}
+                                            onValueChange={(value) => field.handleChange(value)}
+                                            disabled={sizesLoading}
+                                        >
                                             <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select a container size" />
+                                                <SelectValue placeholder={sizesLoading ? "Loading sizes..." : "Select a container size"} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="RF_20">20 RF</SelectItem>  
-                                                <SelectItem value="RF_40">40 RF</SelectItem>
-                                                <SelectItem value="DRY_20">20 DRY</SelectItem>
-                                                <SelectItem value="DRY_40">40 DRY</SelectItem>
+                                                {sizeOptions.map((size) => (
+                                                    <SelectItem key={size.id} value={size.id ?? ""}>
+                                                        {size.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {
+                                            field.state.meta.errors ? (
+                                                <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
+                                            ) : null
+                                        }
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field name="containerTypeId" validators={{ onChange: zodOnChange(containerTypeSchema) }}>
+                                {( field ) => (
+                                    <div className="my-3">
+                                        <FormLabel htmlFor={field.name} className="my-2" required>Container Type</FormLabel>
+                                        <Select
+                                            value={field.state.value}
+                                            onValueChange={(value) => field.handleChange(value)}
+                                            disabled={typesLoading}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder={typesLoading ? "Loading types..." : "Select a container type"} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {typeOptions.map((type) => (
+                                                    <SelectItem key={type.id} value={type.id ?? ""}>
+                                                        {type.name}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         {

@@ -5,14 +5,14 @@ describe("getRoleHomePath", () => {
   test("maps role strings to the correct home", () => {
     expect(getRoleHomePath("admin")).toBe("/dashboard")
     expect(getRoleHomePath("superadmin")).toBe("/dashboard")
-    expect(getRoleHomePath("costing_admin")).toBe("/dashboard/costings")
+    expect(getRoleHomePath("costing_admin")).toBe("/dashboard/shipments")
     expect(getRoleHomePath("viewer")).toBe("/dashboard/shipments")
     expect(getRoleHomePath("domestic_admin")).toBe("/dashboard/shipments")
   })
 
   test("accepts a session user object with role", () => {
     expect(getRoleHomePath({ role: "admin" })).toBe("/dashboard")
-    expect(getRoleHomePath({ role: "costing_admin" })).toBe("/dashboard/costings")
+    expect(getRoleHomePath({ role: "costing_admin" })).toBe("/dashboard/shipments")
     expect(getRoleHomePath({ id: "1", role: "export_admin", email: "a@b.c" })).toBe(
       "/dashboard/shipments"
     )

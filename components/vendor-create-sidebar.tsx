@@ -11,8 +11,7 @@ export function VendorCreateSidebar() {
         </p>
         <h2 className="mt-1 text-xl font-semibold">Create profile</h2>
         <p className="mt-2 text-sm text-primary-foreground/80">
-          Add a vendor account with billing identity details for costings and
-          shipments.
+          Add a vendor account with identity details for shipments.
         </p>
       </div>
 
@@ -26,7 +25,7 @@ export function VendorCreateSidebar() {
               Basic details
             </p>
             <p className="text-sm text-muted-foreground">
-              Vendor code and name identify the company across assignments and reports.
+              Vendor code, name, and shipment type identify the company across assignments and reports.
             </p>
           </div>
         </div>

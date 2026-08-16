@@ -1,3 +1,5 @@
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+
 export type ShipmentType = "EXPORT" | "IMPORT" | "DOMESTIC"
 
 export type AppModule =
@@ -6,6 +8,7 @@ export type AppModule =
   | "VENDOR"
   | "PORT"
   | "VESSEL"
+  | "CONTAINER"
   | "SHIPMENT"
   | "COSTING"
   | "SELLING"
@@ -55,7 +58,7 @@ const RESOURCE_TO_MODULE: Record<Exclude<AppResource, "masterData">, AppModule> 
   roles: "ROLE",
 }
 
-const MASTER_MODULES: AppModule[] = ["CUSTOMER", "VENDOR", "PORT", "VESSEL"]
+const MASTER_MODULES: AppModule[] = ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER"]
 
 export function isAdminRole(role: string | undefined | null): boolean {
   return role === "admin" || role === "superadmin"
@@ -191,6 +194,7 @@ export function getRouteModule(
   if (pathname.startsWith("/dashboard/vendors")) return "VENDOR"
   if (pathname.startsWith("/dashboard/ports")) return "PORT"
   if (pathname.startsWith("/dashboard/vessels")) return "VESSEL"
+  if (pathname.startsWith("/dashboard/containers")) return "CONTAINER"
   if (pathname.startsWith("/dashboard/shipments")) return "SHIPMENT"
   if (pathname.startsWith("/dashboard/costings")) return "COSTING"
   if (pathname.startsWith("/dashboard/sellings")) return "SELLING"
@@ -208,7 +212,8 @@ export function getRouteResource(
     module === "CUSTOMER" ||
     module === "VENDOR" ||
     module === "PORT" ||
-    module === "VESSEL"
+    module === "VESSEL" ||
+    module === "CONTAINER"
   ) {
     return "masterData"
   }
@@ -276,8 +281,12 @@ export function getHomePathFromPermissions(
   const order: { module: AppModule; path: string }[] = [
     { module: "DASHBOARD", path: "/dashboard" },
     { module: "SHIPMENT", path: "/dashboard/shipments" },
-    { module: "COSTING", path: "/dashboard/costings" },
-    { module: "SELLING", path: "/dashboard/sellings" },
+    ...(FINANCIAL_MODULES_ENABLED
+      ? [
+          { module: "COSTING" as const, path: "/dashboard/costings" },
+          { module: "SELLING" as const, path: "/dashboard/sellings" },
+        ]
+      : []),
     { module: "CUSTOMER", path: "/dashboard/customers" },
     { module: "USER", path: "/dashboard/users" },
   ]

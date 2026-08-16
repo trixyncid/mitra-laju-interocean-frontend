@@ -11,6 +11,7 @@ import {
   IconShip,
   IconShieldCog,
   IconTruck,
+  IconBox,
   IconUserCog,
   IconUsersGroup,
 } from "@tabler/icons-react"
@@ -30,6 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { authClient } from "@/lib/auth-client"
 import { usePermissions } from "@/hooks/use-permissions"
+import { FINANCIAL_MODULES_ENABLED, isFinancialModule } from "@/lib/feature-flags"
 import { cn } from "@/lib/utils"
 
 const data = {
@@ -65,6 +67,12 @@ const data = {
       url: "/dashboard/vessels",
       icon: IconShip,
       module: "VESSEL" as const,
+    },
+    {
+      name: "Container",
+      url: "/dashboard/containers",
+      icon: IconBox,
+      module: "CONTAINER" as const,
     },
   ],
   transactionalData: [
@@ -188,6 +196,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     .filter((item) => can(item.module, "view"))
     .map(({ module: _m, ...item }) => item)
   const transactionalItems = data.transactionalData
+    .filter((item) => FINANCIAL_MODULES_ENABLED || !isFinancialModule(item.module))
     .filter((item) => can(item.module, "view"))
     .map(({ module: _m, ...item }) => item)
   const adminPanelItems = data.adminPanel

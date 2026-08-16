@@ -24,7 +24,7 @@ export default function ShipmentActionCell({ row }: { row: Row<Shipment> }) {
 
     return (
         <div className="flex items-center gap-x-2">
-            <ShipmentForm mode="edit" id={row.original.id} orderNumber={row.original.orderNumber} customerCodeId={row.original.customerCodeId} customerShipperId={row.original.customerShipperId} status={row.original.status} isActive={row.original.isActive} />
+            <ShipmentForm id={row.original.id} orderNumber={row.original.orderNumber} customerCodeId={row.original.customerCodeId} customerShipperId={row.original.customerShipperId} status={row.original.status} isActive={row.original.isActive} />
 
             <Dialog open={open} onOpenChange={(next) => { if (deleteShipment.isPending) return; setOpen(next) }}>
                 <DialogTrigger asChild>

@@ -30,6 +30,8 @@ import {
     glassTabCount,
     glassTabsTrigger,
 } from "@/lib/design"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { amountCalculation, cn, formatDate, sellingNetAmount } from "@/lib/utils"
 import type { CustomerShipment } from "@/lib/types/entity-details"
 import { Costing } from "@/app/dashboard/costings/columns"
@@ -335,6 +337,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                             {data.customerName}
                                         </h1>
                                         <StatusChip active={Boolean(data?.isActive)} />
+                                        <ShipmentTypeTags types={data.shipmentTypes} />
                                     </div>
                                     <p className="font-mono text-sm font-medium tracking-wide text-[var(--mli-primary-container)]">
                                         {data.customerCode}
@@ -379,16 +382,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             value={shipments.length}
                             hint="All linked shipments"
                         />
-                        <MetricTile
-                            label="YTD spend"
-                            value={calculateYTDSpend()}
-                            hint="Costings this year"
-                        />
-                        <MetricTile
-                            label="Outstanding bills"
-                            value={calculateOutstandingBills()}
-                            hint="Unpaid customer charges"
-                        />
+                        {FINANCIAL_MODULES_ENABLED ? (
+                            <>
+                                <MetricTile
+                                    label="YTD spend"
+                                    value={calculateYTDSpend()}
+                                    hint="Costings this year"
+                                />
+                                <MetricTile
+                                    label="Outstanding bills"
+                                    value={calculateOutstandingBills()}
+                                    hint="Unpaid customer charges"
+                                />
+                            </>
+                        ) : null}
                     </div>
                 </div>
             </section>
@@ -407,18 +414,22 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             Shipments
                             <span className={glassTabCount}>{shipments.length}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="sellings" className={glassTabsTrigger}>
-                            Sellings
-                            <span className={glassTabCount}>{sellingsTotal}</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="costings" className={glassTabsTrigger}>
-                            Costings
-                            <span className={glassTabCount}>{costingsTotal}</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="summary" className={glassTabsTrigger}>
-                            Summary
-                            <span className={glassTabCount}>{monthlySummary.length}</span>
-                        </TabsTrigger>
+                        {FINANCIAL_MODULES_ENABLED ? (
+                            <>
+                                <TabsTrigger value="sellings" className={glassTabsTrigger}>
+                                    Sellings
+                                    <span className={glassTabCount}>{sellingsTotal}</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="costings" className={glassTabsTrigger}>
+                                    Costings
+                                    <span className={glassTabCount}>{costingsTotal}</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="summary" className={glassTabsTrigger}>
+                                    Summary
+                                    <span className={glassTabCount}>{monthlySummary.length}</span>
+                                </TabsTrigger>
+                            </>
+                        ) : null}
                     </TabsList>
                 </div>
 
@@ -476,6 +487,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                     </DashboardPageCard>
                 </TabsContent>
 
+                {FINANCIAL_MODULES_ENABLED ? (
+                <>
                 <TabsContent value="sellings" className="mt-6">
                     <DashboardPageCard>
                         <SectionIntro
@@ -532,6 +545,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         )}
                     </DashboardPageCard>
                 </TabsContent>
+                </>
+                ) : null}
             </Tabs>
         </DashboardPage>
     )

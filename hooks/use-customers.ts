@@ -81,6 +81,9 @@ export const useCreateCustomerShipper = () => {
             queryClient.invalidateQueries({ queryKey: ["customers"] });
             toast.success("Customer shipper created successfully");
         },
+        onError: (error: Error) => {
+            toast.error(error.message);
+        },
     })
 }
 

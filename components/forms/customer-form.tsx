@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation"
 
 import type { Customer } from "@/app/dashboard/customers/columns"
 import { ActiveStatusField } from "@/components/forms/active-status-field"
+import { ShipmentTypeField } from "@/components/forms/shipment-type-field"
 import { Button } from "@/components/ui/button"
 import { TextField } from "@/components/ui/text-field"
 import { useCreateCustomer, useUpdateCustomer } from "@/hooks/use-customers"
 import { fieldError } from "@/lib/form-field"
-import { customerCodeSchema, customerNameSchema } from "@/lib/schemas/customer"
+import {
+  customerCodeSchema,
+  customerNameSchema,
+  customerShipmentTypesSchema,
+} from "@/lib/schemas/customer"
+import { sameShipmentTypes } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
 import { toast } from "sonner"
 
@@ -31,6 +37,7 @@ export default function CustomerForm({
       customerName: customer?.customerName ?? "",
       npwp: customer?.npwp ?? "",
       address: customer?.address ?? "",
+      shipmentTypes: customer?.shipmentTypes ?? [],
       isActive: customer?.isActive ?? true,
     },
     onSubmit: async ({ value }) => {
@@ -41,6 +48,7 @@ export default function CustomerForm({
             customerCode: value.customerCode,
             npwp: value.npwp,
             address: value.address,
+            shipmentTypes: value.shipmentTypes,
             isActive: value.isActive,
           },
           {
@@ -64,6 +72,7 @@ export default function CustomerForm({
         npwp: value.npwp,
         address: value.address,
         isActive: value.isActive,
+        shipmentTypes: value.shipmentTypes,
       }
 
       const hasChanges =
@@ -71,6 +80,7 @@ export default function CustomerForm({
         next.customerCode !== customer.customerCode ||
         next.npwp !== (customer.npwp ?? "") ||
         next.address !== (customer.address ?? "") ||
+        !sameShipmentTypes(value.shipmentTypes, customer.shipmentTypes) ||
         next.isActive !== customer.isActive
 
       if (!hasChanges) {
@@ -96,7 +106,7 @@ export default function CustomerForm({
         </h2>
         <p className="text-sm text-muted-foreground">
           {mode === "create"
-            ? "Set up a new customer with code, name, and tax information."
+            ? "Set up a new customer with code, name, shipment type, and tax information."
             : "Update customer profile information and active status."}
         </p>
       </div>
@@ -143,6 +153,23 @@ export default function CustomerForm({
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="shipmentTypes"
+          validators={{
+            onChange: zodOnChange(customerShipmentTypesSchema),
+          }}
+        >
+          {(field) => (
+            <ShipmentTypeField
+              id={field.name}
+              value={field.state.value}
+              onValueChange={(nextValue) => field.handleChange(nextValue)}
+              error={fieldError(field.state.meta.errors)}
+              required
             />
           )}
         </form.Field>
@@ -216,6 +243,7 @@ export default function CustomerForm({
                   customerName: customer?.customerName ?? "",
                   npwp: customer?.npwp ?? "",
                   address: customer?.address ?? "",
+                  shipmentTypes: customer?.shipmentTypes ?? [],
                   isActive: customer?.isActive ?? true,
                 })
               }

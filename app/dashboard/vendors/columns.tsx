@@ -6,7 +6,9 @@ import { Info } from "lucide-react"
 import VendorActionCell from "@/components/action-cell/vendor-action-cell"
 import { localDate } from "@/lib/utils"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { primaryText, secondaryText } from "@/lib/design"
+import type { ShipmentType } from "@/lib/permissions"
 import {
   actionColumn,
   dateSort,
@@ -20,6 +22,7 @@ export type Vendor = {
     vendorCode: string
     vendorName: string
     npwp: string | null
+    shipmentTypes?: ShipmentType[]
     isActive: boolean
     createdAt?: string
     updatedBy?: { name?: string } | string | null
@@ -32,9 +35,12 @@ export const columns: ColumnDef<Vendor>[] = [
         header: ({ column }) => sortHeader(column, "Vendor Name"),
         ...textSort,
         cell: ({ row }) => (
-            <div className={`${primaryText} flex items-center gap-x-1`}>
-                <Link href={`/dashboard/vendors/${row.original.id}`} className="hover:underline">{ row.original.vendorName }</Link>
-                <Info className="size-3.5 text-muted-foreground" />
+            <div className={`${primaryText} flex items-center gap-x-1.5`}>
+                <span className="inline-flex items-center gap-x-1">
+                    <Link href={`/dashboard/vendors/${row.original.id}`} className="hover:underline">{ row.original.vendorName }</Link>
+                    <Info className="size-3.5 text-muted-foreground" />
+                </span>
+                <ShipmentTypeTags types={row.original.shipmentTypes} />
             </div>
         )
     },

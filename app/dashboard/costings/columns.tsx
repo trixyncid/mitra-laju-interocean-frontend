@@ -8,6 +8,7 @@ import { Info } from "lucide-react"
 import Link from "next/link"
 import { PaymentStatusChip, UnlinkedChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
+import type { ShipmentStatus } from "@/lib/shipment-status"
 import {
   actionColumn,
   dateSort,
@@ -32,7 +33,7 @@ export type Costing = {
     shipment?: {
         orderNumber: string | null
         id: string | null
-        status: "ONGOING" | "COMPLETED"
+        status: ShipmentStatus
         isActive: boolean
         shipmentOperational?: {
             eta: string | null

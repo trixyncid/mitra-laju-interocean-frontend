@@ -41,7 +41,7 @@ export default function CostingPage() {
     if (error) return <ErrorPage message={error.message} />
 
     return (
-        <DashboardPage>
+        <DashboardPage atmosphere>
             <DashboardPageHeader
                 title="Costing Entries"
                 description="Manage costing entries, vendor invoices, and shipment links."

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+import { QuickAddButton } from "@/components/forms/quick-add-button"
+
 import {
   Combobox,
   ComboboxContent,
@@ -37,6 +39,8 @@ type CustomerComboboxProps = {
   required?: boolean
   placeholder?: string
   enabled?: boolean
+  quickAddLabel?: string
+  onQuickAdd?: () => void
 }
 
 function filterCustomerOptions(items: CustomerOption[], query: string) {
@@ -61,6 +65,8 @@ export function CustomerCombobox({
   required,
   placeholder = "Search customer code or name...",
   enabled = true,
+  quickAddLabel = "Add new customer",
+  onQuickAdd,
 }: CustomerComboboxProps) {
   const anchor = useComboboxAnchor()
   const [open, setOpen] = useState(false)
@@ -170,6 +176,21 @@ export function CustomerCombobox({
                 </ComboboxItem>
               )}
             </ComboboxList>
+            {onQuickAdd ? (
+              <div
+                className="shrink-0 border-t border-[rgba(214,227,255,0.4)]"
+                onMouseDown={(event) => event.preventDefault()}
+                onPointerDown={(event) => event.preventDefault()}
+              >
+                <QuickAddButton
+                  label={quickAddLabel}
+                  onClick={() => {
+                    setOpen(false)
+                    queueMicrotask(onQuickAdd)
+                  }}
+                />
+              </div>
+            ) : null}
           </ComboboxContent>
         </Combobox>
         {error ? (

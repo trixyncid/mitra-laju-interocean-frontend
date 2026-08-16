@@ -13,6 +13,10 @@ import {
   useUpdateRole,
 } from "@/hooks/use-roles"
 import type { Role, RolePermission } from "@/services/roles.service"
+import {
+  FINANCIAL_MODULES_ENABLED,
+  isFinancialModule,
+} from "@/lib/feature-flags"
 import type { AppModule, ShipmentType } from "@/lib/permissions"
 import { toast } from "sonner"
 
@@ -48,7 +52,10 @@ export default function RoleForm({
   const updateRole = useUpdateRole()
 
   const modules = useMemo(
-    () => (catalog ?? []).map((m) => m.key),
+    () =>
+      (catalog ?? [])
+        .map((m) => m.key)
+        .filter((key) => FINANCIAL_MODULES_ENABLED || !isFinancialModule(key)),
     [catalog]
   )
   const moduleLabels = useMemo(() => {
@@ -65,7 +72,18 @@ export default function RoleForm({
   )
   const [permissions, setPermissions] = useState<RolePermission[]>(() =>
     mergePermissions(
-      ["DASHBOARD", "CUSTOMER", "VENDOR", "PORT", "VESSEL", "SHIPMENT", "COSTING", "SELLING", "USER", "ROLE"],
+      [
+        "DASHBOARD",
+        "CUSTOMER",
+        "VENDOR",
+        "PORT",
+        "VESSEL",
+        "CONTAINER",
+        "SHIPMENT",
+        ...(FINANCIAL_MODULES_ENABLED ? (["COSTING", "SELLING"] as const) : []),
+        "USER",
+        "ROLE",
+      ],
       role?.permissions
     )
   )

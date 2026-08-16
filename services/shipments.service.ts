@@ -2,14 +2,37 @@ import { Shipment } from "@/app/dashboard/shipments/columns";
 import { apiClient } from "@/lib/api-client";
 import { openFetchedUrl } from "@/lib/open-attachment";
 import type { ShipmentDetail } from "@/lib/types/entity-details";
+import type { ShipmentStatus } from "@/lib/shipment-status";
 
-type CreateShipmentInput = {
+export type CreateShipmentInput = {
     orderNumber?: string;
     month?: number;
     year?: number;
     customerCodeId: string;
     customerShipperId: string;
-    status?: "ONGOING" | "COMPLETED";
+    status?: ShipmentStatus;
+
+};
+
+export type CreatedShipment = {
+    id: string;
+    orderNumber: string;
+    customerCodeId: string;
+    customerShipperId: string;
+    status: ShipmentStatus;
+};
+
+export type CreateShipmentOperationalInput = {
+    shipmentId: string;
+    shipmentType: string;
+    vesselId: string;
+    portDepartureId: string;
+    portDestinationId: string;
+    eta?: string | null;
+    blNumber?: string;
+    bookingNumber?: string;
+    loadingLocationId?: string;
+    unloadingLocationId?: string;
 };
 
 export type ShipmentListParams = {
@@ -59,8 +82,7 @@ export const shipmentsService = {
         return apiClient.get<ShipmentDetail>(`/shipments/${id}`);
     },
     create: async (shipment: CreateShipmentInput) => {
-        const response = await apiClient.post("/shipments", shipment);
-        return response;
+        return apiClient.post<CreatedShipment>("/shipments", shipment);
     },
     update: async (id: string, shipment: Partial<Shipment>) => {
         const response = await apiClient.put(`/shipments/${id}`, shipment);

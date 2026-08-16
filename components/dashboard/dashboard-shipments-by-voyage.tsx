@@ -35,6 +35,32 @@ import {
 } from "@/lib/design"
 import { cn, localDate } from "@/lib/utils"
 
+const VOYAGE_STATUS_OPTIONS: {
+  value: VoyageStatus
+  label: string
+  description: string
+  empty: string
+}[] = [
+  {
+    value: "draft",
+    label: "Draft",
+    description: "Shipments marked draft and linked to a vessel voyage.",
+    empty: "No draft vessel voyages found.",
+  },
+  {
+    value: "backup",
+    label: "Backup",
+    description: "Shipments marked backup and linked to a vessel voyage.",
+    empty: "No backup vessel voyages found.",
+  },
+  {
+    value: "ongoing",
+    label: "Ongoing",
+    description: "Shipments marked ongoing and linked to active voyage operations.",
+    empty: "No ongoing vessel voyages right now.",
+  },
+]
+
 function formatDateTime(value: string | null) {
   if (!value) return "—"
   return localDate(value)
@@ -45,6 +71,9 @@ export function DashboardShipmentsByVoyage() {
   const { canRead } = usePermissions()
   const canReadShipments = canRead("shipments")
   const { data, isLoading, error } = useDashboardShipmentsByVoyage(voyageStatus)
+  const selectedStatus = VOYAGE_STATUS_OPTIONS.find(
+    (option) => option.value === voyageStatus
+  )
 
   return (
     <Card
@@ -63,17 +92,13 @@ export function DashboardShipmentsByVoyage() {
             Operations
           </p>
           <CardTitle className="text-lg">Shipments by Vessel Voyage</CardTitle>
-          <CardDescription>
-            {voyageStatus === "ongoing"
-              ? "Shipments marked ongoing and linked to active voyage operations."
-              : "Shipments marked completed and linked to active voyage operations."}
-          </CardDescription>
+          <CardDescription>{selectedStatus?.description}</CardDescription>
         </div>
         <ToggleGroup
           type="single"
           value={voyageStatus}
           onValueChange={(value) => {
-            if (value === "ongoing" || value === "completed") {
+            if (value === "draft" || value === "backup" || value === "ongoing") {
               setVoyageStatus(value)
             }
           }}
@@ -81,20 +106,16 @@ export function DashboardShipmentsByVoyage() {
           size="sm"
           className="gap-0.5 rounded-md border border-[rgba(214,227,255,0.55)] bg-[rgba(214,227,255,0.35)] p-0.5 shadow-none"
         >
-          <ToggleGroupItem
-            value="ongoing"
-            aria-label="Show ongoing voyages"
-            className="rounded-md border-0 px-4 text-muted-foreground shadow-none hover:bg-[rgba(247,249,251,0.65)] hover:text-foreground data-[spacing=0]:rounded-md data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md data-[state=on]:bg-[var(--mli-primary-container)] data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-[var(--mli-primary-container)] data-[state=on]:hover:text-primary-foreground"
-          >
-            Ongoing
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="completed"
-            aria-label="Show completed voyages"
-            className="rounded-md border-0 px-4 text-muted-foreground shadow-none hover:bg-[rgba(247,249,251,0.65)] hover:text-foreground data-[spacing=0]:rounded-md data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md data-[state=on]:bg-[var(--mli-primary-container)] data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-[var(--mli-primary-container)] data-[state=on]:hover:text-primary-foreground"
-          >
-            Completed
-          </ToggleGroupItem>
+          {VOYAGE_STATUS_OPTIONS.map((option) => (
+            <ToggleGroupItem
+              key={option.value}
+              value={option.value}
+              aria-label={`Show ${option.label.toLowerCase()} voyages`}
+              className="rounded-md border-0 px-4 text-muted-foreground shadow-none hover:bg-[rgba(247,249,251,0.65)] hover:text-foreground data-[spacing=0]:rounded-md data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md data-[state=on]:bg-[var(--mli-primary-container)] data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-[var(--mli-primary-container)] data-[state=on]:hover:text-primary-foreground"
+            >
+              {option.label}
+            </ToggleGroupItem>
+          ))}
         </ToggleGroup>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -110,9 +131,7 @@ export function DashboardShipmentsByVoyage() {
           </p>
         ) : !data?.length ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {voyageStatus === "ongoing"
-              ? "No ongoing vessel voyages right now."
-              : "No completed vessel voyages found."}
+            {selectedStatus?.empty}
           </p>
         ) : (
           data.map((voyage) => (

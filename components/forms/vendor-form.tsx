@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation"
 
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import { ActiveStatusField } from "@/components/forms/active-status-field"
+import { ShipmentTypeField } from "@/components/forms/shipment-type-field"
 import { Button } from "@/components/ui/button"
 import { TextField } from "@/components/ui/text-field"
 import { useCreateVendor, useUpdateVendor } from "@/hooks/use-vendors"
 import { fieldError } from "@/lib/form-field"
-import { vendorCodeSchema, vendorNameSchema } from "@/lib/schemas/vendor"
+import {
+  vendorCodeSchema,
+  vendorNameSchema,
+  vendorShipmentTypesSchema,
+} from "@/lib/schemas/vendor"
+import { sameShipmentTypes } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
 import { toast } from "sonner"
 
@@ -30,6 +36,7 @@ export default function VendorForm({
       vendorCode: vendor?.vendorCode ?? "",
       vendorName: vendor?.vendorName ?? "",
       npwp: vendor?.npwp ?? "",
+      shipmentTypes: vendor?.shipmentTypes ?? [],
       isActive: vendor?.isActive ?? true,
     },
     onSubmit: async ({ value }) => {
@@ -39,6 +46,7 @@ export default function VendorForm({
             vendorName: value.vendorName,
             vendorCode: value.vendorCode,
             npwp: value.npwp,
+            shipmentTypes: value.shipmentTypes,
             isActive: value.isActive,
           },
           {
@@ -61,12 +69,14 @@ export default function VendorForm({
         vendorCode: value.vendorCode,
         npwp: value.npwp,
         isActive: value.isActive,
+        shipmentTypes: value.shipmentTypes,
       }
 
       const hasChanges =
         next.vendorName !== vendor.vendorName ||
         next.vendorCode !== vendor.vendorCode ||
         next.npwp !== (vendor.npwp ?? "") ||
+        !sameShipmentTypes(value.shipmentTypes, vendor.shipmentTypes) ||
         next.isActive !== vendor.isActive
 
       if (!hasChanges) {
@@ -92,7 +102,7 @@ export default function VendorForm({
         </h2>
         <p className="text-sm text-muted-foreground">
           {mode === "create"
-            ? "Set up a new vendor with code, name, and tax information."
+            ? "Set up a new vendor with code, name, shipment type, and tax information."
             : "Update vendor profile information and active status."}
         </p>
       </div>
@@ -139,6 +149,23 @@ export default function VendorForm({
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               error={fieldError(field.state.meta.errors)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="shipmentTypes"
+          validators={{
+            onChange: zodOnChange(vendorShipmentTypesSchema),
+          }}
+        >
+          {(field) => (
+            <ShipmentTypeField
+              id={field.name}
+              value={field.state.value}
+              onValueChange={(nextValue) => field.handleChange(nextValue)}
+              error={fieldError(field.state.meta.errors)}
+              required
             />
           )}
         </form.Field>
@@ -197,6 +224,7 @@ export default function VendorForm({
                   vendorCode: vendor?.vendorCode ?? "",
                   vendorName: vendor?.vendorName ?? "",
                   npwp: vendor?.npwp ?? "",
+                  shipmentTypes: vendor?.shipmentTypes ?? [],
                   isActive: vendor?.isActive ?? true,
                 })
               }

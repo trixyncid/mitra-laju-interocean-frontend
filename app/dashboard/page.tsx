@@ -20,6 +20,7 @@ import {
   type TableDateRange,
 } from "@/components/ui/date-range-picker"
 import { useDashboard } from "@/hooks/use-dashboard"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 
 function getDefaultDashboardDateRange(): TableDateRange {
   const end = new Date()
@@ -59,7 +60,11 @@ export default function DashboardHomePage() {
       <DashboardPageHeader
         className="mb-8 lg:mb-10"
         title="Operations overview"
-        description="Net figures are after VAT & PPH23."
+        description={
+          FINANCIAL_MODULES_ENABLED
+            ? "Net figures are after VAT & PPH23."
+            : "Shipment volume and operational activity for the selected period."
+        }
         action={
           <DateRangePicker
             layout="inline"
@@ -94,9 +99,15 @@ export default function DashboardHomePage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2"
+            className={
+              FINANCIAL_MODULES_ENABLED
+                ? "grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2"
+                : "min-w-0"
+            }
           >
-            <DashboardShipmentChart data={data} />
+            {FINANCIAL_MODULES_ENABLED ? (
+              <DashboardShipmentChart data={data} />
+            ) : null}
             <DashboardShipmentVolumeChart data={data} />
           </motion.div>
 

@@ -11,8 +11,7 @@ export function CustomerCreateSidebar() {
         </p>
         <h2 className="mt-1 text-xl font-semibold">Create profile</h2>
         <p className="mt-2 text-sm text-primary-foreground/80">
-          Add a customer account with billing identity details for shipments and
-          costing.
+          Add a customer account with identity details for shipments.
         </p>
       </div>
 
@@ -26,7 +25,7 @@ export function CustomerCreateSidebar() {
               Basic details
             </p>
             <p className="text-sm text-muted-foreground">
-              Customer code and name identify the company across orders and reports.
+              Customer code, name, and shipment type identify the company across orders and reports.
             </p>
           </div>
         </div>

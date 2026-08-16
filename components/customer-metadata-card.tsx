@@ -14,6 +14,7 @@ import {
 import type { Customer } from "@/app/dashboard/customers/columns"
 import { Separator } from "@/components/ui/separator"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { glassShine, metadataCardShell, metadataIconWell } from "@/lib/design"
 import { localDate } from "@/lib/utils"
 
@@ -57,7 +58,10 @@ export function CustomerMetadataCard({ customer }: { customer: Customer }) {
         <p className="text-xs font-semibold tracking-[0.08em] text-primary-foreground/70 uppercase">
           Customer overview
         </p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight">{customer.customerName}</h2>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <h2 className="text-xl font-semibold tracking-tight">{customer.customerName}</h2>
+          <ShipmentTypeTags types={customer.shipmentTypes} tone="onPrimary" />
+        </div>
         <p className="mt-2 font-mono text-sm tracking-wide text-primary-foreground/80">
           {customer.customerCode}
         </p>

@@ -6,6 +6,7 @@ import { IconArrowRight } from "@tabler/icons-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
 import { ShipmentLifecycleChip } from "@/components/ui/status-chip"
+import type { ShipmentStatus } from "@/lib/shipment-status"
 import {
   dateSort,
   sortHeader,
@@ -20,7 +21,7 @@ export type LinkedShipment = {
   customerShipper: string
   departureCountry: string
   arrivalCountry: string
-  status: "ONGOING" | "COMPLETED"
+  status: ShipmentStatus
 }
 
 export const columns: ColumnDef<LinkedShipment>[] = [
@@ -33,6 +34,14 @@ export const columns: ColumnDef<LinkedShipment>[] = [
         <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
     }
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => sortHeader(column, "Status"),
+    ...textSort,
+    cell: ({ row }) => (
+      <ShipmentLifecycleChip status={row.original.status} />
+    )
   },
   {
     accessorKey: "customerCode",
@@ -62,14 +71,6 @@ export const columns: ColumnDef<LinkedShipment>[] = [
         )
       )
     },
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => sortHeader(column, "Status"),
-    ...textSort,
-    cell: ({ row }) => (
-      <ShipmentLifecycleChip status={row.original.status} />
-    )
   },
   {
     accessorKey: "eta",

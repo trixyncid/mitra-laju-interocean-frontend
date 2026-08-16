@@ -29,6 +29,8 @@ import {
     glassTabCount,
     glassTabsTrigger,
 } from "@/lib/design"
+import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { amountCalculation, cn, formatDate } from "@/lib/utils"
 import { Costing } from "../../costings/columns"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
@@ -301,6 +303,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                                             {data.vendorName}
                                         </h1>
                                         <StatusChip active={Boolean(data?.isActive)} />
+                                        <ShipmentTypeTags types={data.shipmentTypes} />
                                     </div>
                                     <p className="font-mono text-sm font-medium tracking-wide text-[var(--mli-primary-container)]">
                                         {data.vendorCode}
@@ -336,21 +339,25 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                             value={totalActiveShipments()}
                             hint="Currently in progress"
                         />
-                        <MetricTile
-                            label="Total assignments"
-                            value={costings.length}
-                            hint="All linked costings"
-                        />
-                        <MetricTile
-                            label="YTD spend"
-                            value={calculateYTDSpend()}
-                            hint="Costings this year"
-                        />
-                        <MetricTile
-                            label="Outstanding bills"
-                            value={calculateOutstandingBills()}
-                            hint="Unpaid vendor invoices"
-                        />
+                        {FINANCIAL_MODULES_ENABLED ? (
+                            <>
+                                <MetricTile
+                                    label="Total assignments"
+                                    value={costings.length}
+                                    hint="All linked costings"
+                                />
+                                <MetricTile
+                                    label="YTD spend"
+                                    value={calculateYTDSpend()}
+                                    hint="Costings this year"
+                                />
+                                <MetricTile
+                                    label="Outstanding bills"
+                                    value={calculateOutstandingBills()}
+                                    hint="Unpaid vendor invoices"
+                                />
+                            </>
+                        ) : null}
                     </div>
                 </div>
             </section>
@@ -369,14 +376,18 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                             Shipments
                             <span className={glassTabCount}>{vendorShipments.length}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="costings" className={glassTabsTrigger}>
-                            Costings
-                            <span className={glassTabCount}>{costings.length}</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="summary" className={glassTabsTrigger}>
-                            Summary
-                            <span className={glassTabCount}>{monthlySummary.length}</span>
-                        </TabsTrigger>
+                        {FINANCIAL_MODULES_ENABLED ? (
+                            <>
+                                <TabsTrigger value="costings" className={glassTabsTrigger}>
+                                    Costings
+                                    <span className={glassTabCount}>{costings.length}</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="summary" className={glassTabsTrigger}>
+                                    Summary
+                                    <span className={glassTabCount}>{monthlySummary.length}</span>
+                                </TabsTrigger>
+                            </>
+                        ) : null}
                     </TabsList>
                 </div>
 
@@ -419,13 +430,21 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                     <DashboardPageCard>
                         <SectionIntro
                             title="Shipment history"
-                            description="Shipments linked through this vendor’s costings, including routes and ETAs."
+                            description={
+                                FINANCIAL_MODULES_ENABLED
+                                    ? "Shipments linked through this vendor’s costings, including routes and ETAs."
+                                    : "Shipments linked to this vendor, including routes and ETAs."
+                            }
                         />
                         {vendorShipments.length === 0 ? (
                             <EmptyState
                                 icon={IconShip}
                                 title="No shipments yet"
-                                description="Shipments tied to this vendor’s costings will appear here."
+                                description={
+                                    FINANCIAL_MODULES_ENABLED
+                                        ? "Shipments tied to this vendor’s costings will appear here."
+                                        : "Shipments tied to this vendor will appear here."
+                                }
                             />
                         ) : (
                             <ShipmentHistoryPage vendorShipments={vendorShipments} />
@@ -433,6 +452,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                     </DashboardPageCard>
                 </TabsContent>
 
+                {FINANCIAL_MODULES_ENABLED ? (
+                <>
                 <TabsContent value="costings" className="mt-6">
                     <DashboardPageCard>
                         <SectionIntro
@@ -471,6 +492,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                         )}
                     </DashboardPageCard>
                 </TabsContent>
+                </>
+                ) : null}
             </Tabs>
         </DashboardPage>
     )
