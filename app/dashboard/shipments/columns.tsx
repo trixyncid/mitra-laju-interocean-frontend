@@ -27,8 +27,8 @@ export type Shipment = {
     customerShipper?: { name: string }
     shipmentOperational?: {
         shipmentType?: string
-        portDeparture: { portCountry: string }
-        portDestination: { portCountry: string }
+        portDeparture: { portCountry: string } | null
+        portDestination: { portCountry: string } | null
     }
     isActive: boolean
     updatedBy?: string
@@ -80,7 +80,7 @@ export const columns: ColumnDef<Shipment>[] = [
         id: "route",
         accessorFn: (row) =>
             row.shipmentOperational
-                ? `${row.shipmentOperational.portDeparture.portCountry} ${row.shipmentOperational.portDestination.portCountry}`
+                ? `${row.shipmentOperational.portDeparture?.portCountry ?? ""} ${row.shipmentOperational.portDestination?.portCountry ?? ""}`
                 : "",
         header: ({ column }) => sortHeader(column, "Route"),
         ...textSort,
@@ -88,11 +88,16 @@ export const columns: ColumnDef<Shipment>[] = [
             if (!row.original.shipmentOperational) {
                 return <WarningChip>Unavailable</WarningChip>
             }
+            const departure = row.original.shipmentOperational.portDeparture?.portCountry
+            const destination = row.original.shipmentOperational.portDestination?.portCountry
+            if (!departure && !destination) {
+                return <WarningChip>Unavailable</WarningChip>
+            }
             return (
                 <span className={`${secondaryText} flex flex-row items-center gap-x-1`}>
-                    {row.original.shipmentOperational.portDeparture.portCountry}
+                    {departure ?? "—"}
                     <IconArrowRight className="size-4" />
-                    {row.original.shipmentOperational.portDestination.portCountry}
+                    {destination ?? "—"}
                 </span>
             )
         }

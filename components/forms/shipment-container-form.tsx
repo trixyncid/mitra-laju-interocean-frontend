@@ -83,11 +83,29 @@ export default function ShipmentContainerForm({
             containerTypeId: containerTypeId ?? "",
         },
         onSubmit: ({ value }) => {
+            const normalizeOptionalId = (optionalId: string) => {
+                if (optionalId !== "") return optionalId
+                return mode === "create" ? undefined : null
+            }
+            const normalizeOptionalText = (text: string) => {
+                const trimmed = text.trim()
+                if (trimmed !== "") return trimmed
+                return mode === "create" ? undefined : null
+            }
+
+            const shipmentOperationalContainer = {
+                shipmentOperationalId: shipmentOperationalId ?? "",
+                containerNumber: normalizeOptionalText(value.containerNumber),
+                sealNumber: normalizeOptionalText(value.sealNumber),
+                containerSizeId: normalizeOptionalId(value.containerSizeId),
+                containerTypeId: normalizeOptionalId(value.containerTypeId),
+            }
+
             if (mode === "create") {
                 createShipmentOperationalContainer.mutate({
                     shipmentId: shipmentId ?? "",
                     shipmentOperationalId: shipmentOperationalId ?? "",
-                    shipmentOperationalContainer: value,
+                    shipmentOperationalContainer,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -99,12 +117,7 @@ export default function ShipmentContainerForm({
                     shipmentId: shipmentId ?? "",
                     shipmentOperationalId: shipmentOperationalId ?? "",
                     id: id ?? "",
-                    shipmentOperationalContainer: {
-                        containerNumber: value.containerNumber,
-                        sealNumber: value.sealNumber,
-                        containerSizeId: value.containerSizeId,
-                        containerTypeId: value.containerTypeId,
-                    },
+                    shipmentOperationalContainer,
                 }, {
                     onSuccess: () => {
                         setOpen(false)
@@ -141,7 +154,6 @@ export default function ShipmentContainerForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Container Number"
-                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -161,7 +173,6 @@ export default function ShipmentContainerForm({
                                     <div className="my-3">
                                         <TextField
                                             label="Seal Number"
-                                            required
                                             id={field.name}
                                             name={field.name}
                                             value={field.state.value}
@@ -174,9 +185,9 @@ export default function ShipmentContainerForm({
                             <form.Field name="containerSizeId" validators={{ onChange: zodOnChange(containerSizeSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <FormLabel htmlFor={field.name} className="my-2" required>Container Size</FormLabel>
+                                        <FormLabel htmlFor={field.name} className="my-2">Container Size</FormLabel>
                                         <Select
-                                            value={field.state.value}
+                                            value={field.state.value || undefined}
                                             onValueChange={(value) => field.handleChange(value)}
                                             disabled={sizesLoading}
                                         >
@@ -202,9 +213,9 @@ export default function ShipmentContainerForm({
                             <form.Field name="containerTypeId" validators={{ onChange: zodOnChange(containerTypeSchema) }}>
                                 {( field ) => (
                                     <div className="my-3">
-                                        <FormLabel htmlFor={field.name} className="my-2" required>Container Type</FormLabel>
+                                        <FormLabel htmlFor={field.name} className="my-2">Container Type</FormLabel>
                                         <Select
-                                            value={field.state.value}
+                                            value={field.state.value || undefined}
                                             onValueChange={(value) => field.handleChange(value)}
                                             disabled={typesLoading}
                                         >

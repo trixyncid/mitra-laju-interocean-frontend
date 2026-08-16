@@ -45,8 +45,8 @@ export type CustomerShipment = {
   customerCode: { customerName: string; customerCode: string }
   customerShipper: { name: string }
   shipmentOperational: {
-    portDeparture: { portCountry: string }
-    portDestination: { portCountry: string }
+    portDeparture: { portCountry: string } | null
+    portDestination: { portCountry: string } | null
     eta: string
   } | null
   costings: Costing[]
@@ -123,10 +123,10 @@ export type SellingDetail = {
 
 export type ShipmentOperationalContainer = {
   id?: string
-  containerNumber: string
-  sealNumber: string
-  containerSizeId: string
-  containerTypeId: string
+  containerNumber: string | null
+  sealNumber: string | null
+  containerSizeId: string | null
+  containerTypeId: string | null
   containerSize?: { id: string; name: string }
   containerType?: { id: string; name: string }
   isActive: boolean
@@ -159,19 +159,24 @@ export type ShipmentLinkedSelling = {
 export type ShipmentOperationalDetail = {
   id: string
   shipmentType: string
-  portDepartureId: string
-  portDestinationId: string
+  portDepartureId: string | null
+  portDestinationId: string | null
   loadingLocationId: string | null
   unloadingLocationId: string | null
+  truckingBookToId: string | null
+  freightBookToId: string | null
+  remarks: string | null
   blNumber: string | null
   bookingNumber: string | null
   vesselId: string
   eta: string | null
   updatedAt: string
   updatedBy: { name: string }
-  portDeparture: { portName: string; portCountry: string }
-  portDestination: { portName: string; portCountry: string }
+  portDeparture: { portName: string; portCountry: string } | null
+  portDestination: { portName: string; portCountry: string } | null
   vessel: { vesselName: string; voyageNumber: string }
+  truckingBookTo: { id: string; vendorName: string; vendorCode: string } | null
+  freightBookTo: { id: string; vendorName: string; vendorCode: string } | null
   shipmentOperationalContainers: ShipmentOperationalContainer[]
 }
 

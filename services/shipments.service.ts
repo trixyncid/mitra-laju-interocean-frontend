@@ -26,13 +26,16 @@ export type CreateShipmentOperationalInput = {
     shipmentId: string;
     shipmentType: string;
     vesselId: string;
-    portDepartureId: string;
-    portDestinationId: string;
+    portDepartureId?: string;
+    portDestinationId?: string;
     eta?: string | null;
     blNumber?: string;
     bookingNumber?: string;
     loadingLocationId?: string;
     unloadingLocationId?: string;
+    truckingBookToId?: string;
+    freightBookToId?: string;
+    remarks?: string;
 };
 
 export type ShipmentListParams = {

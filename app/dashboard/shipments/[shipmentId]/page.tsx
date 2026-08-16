@@ -69,10 +69,10 @@ import {
 
 export type ShipmentOperationalContainer = {
     id?: string
-    containerNumber: string
-    sealNumber: string
-    containerSizeId: string
-    containerTypeId: string
+    containerNumber: string | null
+    sealNumber: string | null
+    containerSizeId: string | null
+    containerTypeId: string | null
     containerSize?: { id: string; name: string }
     containerType?: { id: string; name: string }
     isActive: boolean
@@ -211,7 +211,8 @@ function formatIdr(value: number) {
     return value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
 }
 
-function formatPort(port: { portName: string; portCountry: string }) {
+function formatPort(port: { portName: string; portCountry: string } | null | undefined) {
+    if (!port) return null
     return `${port.portName} (${port.portCountry})`
 }
 
@@ -254,6 +255,9 @@ export default function ShipmentDetailPage({
             unloadingLocationId={undefined}
             blNumber={undefined}
             bookingNumber={undefined}
+            truckingBookToId={undefined}
+            freightBookToId={undefined}
+            remarks={undefined}
             customerCodeId={data.customerCodeId}
             customerShipperId={data.customerShipperId}
             vesselId={undefined}
@@ -270,12 +274,17 @@ export default function ShipmentDetailPage({
             status={data.status}
             isActive={data.isActive}
             shipmentType={operational.shipmentType}
-            portDepartureId={operational.portDepartureId}
-            portDestinationId={operational.portDestinationId}
+            portDepartureId={operational.portDepartureId ?? undefined}
+            portDestinationId={operational.portDestinationId ?? undefined}
             loadingLocationId={operational.loadingLocationId ?? undefined}
             unloadingLocationId={operational.unloadingLocationId ?? undefined}
             blNumber={operational.blNumber ?? undefined}
             bookingNumber={operational.bookingNumber ?? undefined}
+            truckingBookToId={operational.truckingBookToId ?? undefined}
+            freightBookToId={operational.freightBookToId ?? undefined}
+            remarks={operational.remarks ?? undefined}
+            truckingBookTo={operational.truckingBookTo}
+            freightBookTo={operational.freightBookTo}
             customerCodeId={data.customerCodeId}
             customerShipperId={data.customerShipperId}
             vesselId={operational.vesselId}
@@ -446,12 +455,12 @@ export default function ShipmentDetailPage({
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             <MetricTile
                                 label="Origin"
-                                value={formatPort(operational.portDeparture)}
+                                value={formatPort(operational.portDeparture) ?? "—"}
                                 hint="Port of loading"
                             />
                             <MetricTile
                                 label="Destination"
-                                value={formatPort(operational.portDestination)}
+                                value={formatPort(operational.portDestination) ?? "—"}
                                 hint="Port of discharge"
                             />
                             <MetricTile
@@ -544,10 +553,14 @@ export default function ShipmentDetailPage({
                                     {operational.vessel.voyageNumber}
                                 </OverviewField>
                                 <OverviewField label="Origin port">
-                                    {formatPort(operational.portDeparture)}
+                                    {formatPort(operational.portDeparture) ?? (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
                                 </OverviewField>
                                 <OverviewField label="Destination port">
-                                    {formatPort(operational.portDestination)}
+                                    {formatPort(operational.portDestination) ?? (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
                                 </OverviewField>
                                 <OverviewField label="BL number">
                                     {operational.blNumber ? (
@@ -563,9 +576,35 @@ export default function ShipmentDetailPage({
                                         <WarningChip>Unavailable</WarningChip>
                                     )}
                                 </OverviewField>
+                                <OverviewField label="Trucking book to">
+                                    {operational.truckingBookTo ? (
+                                        `${operational.truckingBookTo.vendorName} (${operational.truckingBookTo.vendorCode})`
+                                    ) : (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
+                                </OverviewField>
+                                <OverviewField label="Freight book to">
+                                    {operational.freightBookTo ? (
+                                        `${operational.freightBookTo.vendorName} (${operational.freightBookTo.vendorCode})`
+                                    ) : (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
+                                </OverviewField>
                                 <OverviewField label="ETA">
                                     {operational.eta ? (
                                         formatDate(operational.eta.split("T")[0])
+                                    ) : (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
+                                </OverviewField>
+                                <OverviewField
+                                    label="Remarks"
+                                    className="sm:col-span-2"
+                                >
+                                    {operational.remarks ? (
+                                        <span className="whitespace-pre-wrap font-normal">
+                                            {operational.remarks}
+                                        </span>
                                     ) : (
                                         <WarningChip>Unavailable</WarningChip>
                                     )}
@@ -780,10 +819,10 @@ export default function ShipmentDetailPage({
                                                         className={tableRowClass}
                                                     >
                                                         <td className={tableCellClass}>
-                                                            {container.containerNumber}
+                                                            {container.containerNumber || "—"}
                                                         </td>
                                                         <td className={tableCellClass}>
-                                                            {container.sealNumber}
+                                                            {container.sealNumber || "—"}
                                                         </td>
                                                         <td className={tableCellClass}>
                                                             {formatContainerLookup(container.containerSize)}
@@ -812,10 +851,12 @@ export default function ShipmentDetailPage({
                                                                 <ShipmentContainerForm
                                                                     mode="edit"
                                                                     containerNumber={
-                                                                        container.containerNumber
+                                                                        container.containerNumber ??
+                                                                        undefined
                                                                     }
                                                                     sealNumber={
-                                                                        container.sealNumber
+                                                                        container.sealNumber ??
+                                                                        undefined
                                                                     }
                                                                     containerSizeId={
                                                                         container.containerSizeId ??

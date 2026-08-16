@@ -94,11 +94,11 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     ...textSort,
     cell: ({ row }) => {
       return (
-        row.original.departureCountry !== "" && row.original.arrivalCountry !== "" ? (
+        row.original.departureCountry !== "" || row.original.arrivalCountry !== "" ? (
           <div className="flex flex-row items-center gap-x-2">
-            <p className="text-sm text-muted-foreground">{ row.original.departureCountry }</p>
+            <p className="text-sm text-muted-foreground">{ row.original.departureCountry || "—" }</p>
             <IconArrowRight className="w-4 h-4" />
-            <p className="text-sm text-muted-foreground">{ row.original.arrivalCountry }</p>
+            <p className="text-sm text-muted-foreground">{ row.original.arrivalCountry || "—" }</p>
           </div>
         ) : (
           <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-md w-fit">Unavailable</p>
