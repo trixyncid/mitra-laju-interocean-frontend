@@ -10,10 +10,11 @@ import {
   type UpdateUserPayload,
 } from "@/services/users.service"
 
-export const useUsers = (params: UserListParams) => {
+export const useUsers = (params: UserListParams, enabled = true) => {
   return useQuery({
     queryKey: ["users", params],
     queryFn: () => usersService.getAll(params),
+    enabled,
   })
 }
 

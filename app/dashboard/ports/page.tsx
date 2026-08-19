@@ -1,10 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import PortForm from "@/components/forms/port-form";
 import { usePorts } from "@/hooks/use-ports";
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
 import TableSkeleton from "@/components/loading/table-skeleton";
 import ErrorPage from "@/components/error-page";
 import {
@@ -13,16 +14,17 @@ import {
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page";
 import { PermissionGate } from "@/components/permission-gate";
-import { type AppliedTableFilters } from "@/components/data-table-toolbar";
 
 export default function PortMasterDataPage() {
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(20)
-    const [applied, setApplied] = useState<AppliedTableFilters>({
-        search: "",
-        status: "all",
-        dateRange: {},
-    })
+    const {
+        applied,
+        page,
+        pageSize,
+        setApplied,
+        setPage,
+        setPageSize,
+        isRestored,
+    } = usePersistedTableState("ports")
     const params = useMemo(
         () => ({
             page,
@@ -34,7 +36,7 @@ export default function PortMasterDataPage() {
         }),
         [page, pageSize, applied]
     )
-    const { data, isLoading, error } = usePorts(params)
+    const { data, isLoading, error } = usePorts(params, isRestored)
     const ports = data?.items ?? []
     const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
 
@@ -52,7 +54,7 @@ export default function PortMasterDataPage() {
                 }
             />
             <DashboardPageCard>
-                {isLoading ? (
+                {!isRestored || isLoading ? (
                     <TableSkeleton />
                 ) : (
                     <DataTable
@@ -63,15 +65,9 @@ export default function PortMasterDataPage() {
                         totalPages={pagination.totalPages}
                         totalRows={pagination.total}
                         applied={applied}
-                        onApply={(next) => {
-                            setApplied(next)
-                            setPage(1)
-                        }}
+                        onApply={setApplied}
                         onPageChange={setPage}
-                        onPageSizeChange={(next) => {
-                            setPageSize(next)
-                            setPage(1)
-                        }}
+                        onPageSizeChange={setPageSize}
                     />
                 )}
             </DashboardPageCard>

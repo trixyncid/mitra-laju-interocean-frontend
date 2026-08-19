@@ -4,10 +4,11 @@ import type { CustomerDetail } from "@/lib/types/entity-details";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export const useCustomers = (params: CustomerListParams) => {
+export const useCustomers = (params: CustomerListParams, enabled = true) => {
     return useQuery({
         queryKey: ["customers", params],
         queryFn: () => customersService.getAll(params),
+        enabled,
     })
 }
 

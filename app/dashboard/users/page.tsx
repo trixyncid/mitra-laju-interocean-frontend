@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { IconPlus } from "@tabler/icons-react"
 
@@ -14,18 +14,20 @@ import {
   DashboardPageCard,
   DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
-import { type AppliedTableFilters } from "@/components/data-table-toolbar"
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
 import { useRequireAdmin } from "@/hooks/use-require-admin"
 import { useUsers } from "@/hooks/use-users"
 
 export default function UserManagementPage() {
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [applied, setApplied] = useState<AppliedTableFilters>({
-    search: "",
-    status: "all",
-    dateRange: {},
-  })
+  const {
+    applied,
+    page,
+    pageSize,
+    setApplied,
+    setPage,
+    setPageSize,
+    isRestored,
+  } = usePersistedTableState("users")
   const params = useMemo(
     () => ({
       page,
@@ -38,7 +40,7 @@ export default function UserManagementPage() {
     [page, pageSize, applied]
   )
   const { isPending: isSessionPending, canManageUsers, isRedirecting } = useRequireAdmin()
-  const { data, isLoading, error } = useUsers(params)
+  const { data, isLoading, error } = useUsers(params, isRestored)
   const users = data?.items ?? []
   const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
 
@@ -71,7 +73,7 @@ export default function UserManagementPage() {
         }
       />
       <DashboardPageCard>
-        {isLoading ? (
+        {!isRestored || isLoading ? (
           <TableSkeleton />
         ) : (
           <DataTable
@@ -82,15 +84,9 @@ export default function UserManagementPage() {
             totalPages={pagination.totalPages}
             totalRows={pagination.total}
             applied={applied}
-            onApply={(next) => {
-              setApplied(next)
-              setPage(1)
-            }}
+            onApply={setApplied}
             onPageChange={setPage}
-            onPageSizeChange={(next) => {
-              setPageSize(next)
-              setPage(1)
-            }}
+            onPageSizeChange={setPageSize}
           />
         )}
       </DashboardPageCard>

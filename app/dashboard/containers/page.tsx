@@ -5,6 +5,7 @@ import { createContainerLookupColumns } from "./columns"
 import { DataTable } from "./data-table"
 import ContainerLookupForm from "@/components/forms/container-lookup-form"
 import { useContainerLookups } from "@/hooks/use-container-lookups"
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import ErrorPage from "@/components/error-page"
 import {
@@ -13,21 +14,20 @@ import {
   DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
-import { type AppliedTableFilters } from "@/components/data-table-toolbar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { glassTabsTrigger } from "@/lib/design"
 import type { ContainerLookupKind } from "@/services/container-lookups.service"
 
-const emptyFilters: AppliedTableFilters = {
-  search: "",
-  status: "all",
-  dateRange: {},
-}
-
 function ContainerLookupTable({ kind }: { kind: ContainerLookupKind }) {
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [applied, setApplied] = useState<AppliedTableFilters>(emptyFilters)
+  const {
+    applied,
+    page,
+    pageSize,
+    setApplied,
+    setPage,
+    setPageSize,
+    isRestored,
+  } = usePersistedTableState(`containers.${kind}`)
   const params = useMemo(
     () => ({
       page,
@@ -39,14 +39,14 @@ function ContainerLookupTable({ kind }: { kind: ContainerLookupKind }) {
     }),
     [page, pageSize, applied]
   )
-  const { data, isLoading, error } = useContainerLookups(kind, params)
+  const { data, isLoading, error } = useContainerLookups(kind, params, isRestored)
   const items = data?.items ?? []
   const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
   const columns = useMemo(() => createContainerLookupColumns(kind), [kind])
 
   if (error) return <ErrorPage />
 
-  return isLoading ? (
+  return !isRestored || isLoading ? (
     <TableSkeleton />
   ) : (
     <DataTable
@@ -58,15 +58,9 @@ function ContainerLookupTable({ kind }: { kind: ContainerLookupKind }) {
       totalPages={pagination.totalPages}
       totalRows={pagination.total}
       applied={applied}
-      onApply={(next) => {
-        setApplied(next)
-        setPage(1)
-      }}
+      onApply={setApplied}
       onPageChange={setPage}
-      onPageSizeChange={(next) => {
-        setPageSize(next)
-        setPage(1)
-      }}
+      onPageSizeChange={setPageSize}
     />
   )
 }

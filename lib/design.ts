@@ -33,6 +33,10 @@ export const tableSearchInput =
 export const glassControl =
   "rounded-md border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.6)] shadow-none hover:border-input hover:bg-[rgba(247,249,251,0.85)]"
 
+/** Floating menus and filter popovers on glass dashboards. */
+export const glassMenu =
+  "rounded-lg border border-[rgba(214,227,255,0.45)] bg-[rgba(247,249,251,0.96)] shadow-[0_16px_40px_rgba(27,54,93,0.12)] backdrop-blur-xl"
+
 export const tableHeaderRow =
   "border-b border-[rgba(214,227,255,0.35)] bg-[rgba(232,238,246,0.55)] hover:bg-[rgba(232,238,246,0.55)]"
 export const tableHeaderCell =
@@ -98,6 +102,65 @@ export function chipWarning(className?: string) {
     "bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)]",
     className
   )
+}
+
+export function chipExport(className?: string) {
+  return cn(
+    chipBase,
+    "bg-[var(--mli-export-container)] text-[var(--mli-on-export-container)]",
+    className
+  )
+}
+
+export function chipImport(className?: string) {
+  return cn(
+    chipBase,
+    "bg-[var(--mli-import-container)] text-[var(--mli-on-import-container)]",
+    className
+  )
+}
+
+export function chipDomestic(className?: string) {
+  return cn(
+    chipBase,
+    "bg-[var(--mli-domestic-container)] text-[var(--mli-on-domestic-container)]",
+    className
+  )
+}
+
+export function chipDraft(className?: string) {
+  return cn(
+    chipBase,
+    "bg-[var(--mli-draft-container)] text-[var(--mli-on-draft-container)]",
+    className
+  )
+}
+
+export function chipBackup(className?: string) {
+  return cn(
+    chipBase,
+    "bg-[var(--mli-backup-container)] text-[var(--mli-on-backup-container)]",
+    className
+  )
+}
+
+export function chipFinished(className?: string) {
+  return cn(
+    chipBase,
+    "bg-[var(--mli-finished-container)] text-[var(--mli-on-finished-container)]",
+    className
+  )
+}
+
+export function chipShipmentType(
+  type: string | null | undefined,
+  className?: string
+) {
+  const normalized = (type ?? "").toUpperCase()
+  if (normalized === "EXPORT") return chipExport(className)
+  if (normalized === "IMPORT") return chipImport(className)
+  if (normalized === "DOMESTIC") return chipDomestic(className)
+  return chipInfo(className)
 }
 
 export const primaryText = "font-semibold text-foreground"

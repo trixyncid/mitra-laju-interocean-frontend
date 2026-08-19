@@ -1,6 +1,6 @@
 import { Dot } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { chipActive, chipInactive, chipInfo, chipTbd, chipWarning } from "@/lib/design"
+import { chipActive, chipBackup, chipDraft, chipFinished, chipInactive, chipTbd, chipWarning } from "@/lib/design"
 
 export function StatusChip({
   active,
@@ -80,17 +80,17 @@ export function ShipmentLifecycleChip({
         }
       : normalized === "FINISHED"
         ? {
-            chip: chipInfo(),
-            dot: "text-secondary-foreground",
+            chip: chipFinished(),
+            dot: "text-[var(--mli-on-finished-container)]",
           }
         : normalized === "BACKUP"
           ? {
-              chip: chipWarning(),
-              dot: "text-[var(--mli-on-warning-container)]",
+              chip: chipBackup(),
+              dot: "text-[var(--mli-on-backup-container)]",
             }
           : {
-              chip: chipTbd(),
-              dot: "text-primary",
+              chip: chipDraft(),
+              dot: "text-[var(--mli-on-draft-container)]",
             }
 
   const label =

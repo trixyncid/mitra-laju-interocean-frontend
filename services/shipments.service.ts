@@ -29,6 +29,8 @@ export type CreateShipmentOperationalInput = {
     portDepartureId?: string;
     portDestinationId?: string;
     eta?: string | null;
+    loadingInAt?: string | null;
+    loadingOutAt?: string | null;
     blNumber?: string;
     bookingNumber?: string;
     loadingLocationId?: string;

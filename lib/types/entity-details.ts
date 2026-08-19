@@ -170,6 +170,8 @@ export type ShipmentOperationalDetail = {
   bookingNumber: string | null
   vesselId: string
   eta: string | null
+  loadingInAt: string | null
+  loadingOutAt: string | null
   updatedAt: string
   updatedBy: { name: string }
   portDeparture: { portName: string; portCountry: string } | null

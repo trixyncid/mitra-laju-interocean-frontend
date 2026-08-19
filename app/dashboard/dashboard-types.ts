@@ -39,9 +39,35 @@ export interface DashboardVendorByAmount {
   totalAmount: string
 }
 
+export type ShipmentStatusCountKey = "DRAFT" | "BACKUP" | "ONGOING" | "FINISHED"
+
+export interface DashboardNamedCount {
+  name: string
+  count: number
+}
+
+export interface DashboardContainerStats {
+  total: number
+  teu: number
+  bySize: DashboardNamedCount[]
+  byType: DashboardNamedCount[]
+}
+
+export interface DashboardWeeklyVolume {
+  weekStart: string
+  EXPORT: number
+  IMPORT: number
+  DOMESTIC: number
+  containers: number
+}
+
 export interface DashboardData {
   dateRange: DashboardDateRange
   shipmentTypeCounts: Record<ShipmentType, number>
+  shipmentStatusCounts: Record<ShipmentStatusCountKey, number>
+  finishedInPeriod: number
+  containerStats: DashboardContainerStats
+  weeklyVolume: DashboardWeeklyVolume[]
   topCustomersByShipments: DashboardCustomerByShipments[]
   topCustomersBySellingAmount: DashboardCustomerBySellingAmount[]
   topVendorsByCostingCount: DashboardVendorByCosting[]
@@ -58,15 +84,25 @@ export interface DashboardQueryParams {
 
 export type VoyageStatus = "draft" | "backup" | "ongoing"
 
+export interface DashboardVoyageContainer {
+  containerNumber: string | null
+  sealNumber: string | null
+  containerSize: { name: string } | null
+  containerType: { name: string } | null
+}
+
 export interface DashboardVoyageShipment {
   id: string
   orderNumber: string
-  eta: string | null
   shipmentType: ShipmentType
   customerName: string
   customerCode: string
+  customerShipper: string | null
   portDeparture: string | null
   portDestination: string | null
+  bookingNumber: string | null
+  blNumber: string | null
+  containers: DashboardVoyageContainer[]
 }
 
 export interface DashboardVoyageGroup {

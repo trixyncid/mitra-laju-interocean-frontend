@@ -92,6 +92,18 @@
   --mli-on-success-container: #0d5c2e;
   --mli-warning-container: #e8eef6;
   --mli-on-warning-container: #2e476f;
+  --mli-export-container: #d6e3ff;
+  --mli-on-export-container: #1b365d;
+  --mli-import-container: #c5eef0;
+  --mli-on-import-container: #0b5358;
+  --mli-domestic-container: #ead9fa;
+  --mli-on-domestic-container: #4c2a78;
+  --mli-draft-container: #e6e8ec;
+  --mli-on-draft-container: #3f434a;
+  --mli-backup-container: #ffe4b8;
+  --mli-on-backup-container: #7a4a00;
+  --mli-finished-container: #d8dee8;
+  --mli-on-finished-container: #2e3a4d;
 }
 
 .dark {
@@ -128,6 +140,18 @@
   --mli-on-success-container: #d1f7d9;
   --mli-warning-container: #2e476f;
   --mli-on-warning-container: #d6e3ff;
+  --mli-export-container: #1b365d;
+  --mli-on-export-container: #d6e3ff;
+  --mli-import-container: #0b5358;
+  --mli-on-import-container: #c5eef0;
+  --mli-domestic-container: #4c2a78;
+  --mli-on-domestic-container: #ead9fa;
+  --mli-draft-container: #3f434a;
+  --mli-on-draft-container: #e6e8ec;
+  --mli-backup-container: #7a4a00;
+  --mli-on-backup-container: #ffe4b8;
+  --mli-finished-container: #2e3a4d;
+  --mli-on-finished-container: #d8dee8;
 }
 
 @layer base {

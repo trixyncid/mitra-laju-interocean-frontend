@@ -20,13 +20,13 @@ export type TableFilterConfig<TData> = {
 }
 
 export const ACTIVE_STATUS_OPTIONS: FilterOption[] = [
-  { value: "all", label: "All statuses" },
+  { value: "all", label: "All" },
   { value: "true", label: "Active" },
   { value: "false", label: "Inactive" },
 ]
 
 export const PAYMENT_STATUS_OPTIONS: FilterOption[] = [
-  { value: "all", label: "All statuses" },
+  { value: "all", label: "All" },
   { value: "PAID", label: "Paid" },
   { value: "UNPAID", label: "Unpaid" },
 ]

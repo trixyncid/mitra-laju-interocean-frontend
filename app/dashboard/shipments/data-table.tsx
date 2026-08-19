@@ -23,10 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   ACTIVE_STATUS_OPTIONS,
 } from "@/lib/data-table-filters"
-import { tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
+import { glassControl, tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
+import { cn } from "@/lib/utils"
 
 interface DataTableProps {
   columns: ColumnDef<Shipment>[]
@@ -60,9 +62,14 @@ export function DataTable({
   onApply,
 }: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
+  const [showModifiedBy, setShowModifiedBy] = useState(true)
   const pagination = useMemo(
     () => ({ pageIndex: Math.max(page - 1, 0), pageSize }),
     [page, pageSize]
+  )
+  const columnVisibility = useMemo(
+    () => ({ updatedBy: showModifiedBy }),
+    [showModifiedBy]
   )
 
   const table = useReactTable({
@@ -86,6 +93,7 @@ export function DataTable({
     state: {
       sorting,
       pagination,
+      columnVisibility,
     },
   })
 
@@ -96,7 +104,7 @@ export function DataTable({
         filters={{
           status: {
             id: "status",
-            label: "Record Status",
+            label: "Status",
             options: ACTIVE_STATUS_OPTIONS,
             getValue: () => undefined,
           },
@@ -108,6 +116,21 @@ export function DataTable({
         }}
         applied={applied}
         onApply={onApply}
+        extra={
+          <label
+            className={cn(
+              glassControl,
+              "flex h-11 cursor-pointer items-center gap-2 border px-3 text-sm whitespace-nowrap"
+            )}
+          >
+            <Checkbox
+              checked={showModifiedBy}
+              onCheckedChange={(checked) => setShowModifiedBy(checked === true)}
+              aria-label="Show modified by"
+            />
+            Modified by
+          </label>
+        }
       />
 
       <div className={tableShell}>
@@ -133,7 +156,17 @@ export function DataTable({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} className={tableRowClass}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={tableCellClass}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        tableCellClass,
+                        (
+                          cell.column.columnDef.meta as
+                            | { cellClassName?: string }
+                            | undefined
+                        )?.cellClassName
+                      )}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -142,7 +175,7 @@ export function DataTable({
             ) : (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={Math.max(table.getVisibleLeafColumns().length, 1)}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No results.

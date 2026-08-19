@@ -4,7 +4,9 @@ import { format, subDays } from "date-fns"
 import { useMemo, useState } from "react"
 import { motion } from "motion/react"
 
+import { DashboardContainerMix } from "@/components/dashboard/dashboard-container-mix"
 import { DashboardKpiCards } from "@/components/dashboard/dashboard-kpi-cards"
+import { DashboardPipelineStrip } from "@/components/dashboard/dashboard-pipeline-strip"
 import { DashboardRankings } from "@/components/dashboard/dashboard-rankings"
 import { DashboardShipmentChart } from "@/components/dashboard/dashboard-shipment-chart"
 import { DashboardShipmentVolumeChart } from "@/components/dashboard/dashboard-shipment-volume-chart"
@@ -63,7 +65,7 @@ export default function DashboardHomePage() {
         description={
           FINANCIAL_MODULES_ENABLED
             ? "Net figures are after VAT & PPH23."
-            : "Shipment volume and operational activity for the selected period."
+            : "Shipment volume, TEU, and open pipeline for the selected period."
         }
         action={
           <DateRangePicker
@@ -91,25 +93,31 @@ export default function DashboardHomePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-4"
           >
             <DashboardKpiCards data={data} />
+            <DashboardPipelineStrip data={data} />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className={
-              FINANCIAL_MODULES_ENABLED
-                ? "grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2"
-                : "min-w-0"
-            }
+            className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2"
           >
-            {FINANCIAL_MODULES_ENABLED ? (
-              <DashboardShipmentChart data={data} />
-            ) : null}
             <DashboardShipmentVolumeChart data={data} />
+            <DashboardContainerMix data={data} />
           </motion.div>
+
+          {FINANCIAL_MODULES_ENABLED ? (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <DashboardShipmentChart data={data} />
+            </motion.div>
+          ) : null}
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}

@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/select"
 import { TextField } from "@/components/ui/text-field"
 import {
-    useGetLocationsByCustomerId,
     useGetShippersByCustomerCodeId,
 } from "@/hooks/use-customers"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -60,18 +59,15 @@ import {
 } from "@/lib/schemas/shipment"
 import {
     freightBookToIdSchema,
-    loadingLocationIdSchema,
     portDepartureIdSchema,
     portDestinationIdSchema,
     shipmentTypeFieldSchema,
     truckingBookToIdSchema,
-    unloadingLocationIdSchema,
     vesselIdSchema,
 } from "@/lib/schemas/shipment-operational"
 import { type ShipmentStatus } from "@/lib/shipment-status"
 import { SHIPMENT_TYPE_OPTIONS } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
-import type { CustomerLocationOption } from "@/services/customers.service"
 
 type Shipper = {
     id: string
@@ -84,22 +80,11 @@ type VendorOption = {
     vendorCode: string
 }
 
-function toLocationOption(location: CustomerLocationOption): SearchableComboboxOption {
-    return {
-        value: location.id,
-        label: `${location.addressLine1}, ${location.city}, ${location.country}`,
-    }
-}
-
 function toVendorOption(vendor: VendorOption): SearchableComboboxOption {
     return {
         value: vendor.id,
         label: `${vendor.vendorName} (${vendor.vendorCode})`,
     }
-}
-
-function activeLocations(locations: CustomerLocationOption[] | undefined) {
-    return (locations ?? []).filter((location) => location.isActive !== false)
 }
 
 export default function ShipmentOperationalForm({
@@ -116,6 +101,8 @@ export default function ShipmentOperationalForm({
     unloadingLocationId,
     vesselId,
     eta,
+    loadingInAt,
+    loadingOutAt,
     blNumber,
     bookingNumber,
     truckingBookToId,
@@ -127,7 +114,6 @@ export default function ShipmentOperationalForm({
     customerShipperId,
 }: {
     id: string | undefined
-    eta: string | undefined
     shipmentId: string | undefined
     mode: "edit" | "create"
     orderNumber?: string
@@ -139,6 +125,9 @@ export default function ShipmentOperationalForm({
     loadingLocationId: string | undefined
     unloadingLocationId: string | undefined
     vesselId: string | undefined
+    eta: string | undefined
+    loadingInAt: string | undefined
+    loadingOutAt: string | undefined
     blNumber: string | undefined
     bookingNumber: string | undefined
     truckingBookToId: string | undefined
@@ -184,13 +173,6 @@ export default function ShipmentOperationalForm({
         page: 1,
         pageSize: 100,
     })
-    const {
-        data: locations,
-        isLoading: locationsLoading,
-        isError: locationsError,
-    } = useGetLocationsByCustomerId(selectedCustomerCode, {
-        enabled: open && Boolean(selectedCustomerCode),
-    })
     const { data: vesselsData, isLoading: vesselsLoading } = useVessels({
         page: 1,
         pageSize: 100,
@@ -215,6 +197,8 @@ export default function ShipmentOperationalForm({
             isActive: isActive ?? true,
             shipmentType: shipmentType ?? "",
             eta: eta ?? "",
+            loadingInAt: loadingInAt ?? "",
+            loadingOutAt: loadingOutAt ?? "",
             portDepartureId: portDepartureId ?? "",
             portDestinationId: portDestinationId ?? "",
             loadingLocationId: loadingLocationId ?? "",
@@ -236,6 +220,8 @@ export default function ShipmentOperationalForm({
                 shipmentId: value.shipmentId,
                 shipmentType: value.shipmentType,
                 eta: value.eta === "" ? null : value.eta,
+                loadingInAt: value.loadingInAt === "" ? null : value.loadingInAt,
+                loadingOutAt: value.loadingOutAt === "" ? null : value.loadingOutAt,
                 portDepartureId: normalizeOptionalId(value.portDepartureId),
                 portDestinationId: normalizeOptionalId(value.portDestinationId),
                 loadingLocationId: normalizeOptionalId(value.loadingLocationId),
@@ -353,37 +339,10 @@ export default function ShipmentOperationalForm({
         return items
     }, [createdShipper, shippers])
 
-    const activeCustomerLocations = useMemo(
-        () => activeLocations(locations),
-        [locations]
-    )
-
-    const loadingLocationItems = useMemo<SearchableComboboxOption[]>(() => {
-        const scopedLocations =
-            selectedShipperId && selectedShipperId !== "-"
-                ? activeCustomerLocations.filter(
-                      (location) => location.customerShipperId === selectedShipperId
-                  )
-                : activeCustomerLocations
-
-        return scopedLocations.map(toLocationOption)
-    }, [activeCustomerLocations, selectedShipperId])
-
-    const unloadingLocationItems = useMemo<SearchableComboboxOption[]>(
-        () => activeCustomerLocations.map(toLocationOption),
-        [activeCustomerLocations]
-    )
-
     const canEdit =
         mode === "create" ? canWrite("shipments") : canWriteShipmentType(shipmentType)
 
     if (!canEdit) return null
-
-    const locationsEmptyMessage = locationsError
-        ? "Unable to load customer locations."
-        : selectedShipperId && selectedShipperId !== "-"
-          ? "No stuffing locations found for this customer shipper."
-          : "No customer locations found."
 
     const isPending =
         mode === "create"
@@ -808,69 +767,32 @@ export default function ShipmentOperationalForm({
                                         )}
                                     </form.Field>
 
-                                    <form.Field
-                                        name="loadingLocationId"
-                                        validators={{
-                                            onChange: zodOnChange(loadingLocationIdSchema),
-                                        }}
-                                    >
+                                    <form.Field name="loadingInAt">
                                         {(field) => (
-                                            <SearchableCombobox
+                                            <DatePicker
+                                                label="Loading In At"
                                                 id={field.name}
-                                                label="Loading Location (Stuffing)"
                                                 value={field.state.value}
                                                 onValueChange={(nextValue) =>
                                                     field.handleChange(nextValue)
                                                 }
-                                                items={loadingLocationItems}
                                                 error={fieldError(field.state.meta.errors)}
-                                                isLoading={locationsLoading}
-                                                disabled={!selectedCustomerCode}
-                                                placeholder={
-                                                    selectedCustomerCode
-                                                        ? "Search stuffing location..."
-                                                        : "Customer is required to load locations"
-                                                }
-                                                emptyMessage={locationsEmptyMessage}
-                                                description={
-                                                    !selectedCustomerCode
-                                                        ? "Select a customer to load stuffing locations."
-                                                        : undefined
-                                                }
+                                                placeholder="Pick loading in date"
                                             />
                                         )}
                                     </form.Field>
 
-                                    <form.Field
-                                        name="unloadingLocationId"
-                                        validators={{
-                                            onChange: zodOnChange(
-                                                unloadingLocationIdSchema
-                                            ),
-                                        }}
-                                    >
+                                    <form.Field name="loadingOutAt">
                                         {(field) => (
-                                            <SearchableCombobox
+                                            <DatePicker
+                                                label="Loading Out At"
                                                 id={field.name}
-                                                label="Unloading Location (Unstuffing)"
                                                 value={field.state.value}
                                                 onValueChange={(nextValue) =>
                                                     field.handleChange(nextValue)
                                                 }
-                                                items={unloadingLocationItems}
                                                 error={fieldError(field.state.meta.errors)}
-                                                isLoading={locationsLoading}
-                                                disabled={!selectedCustomerCode}
-                                                placeholder={
-                                                    selectedCustomerCode
-                                                        ? "Search unstuffing location..."
-                                                        : "Customer is required to load locations"
-                                                }
-                                                emptyMessage={
-                                                    locationsError
-                                                        ? "Unable to load customer locations."
-                                                        : "No customer locations found."
-                                                }
+                                                placeholder="Pick loading out date"
                                             />
                                         )}
                                     </form.Field>

@@ -55,7 +55,6 @@ import type { ShipmentLinkedSelling } from "@/lib/types/entity-details"
 import {
     brandLink,
     brandText,
-    chipInfo,
     glassInset,
     glassPanel,
     glassShine,
@@ -66,6 +65,7 @@ import {
     tableRowClass,
     tableShell,
 } from "@/lib/design"
+import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -203,10 +203,6 @@ function OverviewField({
     )
 }
 
-function formatShipmentType(type: string) {
-    return type.charAt(0) + type.slice(1).toLowerCase()
-}
-
 function formatIdr(value: number) {
     return value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
 }
@@ -262,6 +258,8 @@ export default function ShipmentDetailPage({
             customerShipperId={data.customerShipperId}
             vesselId={undefined}
             eta={undefined}
+            loadingInAt={undefined}
+            loadingOutAt={undefined}
         />
     )
 
@@ -289,6 +287,8 @@ export default function ShipmentDetailPage({
             customerShipperId={data.customerShipperId}
             vesselId={operational.vesselId}
             eta={operational.eta ?? undefined}
+            loadingInAt={operational.loadingInAt ?? undefined}
+            loadingOutAt={operational.loadingOutAt ?? undefined}
         />
     ) : null
 
@@ -356,13 +356,10 @@ export default function ShipmentDetailPage({
                                         </h1>
                                         <ShipmentLifecycleChip status={data.status} />
                                         {hasOperational ? (
-                                            <span
-                                                className={chipInfo()}
-                                            >
-                                                {formatShipmentType(
-                                                    operational.shipmentType
-                                                )}
-                                            </span>
+                                            <ShipmentTypeTag
+                                                type={operational.shipmentType}
+                                                className="px-3 py-1 text-xs font-semibold tracking-[0.05em]"
+                                            />
                                         ) : (
                                             <TbdChip />
                                         )}
@@ -593,6 +590,20 @@ export default function ShipmentDetailPage({
                                 <OverviewField label="ETA">
                                     {operational.eta ? (
                                         formatDate(operational.eta.split("T")[0])
+                                    ) : (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
+                                </OverviewField>
+                                <OverviewField label="Loading in at">
+                                    {operational.loadingInAt ? (
+                                        formatDate(operational.loadingInAt.split("T")[0])
+                                    ) : (
+                                        <WarningChip>Unavailable</WarningChip>
+                                    )}
+                                </OverviewField>
+                                <OverviewField label="Loading out at">
+                                    {operational.loadingOutAt ? (
+                                        formatDate(operational.loadingOutAt.split("T")[0])
                                     ) : (
                                         <WarningChip>Unavailable</WarningChip>
                                     )}

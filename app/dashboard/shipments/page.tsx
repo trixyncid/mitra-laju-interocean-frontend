@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { IconPlus } from "@tabler/icons-react"
 
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import { useShipments } from "@/hooks/use-shipments"
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import ErrorPage from "@/components/error-page"
 import { Button } from "@/components/ui/button"
@@ -16,16 +17,17 @@ import {
     DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
-import { type AppliedTableFilters } from "@/components/data-table-toolbar"
 
 export default function ShipmentPage() {
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(20)
-    const [applied, setApplied] = useState<AppliedTableFilters>({
-        search: "",
-        status: "all",
-        dateRange: {},
-    })
+    const {
+        applied,
+        page,
+        pageSize,
+        setApplied,
+        setPage,
+        setPageSize,
+        isRestored,
+    } = usePersistedTableState("shipments")
 
     const params = useMemo(
         () => ({
@@ -39,18 +41,13 @@ export default function ShipmentPage() {
         [page, pageSize, applied]
     )
 
-    const { data, isLoading, error } = useShipments(params)
+    const { data, isLoading, error } = useShipments(params, isRestored)
     const shipments = data?.items ?? []
     const pagination = data?.pagination ?? {
         page,
         pageSize,
         total: 0,
         totalPages: 1,
-    }
-
-    const handleApply = (next: AppliedTableFilters) => {
-        setApplied(next)
-        setPage(1)
     }
 
     if (error) return <ErrorPage message={error.message} />
@@ -72,7 +69,7 @@ export default function ShipmentPage() {
                 }
             />
             <DashboardPageCard>
-                {isLoading ? (
+                {!isRestored || isLoading ? (
                     <TableSkeleton />
                 ) : (
                     <DataTable
@@ -83,12 +80,9 @@ export default function ShipmentPage() {
                         totalPages={pagination.totalPages}
                         totalRows={pagination.total}
                         applied={applied}
-                        onApply={handleApply}
+                        onApply={setApplied}
                         onPageChange={setPage}
-                        onPageSizeChange={(next) => {
-                            setPageSize(next)
-                            setPage(1)
-                        }}
+                        onPageSizeChange={setPageSize}
                     />
                 )}
             </DashboardPageCard>

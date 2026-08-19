@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { formatShipmentType } from "@/lib/shipment-types"
+import { chipShipmentType } from "@/lib/design"
 
 export function ShipmentTypeTag({
   type,
@@ -16,10 +17,8 @@ export function ShipmentTypeTag({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded px-1.5 py-px text-[10px] font-medium leading-4 tracking-wide",
-        tone === "onPrimary"
-          ? "bg-primary-foreground/20 text-primary-foreground"
-          : "bg-secondary text-secondary-foreground",
+        chipShipmentType(type, "px-1.5 py-px text-[10px] font-medium leading-4 tracking-wide"),
+        tone === "onPrimary" && "ring-1 ring-white/25",
         className
       )}
     >

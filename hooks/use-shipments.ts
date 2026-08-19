@@ -121,7 +121,7 @@ export const useCreateShipmentOperational = (shipmentId: string) => {
     return useMutation({
         mutationFn: ({ shipmentId, shipmentOperational }: { shipmentId: string, shipmentOperational: unknown }) => shipmentsService.createShipmentOperational(shipmentId, shipmentOperational),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
             toast.success("Shipment operational created successfully");
         },
         onError: (error: Error) => {
@@ -166,7 +166,7 @@ export const useUpdateShipmentOperational = (shipmentId: string) => {
     return useMutation({
         mutationFn: ({ shipmentId, id, shipmentOperational }: { shipmentId: string, id: string, shipmentOperational: unknown }) => shipmentsService.updateShipmentOperational(shipmentId, id, shipmentOperational),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
             toast.success("Shipment operational updated successfully");
         },
         onError: (error: Error) => {
@@ -181,7 +181,7 @@ export const useDeleteShipmentOperational = (shipmentId: string) => {
     return useMutation({
         mutationFn: ({ shipmentId, id }: { shipmentId: string, id: string }) => shipmentsService.deleteShipmentOperational(shipmentId, id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
             toast.success("Shipment operational deleted successfully");
         },
     });
@@ -201,7 +201,8 @@ export const useCreateShipmentOperationalContainer = (shipmentId: string) => {
     return useMutation({
         mutationFn: ({ shipmentId, shipmentOperationalId, shipmentOperationalContainer }: { shipmentId: string, shipmentOperationalId: string, shipmentOperationalContainer: unknown }) => shipmentsService.createShipmentOperationalContainer(shipmentId, shipmentOperationalId, shipmentOperationalContainer),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
+            queryClient.invalidateQueries({ queryKey: ["shipmentOperationalContainers"] });
             toast.success("Shipment operational container created successfully");
         },
     });
@@ -213,7 +214,8 @@ export const useUpdateShipmentOperationalContainer = (shipmentId: string) => {
     return useMutation({
         mutationFn: ({ shipmentId, shipmentOperationalId, id, shipmentOperationalContainer }: { shipmentId: string, shipmentOperationalId: string, id: string, shipmentOperationalContainer: unknown }) => shipmentsService.updateShipmentOperationalContainer(shipmentId, shipmentOperationalId, id, shipmentOperationalContainer),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
+            queryClient.invalidateQueries({ queryKey: ["shipmentOperationalContainers"] });
             toast.success("Shipment operational container updated successfully");
         },
     });
@@ -225,7 +227,8 @@ export const useDeleteShipmentOperationalContainer = (shipmentId: string) => {
     return useMutation({
         mutationFn: ({ shipmentId, shipmentOperationalId, id }: { shipmentId: string, shipmentOperationalId: string, id: string }) => shipmentsService.deleteShipmentOperationalContainer(shipmentId, shipmentOperationalId, id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shipments", shipmentId] });
+            queryClient.invalidateQueries({ queryKey: ["shipments"] });
+            queryClient.invalidateQueries({ queryKey: ["shipmentOperationalContainers"] });
             toast.success("Shipment operational container deleted successfully");
         },
     });

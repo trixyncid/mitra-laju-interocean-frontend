@@ -1,9 +1,12 @@
 "use client"
 
 import {
+  IconBox,
+  IconCircleCheck,
   IconCoin,
   IconPackage,
   IconReceipt,
+  IconStack2,
   IconTrendingUp,
 } from "@tabler/icons-react"
 
@@ -48,55 +51,89 @@ function formatIdrKpi(value: string | number) {
   return { display: full, full }
 }
 
+function formatCount(value: number) {
+  const display = value.toLocaleString("id-ID")
+  return { display, full: display }
+}
+
 export function DashboardKpiCards({ data }: { data: DashboardData }) {
   const netRevenue = parseAmount(data.netRevenue)
   const shipmentTotal = totalShipmentCount(data.shipmentTypeCounts)
+  const containerTotal = data.containerStats.total
+  const teuTotal = data.containerStats.teu
+  const finishedTotal = data.finishedInPeriod
 
-  const cards = [
+  const opsCards = [
     {
       label: "Total shipments",
       description: "Active operationals in selected period",
-      display: shipmentTotal.toLocaleString("id-ID"),
-      full: shipmentTotal.toLocaleString("id-ID"),
+      ...formatCount(shipmentTotal),
       icon: IconPackage,
       accent: "text-[var(--chart-1)]",
       tint: "from-[var(--chart-1)]/10 to-transparent",
     },
-    ...(FINANCIAL_MODULES_ENABLED
-      ? [
-          {
-            label: "Total selling",
-            description: "Sum of net selling amounts in period",
-            ...formatIdrKpi(data.totalNetSelling),
-            icon: IconCoin,
-            accent: "text-[var(--chart-1)]",
-            tint: "from-[var(--chart-1)]/10 to-transparent",
-          },
-          {
-            label: "Total costing",
-            description: "Sum of net vendor costing amounts in period",
-            ...formatIdrKpi(data.totalNetCosting),
-            icon: IconReceipt,
-            accent: "text-[var(--chart-2)]",
-            tint: "from-[var(--chart-2)]/10 to-transparent",
-          },
-          {
-            label: "Net revenue",
-            description: "Total selling minus total costing",
-            ...formatIdrKpi(data.netRevenue),
-            icon: IconTrendingUp,
-            accent:
-              netRevenue >= 0
-                ? "text-secondary-foreground"
-                : "text-[var(--mli-on-error-container)]",
-            tint:
-              netRevenue >= 0
-                ? "from-[var(--mli-primary-container)]/12 to-transparent"
-                : "from-[var(--mli-error-container)] to-transparent",
-          },
-        ]
-      : []),
+    {
+      label: "Containers",
+      description: "Active container lines on those operationals",
+      ...formatCount(containerTotal),
+      icon: IconBox,
+      accent: "text-[var(--chart-2)]",
+      tint: "from-[var(--chart-2)]/10 to-transparent",
+    },
+    {
+      label: "TEU",
+      description: "20′ = 1 TEU, 40′ = 2 TEU",
+      ...formatCount(teuTotal),
+      icon: IconStack2,
+      accent: "text-[var(--chart-3)]",
+      tint: "from-[var(--chart-3)]/10 to-transparent",
+    },
+    {
+      label: "Finished",
+      description: "Jobs marked finished in the selected period",
+      ...formatCount(finishedTotal),
+      icon: IconCircleCheck,
+      accent: "text-secondary-foreground",
+      tint: "from-[var(--mli-primary-container)]/12 to-transparent",
+    },
   ]
+
+  const financeCards = [
+    {
+      label: "Total selling",
+      description: "Sum of net selling amounts in period",
+      ...formatIdrKpi(data.totalNetSelling),
+      icon: IconCoin,
+      accent: "text-[var(--chart-1)]",
+      tint: "from-[var(--chart-1)]/10 to-transparent",
+    },
+    {
+      label: "Total costing",
+      description: "Sum of net vendor costing amounts in period",
+      ...formatIdrKpi(data.totalNetCosting),
+      icon: IconReceipt,
+      accent: "text-[var(--chart-2)]",
+      tint: "from-[var(--chart-2)]/10 to-transparent",
+    },
+    {
+      label: "Net revenue",
+      description: "Total selling minus total costing",
+      ...formatIdrKpi(data.netRevenue),
+      icon: IconTrendingUp,
+      accent:
+        netRevenue >= 0
+          ? "text-secondary-foreground"
+          : "text-[var(--mli-on-error-container)]",
+      tint:
+        netRevenue >= 0
+          ? "from-[var(--mli-primary-container)]/12 to-transparent"
+          : "from-[var(--mli-error-container)] to-transparent",
+    },
+  ]
+
+  const cards = FINANCIAL_MODULES_ENABLED
+    ? [opsCards[0], ...financeCards]
+    : opsCards
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

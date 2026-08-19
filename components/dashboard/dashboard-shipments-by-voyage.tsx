@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
+import { IconArrowRight } from "@tabler/icons-react"
 
 import type { VoyageStatus } from "@/app/dashboard/dashboard-types"
+import { ContainerSummaryTags } from "@/components/ui/container-summary-tags"
 import {
   Card,
   CardContent,
@@ -12,6 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
+import { WarningChip } from "@/components/ui/status-chip"
 import {
   Table,
   TableBody,
@@ -27,6 +31,7 @@ import {
   brandLink,
   brandText,
   glassPanel,
+  secondaryText,
   tableCellClass,
   tableHeaderCell,
   tableHeaderRow,
@@ -64,6 +69,100 @@ const VOYAGE_STATUS_OPTIONS: {
 function formatDateTime(value: string | null) {
   if (!value) return "—"
   return localDate(value)
+}
+
+function displayValue(value: string | null | undefined) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : "—"
+}
+
+function LabeledStack({
+  items,
+}: {
+  items: { label: string; value: string | null | undefined }[]
+}) {
+  return (
+    <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
+      {items.map((item) => (
+        <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
+          <span className="w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            {item.label}
+          </span>
+          <span className={cn(secondaryText, "truncate")}>
+            {displayValue(item.value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function RouteCell({
+  departure,
+  destination,
+}: {
+  departure: string | null
+  destination: string | null
+}) {
+  if (!departure && !destination) {
+    return <WarningChip>Unavailable</WarningChip>
+  }
+
+  return (
+    <span className={cn(secondaryText, "flex flex-row items-center gap-x-1")}>
+      {departure ?? "—"}
+      <IconArrowRight className="size-4 shrink-0" />
+      {destination ?? "—"}
+    </span>
+  )
+}
+
+function CustomerCell({
+  name,
+  code,
+  shipper,
+  type,
+}: {
+  name: string
+  code: string
+  shipper: string | null
+  type: string
+}) {
+  const customer = name ? `${name} (${code})` : "—"
+
+  return (
+    <div className="flex min-w-0 max-w-[18rem] flex-col gap-0.5">
+      <span className={cn(secondaryText, "inline-flex min-w-0 items-center gap-1.5")}>
+        <span className="truncate">{customer}</span>
+        {type ? (
+          <ShipmentTypeTag type={type} className="shrink-0 px-2 py-0.5 text-xs" />
+        ) : null}
+      </span>
+      <span className="truncate text-xs text-muted-foreground">
+        {displayValue(shipper)}
+      </span>
+    </div>
+  )
+}
+
+function OrderCell({
+  id,
+  orderNumber,
+  canReadShipments,
+}: {
+  id: string
+  orderNumber: string
+  canReadShipments: boolean
+}) {
+  const label: ReactNode = canReadShipments ? (
+    <Link href={`/dashboard/shipments/${id}`} className={brandLink}>
+      {orderNumber}
+    </Link>
+  ) : (
+    orderNumber
+  )
+
+  return <div className="font-semibold text-foreground">{label}</div>
 }
 
 export function DashboardShipmentsByVoyage() {
@@ -137,7 +236,7 @@ export function DashboardShipmentsByVoyage() {
           data.map((voyage) => (
             <div
               key={voyage.vesselId}
-              className={cn(tableShell, "rounded-lg")}
+              className={cn(tableShell, "overflow-x-auto rounded-lg")}
             >
               <div className="flex flex-col gap-1 border-b border-[rgba(214,227,255,0.35)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -156,46 +255,54 @@ export function DashboardShipmentsByVoyage() {
               <Table>
                 <TableHeader>
                   <TableRow className={tableHeaderRow}>
-                    <TableHead className={tableHeaderCell}>Order #</TableHead>
+                    <TableHead className={tableHeaderCell}>Order Number</TableHead>
                     <TableHead className={tableHeaderCell}>Customer</TableHead>
-                    <TableHead className={tableHeaderCell}>Type</TableHead>
-                    <TableHead className={tableHeaderCell}>POL</TableHead>
-                    <TableHead className={tableHeaderCell}>POD</TableHead>
-                    <TableHead className={tableHeaderCell}>ETA</TableHead>
+                    <TableHead className={tableHeaderCell}>Route</TableHead>
+                    <TableHead className={tableHeaderCell}>Booking / BL</TableHead>
+                    <TableHead className={cn(tableHeaderCell, "min-w-[12rem]")}>
+                      Containers
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {voyage.shipments.map((shipment) => (
                     <TableRow key={shipment.id} className={tableRowClass}>
                       <TableCell className={tableCellClass}>
-                        {canReadShipments ? (
-                          <Link
-                            href={`/dashboard/shipments/${shipment.id}`}
-                            className={brandLink}
-                          >
-                            {shipment.orderNumber}
-                          </Link>
-                        ) : (
-                          shipment.orderNumber
+                        <OrderCell
+                          id={shipment.id}
+                          orderNumber={shipment.orderNumber}
+                          canReadShipments={canReadShipments}
+                        />
+                      </TableCell>
+                      <TableCell className={tableCellClass}>
+                        <CustomerCell
+                          name={shipment.customerName}
+                          code={shipment.customerCode}
+                          shipper={shipment.customerShipper}
+                          type={shipment.shipmentType}
+                        />
+                      </TableCell>
+                      <TableCell className={tableCellClass}>
+                        <RouteCell
+                          departure={shipment.portDeparture}
+                          destination={shipment.portDestination}
+                        />
+                      </TableCell>
+                      <TableCell className={tableCellClass}>
+                        <LabeledStack
+                          items={[
+                            { label: "Booking", value: shipment.bookingNumber },
+                            { label: "BL", value: shipment.blNumber },
+                          ]}
+                        />
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          tableCellClass,
+                          "min-w-[12rem] max-w-[18rem] whitespace-normal"
                         )}
-                      </TableCell>
-                      <TableCell className={tableCellClass}>
-                        <div>{shipment.customerName}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {shipment.customerCode}
-                        </div>
-                      </TableCell>
-                      <TableCell className={tableCellClass}>
-                        {shipment.shipmentType}
-                      </TableCell>
-                      <TableCell className={tableCellClass}>
-                        {shipment.portDeparture ?? "—"}
-                      </TableCell>
-                      <TableCell className={tableCellClass}>
-                        {shipment.portDestination ?? "—"}
-                      </TableCell>
-                      <TableCell className={tableCellClass}>
-                        {formatDateTime(shipment.eta)}
+                      >
+                        <ContainerSummaryTags containers={shipment.containers ?? []} />
                       </TableCell>
                     </TableRow>
                   ))}
