@@ -24,7 +24,7 @@ export const pageCard = cn(
 
 /** Nested table shell inside glass page cards. */
 export const tableShell =
-  "overflow-hidden rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.55)]"
+  "overflow-x-auto rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.55)]"
 
 export const tableSearchInput =
   "h-11 w-full max-w-xl cursor-text caret-primary rounded-md border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.6)] px-5 text-base shadow-none placeholder:text-muted-foreground/80 transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-input focus-visible:border-ring focus-visible:bg-[rgba(247,249,251,0.92)] focus-visible:ring-[3px] focus-visible:ring-ring/20"

@@ -102,6 +102,9 @@ export interface DashboardVoyageShipment {
   portDestination: string | null
   bookingNumber: string | null
   blNumber: string | null
+  truckingBookTo: string | null
+  freightBookTo: string | null
+  remarks: string | null
   containers: DashboardVoyageContainer[]
 }
 

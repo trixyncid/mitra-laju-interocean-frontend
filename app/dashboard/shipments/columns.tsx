@@ -42,9 +42,12 @@ export type Shipment = {
         shipmentType?: string
         blNumber?: string | null
         bookingNumber?: string | null
+        remarks?: string | null
         portDeparture: { portName: string; portCountry: string } | null
         portDestination: { portName: string; portCountry: string } | null
         vessel?: { vesselName: string; voyageNumber: string } | null
+        truckingBookTo?: { vendorName: string; vendorCode: string } | null
+        freightBookTo?: { vendorName: string; vendorCode: string } | null
         shipmentOperationalContainers?: ShipmentContainerSummary[]
     }
     isActive: boolean
@@ -72,19 +75,35 @@ function StackedValue({
     )
 }
 
+function vendorLabel(
+    vendor?: { vendorName: string; vendorCode: string } | null
+) {
+    if (!vendor) return null
+    if (!vendor.vendorName && !vendor.vendorCode) return null
+    if (!vendor.vendorCode) return vendor.vendorName
+    return `${vendor.vendorName} (${vendor.vendorCode})`
+}
+
 function LabeledStack({
     items,
+    labelClassName,
 }: {
     items: { label: string; value: string | null | undefined }[]
+    labelClassName?: string
 }) {
     return (
         <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
             {items.map((item) => (
                 <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
-                    <span className="w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                    <span
+                        className={cn(
+                            "w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
+                            labelClassName
+                        )}
+                    >
                         {item.label}
                     </span>
-                    <span className={cn(secondaryText, "truncate")}>
+                    <span className={cn(secondaryText, "truncate")} title={displayValue(item.value)}>
                         {displayValue(item.value)}
                     </span>
                 </div>
@@ -211,6 +230,59 @@ export const columns: ColumnDef<Shipment>[] = [
                         },
                     ]}
                 />
+            )
+        }
+    },
+    {
+        id: "bookTo",
+        accessorFn: (row) =>
+            [
+                vendorLabel(row.shipmentOperational?.truckingBookTo) ?? "",
+                vendorLabel(row.shipmentOperational?.freightBookTo) ?? "",
+            ].join(" "),
+        header: ({ column }) => sortHeader(column, "Book To"),
+        ...textSort,
+        enableGlobalFilter: false,
+        cell: ({ row }) => {
+            if (!row.original.shipmentOperational) {
+                return <WarningChip>Unavailable</WarningChip>
+            }
+            return (
+                <LabeledStack
+                    labelClassName="w-16"
+                    items={[
+                        {
+                            label: "Trucking",
+                            value: vendorLabel(row.original.shipmentOperational.truckingBookTo),
+                        },
+                        {
+                            label: "Freight",
+                            value: vendorLabel(row.original.shipmentOperational.freightBookTo),
+                        },
+                    ]}
+                />
+            )
+        }
+    },
+    {
+        id: "remarks",
+        accessorFn: (row) => row.shipmentOperational?.remarks ?? "",
+        header: ({ column }) => sortHeader(column, "Remarks"),
+        ...textSort,
+        enableGlobalFilter: false,
+        meta: { cellClassName: "whitespace-normal min-w-[10rem] max-w-[16rem]" },
+        cell: ({ row }) => {
+            if (!row.original.shipmentOperational) {
+                return <WarningChip>Unavailable</WarningChip>
+            }
+            const remarks = row.original.shipmentOperational.remarks?.trim()
+            if (!remarks) {
+                return <span className={secondaryText}>—</span>
+            }
+            return (
+                <span className={cn(secondaryText, "line-clamp-2")} title={remarks}>
+                    {remarks}
+                </span>
             )
         }
     },

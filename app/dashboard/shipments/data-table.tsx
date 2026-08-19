@@ -62,13 +62,13 @@ export function DataTable({
   onApply,
 }: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
-  const [showModifiedBy, setShowModifiedBy] = useState(true)
+  const [showModifiedBy, setShowModifiedBy] = useState(false)
   const pagination = useMemo(
     () => ({ pageIndex: Math.max(page - 1, 0), pageSize }),
     [page, pageSize]
   )
   const columnVisibility = useMemo(
-    () => ({ updatedBy: showModifiedBy }),
+    () => ({ updatedBy: showModifiedBy, updatedAt: showModifiedBy }),
     [showModifiedBy]
   )
 
@@ -126,15 +126,15 @@ export function DataTable({
             <Checkbox
               checked={showModifiedBy}
               onCheckedChange={(checked) => setShowModifiedBy(checked === true)}
-              aria-label="Show modified by"
+              aria-label="Show modified columns"
             />
-            Modified by
+            Modified
           </label>
         }
       />
 
       <div className={tableShell}>
-        <Table>
+        <Table className="min-w-max">
           <TableHeader className="[&_tr]:border-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className={tableHeaderRow}>

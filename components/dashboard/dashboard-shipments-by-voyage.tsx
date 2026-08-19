@@ -78,17 +78,24 @@ function displayValue(value: string | null | undefined) {
 
 function LabeledStack({
   items,
+  labelClassName,
 }: {
   items: { label: string; value: string | null | undefined }[]
+  labelClassName?: string
 }) {
   return (
     <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
       {items.map((item) => (
         <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
-          <span className="w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          <span
+            className={cn(
+              "w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
+              labelClassName
+            )}
+          >
             {item.label}
           </span>
-          <span className={cn(secondaryText, "truncate")}>
+          <span className={cn(secondaryText, "truncate")} title={displayValue(item.value)}>
             {displayValue(item.value)}
           </span>
         </div>
@@ -259,6 +266,10 @@ export function DashboardShipmentsByVoyage() {
                     <TableHead className={tableHeaderCell}>Customer</TableHead>
                     <TableHead className={tableHeaderCell}>Route</TableHead>
                     <TableHead className={tableHeaderCell}>Booking / BL</TableHead>
+                    <TableHead className={tableHeaderCell}>Book To</TableHead>
+                    <TableHead className={cn(tableHeaderCell, "min-w-[10rem]")}>
+                      Remarks
+                    </TableHead>
                     <TableHead className={cn(tableHeaderCell, "min-w-[12rem]")}>
                       Containers
                     </TableHead>
@@ -295,6 +306,32 @@ export function DashboardShipmentsByVoyage() {
                             { label: "BL", value: shipment.blNumber },
                           ]}
                         />
+                      </TableCell>
+                      <TableCell className={tableCellClass}>
+                        <LabeledStack
+                          labelClassName="w-16"
+                          items={[
+                            { label: "Trucking", value: shipment.truckingBookTo },
+                            { label: "Freight", value: shipment.freightBookTo },
+                          ]}
+                        />
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          tableCellClass,
+                          "min-w-[10rem] max-w-[16rem] whitespace-normal"
+                        )}
+                      >
+                        {shipment.remarks?.trim() ? (
+                          <span
+                            className={cn(secondaryText, "line-clamp-2")}
+                            title={shipment.remarks}
+                          >
+                            {shipment.remarks}
+                          </span>
+                        ) : (
+                          <span className={secondaryText}>—</span>
+                        )}
                       </TableCell>
                       <TableCell
                         className={cn(
