@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -19,6 +19,14 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Dashboard - Mitra Laju Interocean",
   description: "Freight forwarding operations dashboard",
+  applicationName: "Mitra Laju Interocean",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1b365d" },
+    { media: "(prefers-color-scheme: dark)", color: "#001833" },
+  ],
 };
 
 export default function RootLayout({
