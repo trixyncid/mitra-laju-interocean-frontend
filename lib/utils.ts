@@ -5,11 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** @deprecated Use `toIsoDateOnly` / `formatCalendarDate`. Kept so leftover callers do not write UTC end-of-day. */
 export function ISOFormat(date: string) {
-  const d = new Date(date)
-  d.setUTCHours(23, 59, 59, 999)
-
-  return d.toISOString()
+  return date.split("T")[0] ?? date
 }
 
 /**

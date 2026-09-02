@@ -26,11 +26,6 @@ export type ChangePasswordPayload = {
   newPassword: string
 }
 
-export type ResetPasswordResponse = {
-  user: User
-  temporaryPassword: string
-}
-
 export type UserListParams = {
   page: number
   pageSize: number
@@ -78,8 +73,8 @@ export const usersService = {
     apiClient.put(`/users/${id}`, user),
   changePassword: async (id: string, payload: ChangePasswordPayload) =>
     apiClient.put(`/users/${id}/password`, payload),
-  resetPassword: async (id: string): Promise<ResetPasswordResponse> =>
-    apiClient.post(`/users/${id}/reset-password`, {}),
+  resetPassword: async (id: string, password: string): Promise<User> =>
+    apiClient.post(`/users/${id}/reset-password`, { password }),
   uploadAvatar: async (id: string, avatar: FormData): Promise<User> =>
     apiClient.post(`/users/${id}/avatar`, avatar),
   getAvatarUrl: async (id: string): Promise<{ url: string }> =>

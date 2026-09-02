@@ -1,28 +1,59 @@
 import { NextRequest, NextResponse } from "next/server"
 
-function hasSessionCookie(request: NextRequest) {
-  return (
-    request.cookies.has("better-auth.session_token") ||
-    request.cookies.has("__Secure-better-auth.session_token")
-  )
-}
+import { normalizeBackendUrl } from "@/lib/backend-url"
+import {
+  authRedirectPath,
+  hasSessionCookie,
+  sessionStatusFromGetSessionResponse,
+  type SessionStatus,
+} from "@/lib/proxy-session"
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const authenticated = hasSessionCookie(request)
+const SESSION_CHECK_TIMEOUT_MS = 2500
 
-  if (pathname.startsWith("/dashboard") && !authenticated) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = "/"
-    loginUrl.search = ""
-    return NextResponse.redirect(loginUrl)
+async function getBackendSessionStatus(
+  request: NextRequest
+): Promise<SessionStatus> {
+  if (!hasSessionCookie((name) => request.cookies.has(name))) {
+    return "invalid"
   }
 
-  if (pathname === "/" && authenticated) {
-    const dashboardUrl = request.nextUrl.clone()
-    dashboardUrl.pathname = "/dashboard"
-    dashboardUrl.search = ""
-    return NextResponse.redirect(dashboardUrl)
+  const backendUrl = normalizeBackendUrl(process.env.NEXT_PUBLIC_BACKEND_URL)
+  if (!backendUrl) return "unknown"
+
+  try {
+    const response = await fetch(`${backendUrl}/auth/get-session`, {
+      method: "GET",
+      headers: {
+        cookie: request.headers.get("cookie") ?? "",
+        origin: request.nextUrl.origin,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(SESSION_CHECK_TIMEOUT_MS),
+    })
+
+    let payload: unknown = null
+    try {
+      payload = await response.json()
+    } catch {
+      payload = null
+    }
+
+    return sessionStatusFromGetSessionResponse(response.status, payload)
+  } catch {
+    return "unknown"
+  }
+}
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const sessionStatus = await getBackendSessionStatus(request)
+  const redirectTo = authRedirectPath(pathname, sessionStatus)
+
+  if (redirectTo) {
+    const url = request.nextUrl.clone()
+    url.pathname = redirectTo
+    url.search = ""
+    return NextResponse.redirect(url)
   }
 
   return NextResponse.next()

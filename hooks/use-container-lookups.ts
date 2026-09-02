@@ -42,9 +42,6 @@ export const useCreateContainerLookup = (kind: ContainerLookupKind) => {
       queryClient.invalidateQueries({ queryKey: [queryKeyFor(kind)] })
       toast.success(`${label} created successfully`)
     },
-    onError: (error: Error) => {
-      toast.warning(error.message)
-    },
   })
 }
 
@@ -59,9 +56,6 @@ export const useUpdateContainerLookup = (kind: ContainerLookupKind) => {
       queryClient.invalidateQueries({ queryKey: [queryKeyFor(kind)] })
       toast.success(`${label} updated successfully`)
     },
-    onError: (error: Error) => {
-      toast.error(error.message)
-    },
   })
 }
 
@@ -74,9 +68,6 @@ export const useDeleteContainerLookup = (kind: ContainerLookupKind) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [queryKeyFor(kind)] })
       toast.success(`${label} deleted successfully`)
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
     },
   })
 }

@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
 import { IconArrowRight } from "@tabler/icons-react"
-import { cn, formatDate } from "@/lib/utils"
+import { cn, localDate } from "@/lib/utils"
 import Link from "next/link"
 import { Info } from "lucide-react"
 import { ShipmentLifecycleChip, WarningChip } from "@/components/ui/status-chip"
@@ -331,7 +331,7 @@ export const columns: ColumnDef<Shipment>[] = [
         accessorKey: "updatedAt",
         header: ({ column }) => sortHeader(column, "Modified At"),
         ...dateSort,
-        cell: ({ row }) => <span className={secondaryText}>{formatDate(row.original.updatedAt as string)}</span>
+        cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>
     },
     {
         ...actionColumn,

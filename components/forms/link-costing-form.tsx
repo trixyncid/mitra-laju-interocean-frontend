@@ -5,9 +5,9 @@ import { Button } from "../ui/button"
 import { DeleteConfirmButton } from "../ui/delete-confirm-button"
 import { IconLink, IconLinkOff, IconTrash } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "../ui/dialog"
+import { useShipmentSearch } from "@/hooks/use-entity-searches"
 import { useUpdateCosting, useDeleteCosting } from "@/hooks/use-costings"
 import { useState } from "react"
-import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
 import { usePermissions } from "@/hooks/use-permissions"
 import { shipmentSelectionSchema } from "@/lib/schemas/link"
@@ -24,16 +24,15 @@ export default function LinkCostingForm({
 }) {
     const [open, setOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const [shipmentSearch, setShipmentSearch] = useState("")
     const { canReadShipmentsForCosting } = usePermissions()
 
-    const { data: shipmentsPage, isLoading, error: errorShipments } = useShipments(
-        {
-            page: 1,
-            pageSize: 100,
-            status: "all",
-        },
-        open && canReadShipmentsForCosting()
-    )
+    const { data: shipmentsPage, isLoading, isFetching, isError: errorShipments } =
+        useShipmentSearch(
+            shipmentSearch,
+            open && canReadShipmentsForCosting(),
+            "all"
+        )
 
     const deleteCosting = useDeleteCosting()
     const updateCosting = useUpdateCosting()
@@ -103,13 +102,11 @@ export default function LinkCostingForm({
                                             error={fieldError(field.state.meta.errors)}
                                             required
                                             isLoading={isLoading}
-                                            disabled={Boolean(errorShipments)}
+                                            isSearching={isFetching}
+                                            searchError={Boolean(errorShipments)}
+                                            onSearchTermChange={setShipmentSearch}
                                             placeholder="Search shipment order number..."
-                                            emptyMessage={
-                                                errorShipments
-                                                    ? "Unable to load shipments."
-                                                    : "No shipments found."
-                                            }
+                                            emptyMessage="No shipments found."
                                         />
                                     </div>
                                 )}

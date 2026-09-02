@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client"
-import { openFetchedUrl } from "@/lib/open-attachment"
+import { openFetchedAttachment } from "@/lib/open-attachment"
 import type { Costing, CostingDetail } from "@/app/dashboard/costings/columns"
 
 export type CreateCostingInput = {
@@ -94,11 +94,17 @@ export const costingService = {
         return response
     },
     viewCostingAttachment: async (costingId: string, id: string) => {
-        await openFetchedUrl(async () => {
-            const response = await apiClient.get<{ url: string }>(
-                `/costings/${costingId}/attachments/${id}`
-            )
-            return response.url
+        await openFetchedAttachment(async () => {
+            const response = await apiClient.get<{
+                url: string
+                contentType?: string | null
+                fileName?: string | null
+            }>(`/costings/${costingId}/attachments/${id}`)
+            return {
+                url: response.url,
+                contentType: response.contentType,
+                fileName: response.fileName,
+            }
         })
     }
 }

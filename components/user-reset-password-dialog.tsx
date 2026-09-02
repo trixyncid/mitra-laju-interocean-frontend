@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useResetPassword } from "@/hooks/use-users"
+import { generateTemporaryPassword } from "@/lib/temporary-password"
 
 export default function UserResetPasswordDialog({
   user,
@@ -40,11 +41,15 @@ export default function UserResetPasswordDialog({
   }
 
   const handleReset = () => {
-    resetPassword.mutate(user.id, {
-      onSuccess: (data) => {
-        setTemporaryPassword(data.temporaryPassword)
-      },
-    })
+    const password = generateTemporaryPassword()
+    resetPassword.mutate(
+      { id: user.id, password },
+      {
+        onSuccess: () => {
+          setTemporaryPassword(password)
+        },
+      }
+    )
   }
 
   const handleCopy = async () => {
@@ -74,12 +79,13 @@ export default function UserResetPasswordDialog({
           <div className="space-y-4">
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
-                A temporary password has been generated. Copy it and send it to the user
-                securely. They should sign in with this password, then go to their profile and
-                change it to a new password of their choice.
+                A temporary password was generated in this browser and saved for {user.email}.
+                Copy it and send it to the user securely (chat, phone, or in person). It is not
+                returned by the API and will not appear in server logs.
               </p>
               <p className="font-medium text-foreground">
-                This password cannot be retrieved again after you close this dialog.
+                This password cannot be retrieved again after you close this dialog. The user
+                should sign in, then change it from their profile.
               </p>
             </div>
             <div className="space-y-2">
@@ -99,8 +105,8 @@ export default function UserResetPasswordDialog({
           </div>
         ) : (
           <DialogDescription>
-            This will generate a new random 8-character password for {user.email}. The user must
-            change it from their profile after signing in.
+            This will set a new random password for {user.email}. Share it with the user out of
+            band. They must change it from their profile after signing in.
           </DialogDescription>
         )}
 

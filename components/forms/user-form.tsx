@@ -10,15 +10,9 @@ import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { Button } from "@/components/ui/button"
 import { FormLabel } from "@/components/ui/form-label"
 import { TextField } from "@/components/ui/text-field"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableCombobox } from "@/components/searchable-combobox"
 import { useCreateUser, useUpdateUser } from "@/hooks/use-users"
-import { useRolesOptions } from "@/hooks/use-roles"
+import { useRoleSearch } from "@/hooks/use-entity-searches"
 import { buildUserUpdatePayload } from "@/lib/user-update"
 import { fieldError } from "@/lib/form-field"
 import { userEmailSchema, userNameSchema } from "@/lib/schemas/user"
@@ -28,7 +22,7 @@ import {
   zodOnChange,
 } from "@/lib/zod-form"
 import { toast } from "sonner"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useMemo, useState } from "react"
 
 function FormField({
   label,
@@ -66,7 +60,21 @@ export default function UserForm({
   const router = useRouter()
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
-  const { data: roles, isLoading: rolesLoading } = useRolesOptions()
+  const [roleSearch, setRoleSearch] = useState("")
+  const {
+    data: rolesPage,
+    isLoading: rolesLoading,
+    isFetching: rolesFetching,
+    isError: rolesError,
+  } = useRoleSearch(roleSearch)
+  const roleItems = useMemo(
+    () =>
+      rolesPage?.items.map((role) => ({
+        value: role.id,
+        label: role.name || formatRoleLabel(role.slug),
+      })) ?? [],
+    [rolesPage?.items]
+  )
 
   const form = useForm({
     defaultValues: {
@@ -225,27 +233,25 @@ export default function UserForm({
 
         <form.Field name="roleId">
           {(field) => (
-            <FormField label="Role" required field={field}>
-              {rolesLoading ? (
-                <Skeleton className="h-9 w-full" />
-              ) : (
-                <Select
-                  value={field.state.value}
-                  onValueChange={(value) => field.handleChange(value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(roles ?? []).map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name || formatRoleLabel(role.slug)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </FormField>
+            <SearchableCombobox
+              id={field.name}
+              label="Role"
+              value={field.state.value}
+              onValueChange={(value) => field.handleChange(value)}
+              items={roleItems}
+              error={
+                field.state.meta.errors[0]
+                  ? String(field.state.meta.errors[0])
+                  : undefined
+              }
+              required
+              isLoading={rolesLoading}
+              isSearching={rolesFetching}
+              searchError={rolesError}
+              onSearchTermChange={setRoleSearch}
+              placeholder="Search role name..."
+              emptyMessage="No roles found."
+            />
           )}
         </form.Field>
 

@@ -23,9 +23,10 @@ import {
 } from "@/lib/schemas/costing"
 import { zodOnChange } from "@/lib/zod-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { useState } from "react"
-import { useVendors } from "@/hooks/use-vendors"
+import { useState, useMemo } from "react"
+import { useVendorSearch } from "@/hooks/use-entity-searches"
 import { Vendor } from "@/app/dashboard/vendors/columns"
+import { SearchableCombobox } from "@/components/searchable-combobox"
 import { useCreateCosting, useUpdateCosting } from "@/hooks/use-costings"
 import { usePermissions } from "@/hooks/use-permissions"
 import {
@@ -88,16 +89,25 @@ export default function CostingForm({
 
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+    const [vendorSearch, setVendorSearch] = useState("")
 
     const fetchDependencies = open && canReadVendorsForCosting()
-    const { data: vendorsPage, isLoading: isLoadingVendors, error: errorVendors } = useVendors(
-        {
-            page: 1,
-            pageSize: 100,
-        },
-        fetchDependencies
+    const {
+        data: vendorsPage,
+        isLoading: isLoadingVendors,
+        isFetching: isFetchingVendors,
+        isError: errorVendors,
+    } = useVendorSearch(vendorSearch, fetchDependencies, "true")
+    const vendorItems = useMemo(
+        () =>
+            vendorsPage?.items
+                ?.filter((vendor: Vendor) => vendor.id)
+                .map((vendor: Vendor) => ({
+                    value: vendor.id as string,
+                    label: `${vendor.vendorName} (${vendor.vendorCode})`,
+                })) ?? [],
+        [vendorsPage?.items]
     )
-    const vendors = vendorsPage?.items ?? []
 
     const form = useForm({
         defaultValues: {
@@ -440,35 +450,21 @@ export default function CostingForm({
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <form.Field name="vendorId" validators={{ onChange: zodOnChange(costingVendorSchema), onSubmit: zodOnChange(costingVendorSchema) }}>
                                             {( field ) => (
-                                                <div>
-                                                    <FormLabel htmlFor={field.name} className="my-2" required>Vendor</FormLabel>
-                                                    <Select
-                                                        value={field.state.value as string}
-                                                        onValueChange={(value) => field.handleChange(value)}
-                                                    >
-                                                        <SelectTrigger className="w-full">
-                                                            <SelectValue placeholder="Select a vendor" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {
-                                                                isLoadingVendors ? (
-                                                                    <SelectItem value="-">Loading...</SelectItem>
-                                                                ) : errorVendors ? (
-                                                                    <SelectItem value="-">Error loading vendors</SelectItem>
-                                                                ) : vendors?.length === 0 ? (
-                                                                    <SelectItem value="-">No vendors found</SelectItem>
-                                                                ) : vendors?.map((vendor: Vendor) => (
-                                                                    <SelectItem key={vendor.id} value={vendor.id ?? "-"}>{vendor.vendorName}</SelectItem>
-                                                                ))
-                                                            }
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {
-                                                        field.state.meta.errors ? (
-                                                            <em className="text-xs text-[var(--mli-on-error-container)]">{field.state.meta.errors}</em>
-                                                        ) : null
-                                                    }
-                                                </div>
+                                                <SearchableCombobox
+                                                    id={field.name}
+                                                    label="Vendor"
+                                                    value={field.state.value === "-" ? "" : field.state.value}
+                                                    onValueChange={(value) => field.handleChange(value || "-")}
+                                                    items={vendorItems}
+                                                    error={fieldError(field.state.meta.errors)}
+                                                    required
+                                                    isLoading={isLoadingVendors}
+                                                    isSearching={isFetchingVendors}
+                                                    searchError={errorVendors}
+                                                    onSearchTermChange={setVendorSearch}
+                                                    placeholder="Search vendor name or code..."
+                                                    emptyMessage="No vendors found."
+                                                />
                                             )}
                                         </form.Field>
                                         <form.Field name="vendorInvoiceNumber" validators={{ onChange: zodOnChange(costingVendorInvoiceSchema) }}>

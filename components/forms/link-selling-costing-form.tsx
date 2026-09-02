@@ -5,8 +5,10 @@ import { Button } from "../ui/button"
 import { IconPlus } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Label } from "../ui/label"
-import { useCostings, useUpdateCosting } from "@/hooks/use-costings"
+import { useCostingSearch } from "@/hooks/use-entity-searches"
+import { useUpdateCosting } from "@/hooks/use-costings"
 import { useQueryClient } from "@tanstack/react-query"
+import { sellingKeys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import { Costing } from "@/app/dashboard/costings/columns"
 import { costingSelectionSchema } from "@/lib/schemas/link"
@@ -20,8 +22,12 @@ export default function LinkSellingCostingForm({
     sellingId: string
 }) {
     const [open, setOpen] = useState(false)
+    const [costingSearch, setCostingSearch] = useState("")
 
-    const { data: costingsData, isLoading } = useCostings({ page: 1, pageSize: 100 })
+    const { data: costingsData, isLoading, isFetching, isError } = useCostingSearch(
+        costingSearch,
+        open
+    )
     const costings = costingsData?.items
     const updateCosting = useUpdateCosting()
     const queryClient = useQueryClient()
@@ -47,7 +53,7 @@ export default function LinkSellingCostingForm({
                 { id: value.costingId, costing: { sellingId } },
                 {
                     onSuccess: () => {
-                        queryClient.invalidateQueries({ queryKey: ["sellings", sellingId] })
+                        queryClient.invalidateQueries({ queryKey: sellingKeys.detail(sellingId) })
                         setOpen(false)
                         form.reset()
                     },
@@ -100,6 +106,9 @@ export default function LinkSellingCostingForm({
                                         error={fieldError(field.state.meta.errors)}
                                         required
                                         isLoading={isLoading}
+                                        isSearching={isFetching}
+                                        searchError={isError}
+                                        onSearchTermChange={setCostingSearch}
                                         placeholder="Search costing number or description..."
                                         emptyMessage="No unlinked costings found."
                                     />

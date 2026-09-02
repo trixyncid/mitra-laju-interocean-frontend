@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { SearchableCombobox } from "@/components/searchable-combobox"
 import { Costing } from "@/app/dashboard/costings/columns"
-import { useCostings, useUpdateCosting } from "@/hooks/use-costings"
+import { useCostingSearch } from "@/hooks/use-entity-searches"
+import { useUpdateCosting } from "@/hooks/use-costings"
 import { usePermissions } from "@/hooks/use-permissions"
 import { fieldError } from "@/lib/form-field"
 import { costingSelectionSchema } from "@/lib/schemas/link"
@@ -103,9 +104,10 @@ export default function LinkShipmentCostingForm({
   orderNumber: string
 }) {
   const [open, setOpen] = useState(false)
+  const [costingSearch, setCostingSearch] = useState("")
   const { canWrite } = usePermissions()
-  const { data: costingsData, isLoading, isError } = useCostings(
-    { page: 1, pageSize: 100 },
+  const { data: costingsData, isLoading, isFetching, isError } = useCostingSearch(
+    costingSearch,
     open && canWrite("costings")
   )
   const updateCosting = useUpdateCosting()
@@ -213,13 +215,11 @@ export default function LinkShipmentCostingForm({
                 error={fieldError(field.state.meta.errors)}
                 required
                 isLoading={isLoading}
-                disabled={isError}
+                isSearching={isFetching}
+                searchError={isError}
+                onSearchTermChange={setCostingSearch}
                 placeholder="Search by number, description, or vendor..."
-                emptyMessage={
-                  isError
-                    ? "Unable to load costings."
-                    : "No unlinked costings available."
-                }
+                emptyMessage="No unlinked costings available."
               />
             )}
           </form.Field>

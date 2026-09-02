@@ -32,11 +32,9 @@ import {
 } from "@/components/ui/select"
 import { TextField } from "@/components/ui/text-field"
 import { useGetLocationsByCustomerId, useGetShippersByCustomerCodeId } from "@/hooks/use-customers"
+import { usePortSearch, useVendorSearch, useVesselSearch } from "@/hooks/use-entity-searches"
 import { usePermissions } from "@/hooks/use-permissions"
-import { usePorts } from "@/hooks/use-ports"
 import { useCreateShipmentWithOperational } from "@/hooks/use-shipments"
-import { useVendors } from "@/hooks/use-vendors"
-import { useVessels } from "@/hooks/use-vessels"
 import { fieldError } from "@/lib/form-field"
 import {
   customerCodeIdSchema,
@@ -130,6 +128,9 @@ export default function ShipmentCreateForm() {
   const [vendorDialogTarget, setVendorDialogTarget] = useState<
     "trucking" | "freight" | null
   >(null)
+  const [portSearch, setPortSearch] = useState("")
+  const [vesselSearch, setVesselSearch] = useState("")
+  const [vendorSearch, setVendorSearch] = useState("")
 
   const form = useForm({
     defaultValues: {
@@ -181,8 +182,8 @@ export default function ShipmentCreateForm() {
         },
         {
           onSuccess: (data) => {
-            if (data.shipment.id) {
-              router.push(`/dashboard/shipments/${data.shipment.id}`)
+            if (data.id) {
+              router.push(`/dashboard/shipments/${data.id}`)
               return
             }
             router.push("/dashboard/shipments")
@@ -201,19 +202,12 @@ export default function ShipmentCreateForm() {
   } = useGetLocationsByCustomerId(selectedCustomerCode, {
     enabled: Boolean(selectedCustomerCode),
   })
-  const { data: portsData, isLoading: portsLoading } = usePorts({
-    page: 1,
-    pageSize: 100,
-  })
-  const { data: vesselsData, isLoading: vesselsLoading } = useVessels({
-    page: 1,
-    pageSize: 100,
-  })
-  const { data: vendorsData, isLoading: vendorsLoading } = useVendors({
-    page: 1,
-    pageSize: 100,
-    status: "true",
-  })
+  const { data: portsData, isLoading: portsLoading, isFetching: portsFetching, isError: portsError } =
+    usePortSearch(portSearch)
+  const { data: vesselsData, isLoading: vesselsLoading, isFetching: vesselsFetching, isError: vesselsError } =
+    useVesselSearch(vesselSearch)
+  const { data: vendorsData, isLoading: vendorsLoading, isFetching: vendorsFetching, isError: vendorsError } =
+    useVendorSearch(vendorSearch, true, "true")
 
   const shipmentTypeOptions = useMemo(
     () =>
@@ -616,6 +610,9 @@ export default function ShipmentCreateForm() {
                   error={fieldError(field.state.meta.errors)}
                   required
                   isLoading={vesselsLoading}
+                  isSearching={vesselsFetching}
+                  searchError={vesselsError}
+                  onSearchTermChange={setVesselSearch}
                   placeholder="Search vessel..."
                   emptyMessage="No vessels found."
                   quickAddLabel="Add new vessel"
@@ -643,6 +640,9 @@ export default function ShipmentCreateForm() {
                   items={portItems}
                   error={fieldError(field.state.meta.errors)}
                   isLoading={portsLoading}
+                  isSearching={portsFetching}
+                  searchError={portsError}
+                  onSearchTermChange={setPortSearch}
                   placeholder="Search port of loading..."
                   emptyMessage="No ports found."
                   quickAddLabel="Add new port"
@@ -670,6 +670,9 @@ export default function ShipmentCreateForm() {
                   items={portItems}
                   error={fieldError(field.state.meta.errors)}
                   isLoading={portsLoading}
+                  isSearching={portsFetching}
+                  searchError={portsError}
+                  onSearchTermChange={setPortSearch}
                   placeholder="Search port of discharge..."
                   emptyMessage="No ports found."
                   quickAddLabel="Add new port"
@@ -797,6 +800,9 @@ export default function ShipmentCreateForm() {
                   items={vendorItems}
                   error={fieldError(field.state.meta.errors)}
                   isLoading={vendorsLoading}
+                  isSearching={vendorsFetching}
+                  searchError={vendorsError}
+                  onSearchTermChange={setVendorSearch}
                   placeholder="Search trucking vendor..."
                   emptyMessage="No vendors found."
                   quickAddLabel="Add new vendor"
@@ -822,6 +828,9 @@ export default function ShipmentCreateForm() {
                   items={vendorItems}
                   error={fieldError(field.state.meta.errors)}
                   isLoading={vendorsLoading}
+                  isSearching={vendorsFetching}
+                  searchError={vendorsError}
+                  onSearchTermChange={setVendorSearch}
                   placeholder="Search freight vendor..."
                   emptyMessage="No vendors found."
                   quickAddLabel="Add new vendor"
@@ -853,6 +862,13 @@ export default function ShipmentCreateForm() {
         </section>
 
         <div className="flex flex-wrap gap-3 pt-2">
+          {createShipment.isError ? (
+            <p className="w-full text-sm text-[var(--mli-on-error-container)]">
+              {createShipment.error instanceof Error
+                ? createShipment.error.message
+                : "Unable to create shipment. Please try again."}
+            </p>
+          ) : null}
           <Button type="submit" disabled={createShipment.isPending}>
             {createShipment.isPending ? "Creating..." : "Create shipment"}
           </Button>

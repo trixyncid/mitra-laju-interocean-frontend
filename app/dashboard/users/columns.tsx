@@ -39,19 +39,29 @@ export type User = {
   updatedAt: string
 }
 
-export const columns: ColumnDef<User>[] = [
+export function getUserColumns({
+  canEditUsers,
+  canDeleteUsers,
+}: {
+  canEditUsers: boolean
+  canDeleteUsers: boolean
+}): ColumnDef<User>[] {
+  const columns: ColumnDef<User>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => sortHeader(column, "Name"),
     ...textSort,
-    cell: ({ row }) => (
-      <Link
-        href={`/dashboard/users/${row.original.id}`}
-        className={`${primaryText} hover:underline`}
-      >
-        {row.original.name}
-      </Link>
-    ),
+    cell: ({ row }) =>
+      canEditUsers ? (
+        <Link
+          href={`/dashboard/users/${row.original.id}`}
+          className={`${primaryText} hover:underline`}
+        >
+          {row.original.name}
+        </Link>
+      ) : (
+        <span className={primaryText}>{row.original.name}</span>
+      ),
   },
   {
     accessorKey: "email",
@@ -85,9 +95,21 @@ export const columns: ColumnDef<User>[] = [
     ...dateSort,
     cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt)}</span>,
   },
-  {
-    ...actionColumn,
-    header: "Action",
-    cell: ({ row }) => <UserActionCell row={row} />,
-  },
-]
+  ]
+
+  if (canEditUsers || canDeleteUsers) {
+    columns.push({
+      ...actionColumn,
+      header: "Action",
+      cell: ({ row }) => (
+        <UserActionCell
+          row={row}
+          canEditUsers={canEditUsers}
+          canDeleteUsers={canDeleteUsers}
+        />
+      ),
+    })
+  }
+
+  return columns
+}

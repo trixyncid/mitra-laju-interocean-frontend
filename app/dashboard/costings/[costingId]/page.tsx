@@ -22,7 +22,7 @@ import DocumentUploadForm from "@/components/forms/document-upload-form"
 import CostingForm from "@/components/forms/costing-form"
 import { useCostingById, useUpdateCosting } from "@/hooks/use-costings"
 import type { CostingAttachment } from "@/app/dashboard/costings/columns"
-import { amountCalculation, cn, formatDate, localDate } from "@/lib/utils"
+import { amountCalculation, cn, localDate } from "@/lib/utils"
 import { costingCurrencyRequiresRate } from "@/lib/costing-currencies"
 import { costingService } from "@/services/costing.service"
 import CostingLoading from "@/components/loading/costing-loading"
@@ -508,9 +508,7 @@ export default function CostingDetailPage({
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     Updated{" "}
-                                                    {formatDate(
-                                                        attachment.updatedAt.split("T")[0]
-                                                    )}
+                                                    {localDate(attachment.updatedAt)}
                                                     {attachment.updatedBy?.name
                                                         ? ` by ${attachment.updatedBy.name}`
                                                         : ""}

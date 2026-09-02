@@ -20,7 +20,8 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { glassPanel, glassShine } from "@/lib/design"
-import { cn, formatDate } from "@/lib/utils"
+import { formatCalendarDate } from "@/lib/date-input"
+import { cn } from "@/lib/utils"
 
 const chartConfig = {
   EXPORT: { label: "Export", color: "var(--chart-1)" },
@@ -30,9 +31,10 @@ const chartConfig = {
 } satisfies ChartConfig
 
 function weekLabel(weekStart: string) {
-  const [year, month, day] = weekStart.split("-")
-  if (!year || !month || !day) return weekStart
-  return formatDate(weekStart).replace(` ${year}`, "")
+  const formatted = formatCalendarDate(weekStart)
+  const year = weekStart.split("-")[0]
+  if (!year || formatted === "-") return weekStart
+  return formatted.replace(` ${year}`, "")
 }
 
 export function DashboardShipmentVolumeChart({ data }: { data: DashboardData }) {
@@ -107,7 +109,7 @@ export function DashboardShipmentVolumeChart({ data }: { data: DashboardData }) 
 
                 return (
                   <div className="border-border/50 bg-background grid min-w-[10rem] gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
-                    <p className="font-medium">Week of {formatDate(week.weekStart)}</p>
+                    <p className="font-medium">Week of {formatCalendarDate(week.weekStart)}</p>
                     {rows.map((row) => (
                       <div key={row.key} className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5 text-muted-foreground">

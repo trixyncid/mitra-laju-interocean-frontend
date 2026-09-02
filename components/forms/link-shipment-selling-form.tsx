@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { SearchableCombobox } from "@/components/searchable-combobox"
 import { Selling } from "@/app/dashboard/sellings/columns"
-import { useSellings, useUpdateSelling } from "@/hooks/use-sellings"
+import { useSellingSearch } from "@/hooks/use-entity-searches"
+import { useUpdateSelling } from "@/hooks/use-sellings"
 import { usePermissions } from "@/hooks/use-permissions"
 import { fieldError } from "@/lib/form-field"
 import { sellingSelectionSchema } from "@/lib/schemas/link"
@@ -103,9 +104,10 @@ export default function LinkShipmentSellingForm({
   orderNumber: string
 }) {
   const [open, setOpen] = useState(false)
+  const [sellingSearch, setSellingSearch] = useState("")
   const { canWrite } = usePermissions()
-  const { data: sellingsData, isLoading, isError } = useSellings(
-    { page: 1, pageSize: 100 },
+  const { data: sellingsData, isLoading, isFetching, isError } = useSellingSearch(
+    sellingSearch,
     open && canWrite("sellings")
   )
   const updateSelling = useUpdateSelling()
@@ -206,13 +208,11 @@ export default function LinkShipmentSellingForm({
                 error={fieldError(field.state.meta.errors)}
                 required
                 isLoading={isLoading}
-                disabled={isError}
+                isSearching={isFetching}
+                searchError={isError}
+                onSearchTermChange={setSellingSearch}
                 placeholder="Search by number or description..."
-                emptyMessage={
-                  isError
-                    ? "Unable to load sellings."
-                    : "No unlinked sellings available."
-                }
+                emptyMessage="No unlinked sellings available."
               />
             )}
           </form.Field>

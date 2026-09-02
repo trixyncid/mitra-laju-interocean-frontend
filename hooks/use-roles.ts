@@ -7,17 +7,18 @@ import {
   type RoleListParams,
   type UpdateRolePayload,
 } from "@/services/roles.service"
+import { roleKeys } from "@/lib/query-keys"
 
 export const useRoles = (params: RoleListParams) => {
   return useQuery({
-    queryKey: ["roles", params],
+    queryKey: roleKeys.list(params),
     queryFn: () => rolesService.getAll(params),
   })
 }
 
 export const useRolesOptions = () => {
   return useQuery({
-    queryKey: ["roles", "options"],
+    queryKey: roleKeys.options(),
     queryFn: () => rolesService.getAll({ page: 1, pageSize: 100 }),
     select: (data) => data.items,
   })
@@ -25,7 +26,7 @@ export const useRolesOptions = () => {
 
 export function useRoleById(roleId: string | undefined) {
   return useQuery({
-    queryKey: ["role", roleId],
+    queryKey: roleKeys.detail(roleId ?? ""),
     queryFn: () => rolesService.getById(roleId!),
     enabled: !!roleId,
   })
@@ -33,7 +34,7 @@ export function useRoleById(roleId: string | undefined) {
 
 export function useRoleModules() {
   return useQuery({
-    queryKey: ["roles", "modules"],
+    queryKey: roleKeys.modules(),
     queryFn: () => rolesService.getModules(),
   })
 }
@@ -44,12 +45,11 @@ export const useCreateRole = () => {
   return useMutation({
     mutationFn: (payload: CreateRolePayload) => rolesService.create(payload),
     onSuccess: (data) => {
-      queryClient.setQueryData(["role", data.id], data)
-      queryClient.invalidateQueries({ queryKey: ["roles"] })
+      queryClient.setQueryData(roleKeys.detail(data.id), data)
+      queryClient.invalidateQueries({ queryKey: roleKeys.all })
       queryClient.invalidateQueries({ queryKey: ["me", "permissions"] })
       toast.success("Role created successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -60,12 +60,11 @@ export const useUpdateRole = () => {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateRolePayload }) =>
       rolesService.update(id, payload),
     onSuccess: (data, { id }) => {
-      queryClient.setQueryData(["role", id], data)
-      queryClient.invalidateQueries({ queryKey: ["roles"] })
+      queryClient.setQueryData(roleKeys.detail(id), data)
+      queryClient.invalidateQueries({ queryKey: roleKeys.all })
       queryClient.invalidateQueries({ queryKey: ["me", "permissions"] })
       toast.success("Role updated successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -75,10 +74,9 @@ export const useDeleteRole = () => {
   return useMutation({
     mutationFn: rolesService.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["roles"] })
+      queryClient.invalidateQueries({ queryKey: roleKeys.all })
       queryClient.invalidateQueries({ queryKey: ["me", "permissions"] })
       toast.success("Role deleted successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }

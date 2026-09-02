@@ -38,7 +38,8 @@ import {
   tableRowClass,
   tableShell,
 } from "@/lib/design"
-import { cn, localDate } from "@/lib/utils"
+import { formatCalendarDate } from "@/lib/date-input"
+import { cn } from "@/lib/utils"
 
 const VOYAGE_STATUS_OPTIONS: {
   value: VoyageStatus
@@ -67,8 +68,7 @@ const VOYAGE_STATUS_OPTIONS: {
 ]
 
 function formatDateTime(value: string | null) {
-  if (!value) return "—"
-  return localDate(value)
+  return formatCalendarDate(value, "—")
 }
 
 function displayValue(value: string | null | undefined) {

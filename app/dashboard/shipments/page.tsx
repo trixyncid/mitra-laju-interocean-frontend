@@ -35,6 +35,12 @@ export default function ShipmentPage() {
             pageSize,
             search: applied.search || undefined,
             status: applied.status as "all" | "true" | "false",
+            lifecycleStatus: (applied.lifecycleStatus ?? "all") as
+                | "all"
+                | "DRAFT"
+                | "BACKUP"
+                | "ONGOING"
+                | "FINISHED",
             from: applied.dateRange.from,
             to: applied.dateRange.to,
         }),

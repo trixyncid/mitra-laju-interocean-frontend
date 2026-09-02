@@ -235,7 +235,19 @@ export function canAccessRouteWithPermissions(
 ): boolean {
   const module = getRouteModule(pathname)
   if (module === null || module === "profile") return true
+  if (module === "ROLE") return isAdminRole(roleSlug)
+  if (
+    !FINANCIAL_MODULES_ENABLED &&
+    (module === "COSTING" || module === "SELLING")
+  ) {
+    return false
+  }
   return canViewModule(permissions, module, roleSlug)
+}
+
+/** Role management UI is restricted to system admin / superadmin. */
+export function canManageRoles(roleSlug?: string | null): boolean {
+  return isAdminRole(roleSlug)
 }
 
 export function canReadVendorsForCostingWithPermissions(

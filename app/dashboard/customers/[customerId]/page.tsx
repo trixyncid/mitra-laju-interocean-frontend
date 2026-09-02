@@ -32,7 +32,7 @@ import {
 } from "@/lib/design"
 import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
-import { amountCalculation, cn, formatDate, sellingNetAmount } from "@/lib/utils"
+import { amountCalculation, cn, localDate, sellingNetAmount } from "@/lib/utils"
 import type { CustomerShipment } from "@/lib/types/entity-details"
 import { Costing } from "@/app/dashboard/costings/columns"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
@@ -346,11 +346,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
                                 <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
                                     <span>
-                                        Updated {formatDate(data.updatedAt)}
+                                        Updated {localDate(data.updatedAt)}
                                         {updatedByName ? ` by ${updatedByName}` : ""}
                                     </span>
                                     <Dot className="hidden size-4 sm:inline" />
-                                    <span>Registered {formatDate(data.createdAt)}</span>
+                                    <span>Registered {localDate(data.createdAt)}</span>
                                 </p>
                             </div>
                         </div>

@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { parseLocaleNumber } from "@/lib/number-input"
+
 export const requiredString = (label: string) =>
   z.string().trim().min(1, `${label} is required`)
 
@@ -48,8 +50,9 @@ export const requiredPercentageSchema = (label: string, maxMessage?: string) =>
       })
       return
     }
-    const num = Number(val)
-    if (!Number.isFinite(num) || num > 100) {
+    const num =
+      typeof val === "number" ? val : parseLocaleNumber(String(val))
+    if (num === "" || !Number.isFinite(num) || num > 100) {
       ctx.addIssue({
         code: "custom",
         message: maxMessage ?? `${label} must be less than or equal to 100`,

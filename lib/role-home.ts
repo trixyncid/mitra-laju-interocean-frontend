@@ -34,10 +34,27 @@ export function getRoleHomePath(roleOrUser: unknown): string {
     return getHomePathFromPermissions(permissions, role)
   }
 
-  // Fallback when permissions are not yet on the session object.
+  // Slug fallback only when permissions are unavailable (e.g. fetch failed).
   if (role === "admin" || role === "superadmin") return "/dashboard"
   if (role === "costing_admin") {
     return FINANCIAL_MODULES_ENABLED ? "/dashboard/costings" : "/dashboard/shipments"
   }
   return "/dashboard/shipments"
+}
+
+export async function resolveRoleHomePathAfterAuth(
+  user: unknown
+): Promise<string> {
+  const permissions = resolvePermissions(user)
+  if (permissions) {
+    return getRoleHomePath(user)
+  }
+
+  try {
+    const { meService } = await import("@/services/me.service")
+    const fetched = await meService.getPermissions()
+    return getHomePathFromPermissions(fetched.permissions, fetched.role.slug)
+  } catch {
+    return getRoleHomePath(user)
+  }
 }

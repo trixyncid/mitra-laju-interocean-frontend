@@ -31,7 +31,7 @@ import {
 } from "@/lib/design"
 import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
 import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
-import { amountCalculation, cn, formatDate } from "@/lib/utils"
+import { amountCalculation, cn, localDate } from "@/lib/utils"
 import { Costing } from "../../costings/columns"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import { LinkedShipment } from "./(shipments)/shipment-columns"
@@ -312,11 +312,11 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
 
                                 <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
                                     <span>
-                                        Updated {formatDate(data.updatedAt)}
+                                        Updated {localDate(data.updatedAt)}
                                         {updatedByName ? ` by ${updatedByName}` : ""}
                                     </span>
                                     <Dot className="hidden size-4 sm:inline" />
-                                    <span>Registered {formatDate(data.createdAt)}</span>
+                                    <span>Registered {localDate(data.createdAt)}</span>
                                 </p>
                             </div>
                         </div>

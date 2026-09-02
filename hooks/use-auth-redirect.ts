@@ -1,24 +1,39 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { authClient } from "@/lib/auth-client"
-import { getRoleHomePath } from "@/lib/role-home"
+import { getRoleHomePath, resolveRoleHomePathAfterAuth } from "@/lib/role-home"
 
 /** Redirect authenticated users away from the login page. */
 export function useGuestOnly(redirectTo?: string) {
   const router = useRouter()
   const { data: session, isPending, error } = authClient.useSession()
-  const targetPath = redirectTo ?? getRoleHomePath(session?.user)
+  const [targetPath, setTargetPath] = useState(redirectTo ?? "/dashboard")
 
   useEffect(() => {
-    if (!isPending && session) {
+    if (!session?.user) return
+    if (redirectTo) {
+      setTargetPath(redirectTo)
+      return
+    }
+    let cancelled = false
+    void resolveRoleHomePathAfterAuth(session.user).then((path) => {
+      if (!cancelled) setTargetPath(path)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [session?.user, redirectTo])
+
+  useEffect(() => {
+    if (!isPending && session && !error) {
       router.replace(targetPath)
     }
-  }, [isPending, session, targetPath, router])
+  }, [isPending, session, error, targetPath, router])
 
-  const isRedirecting = !isPending && !!session
+  const isRedirecting = !isPending && !!session && !error
 
   return { session, isPending, error, isRedirecting }
 }
@@ -27,14 +42,15 @@ export function useGuestOnly(redirectTo?: string) {
 export function useRequireAuth(redirectTo = "/") {
   const router = useRouter()
   const { data: session, isPending, error } = authClient.useSession()
+  const shouldRedirect = !isPending && (!session || !!error)
 
   useEffect(() => {
-    if (!isPending && !session && !error) {
+    if (shouldRedirect) {
       router.replace(redirectTo)
     }
-  }, [isPending, session, error, redirectTo, router])
+  }, [shouldRedirect, redirectTo, router])
 
-  const isRedirecting = !isPending && !session && !error
+  const isRedirecting = shouldRedirect
 
   return { session, isPending, error, isRedirecting }
 }

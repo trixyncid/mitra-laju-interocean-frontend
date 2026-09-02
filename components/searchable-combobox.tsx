@@ -42,6 +42,10 @@ type SearchableComboboxProps = {
   isLoading?: boolean
   quickAddLabel?: string
   onQuickAdd?: () => void
+  /** When set, typing triggers server-side search via the parent. */
+  onSearchTermChange?: (term: string) => void
+  isSearching?: boolean
+  searchError?: boolean
 }
 
 function ensureSelectedOption(
@@ -51,6 +55,17 @@ function ensureSelectedOption(
   if (!value) return items
   if (items.some((item) => item.value === value)) return items
   return [...items, { value, label: value }]
+}
+
+function filterOptions(
+  items: SearchableComboboxOption[],
+  query: string
+): SearchableComboboxOption[] {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (!normalizedQuery) return items
+  return items.filter((item) =>
+    item.label.toLowerCase().includes(normalizedQuery)
+  )
 }
 
 export function SearchableCombobox({
@@ -68,10 +83,14 @@ export function SearchableCombobox({
   isLoading = false,
   quickAddLabel = "Add new",
   onQuickAdd,
+  onSearchTermChange,
+  isSearching = false,
+  searchError = false,
 }: SearchableComboboxProps) {
   const anchor = useComboboxAnchor()
   const [open, setOpen] = useState(false)
   const [inputValue, setInputValue] = useState("")
+  const asyncSearch = Boolean(onSearchTermChange)
 
   const options = useMemo(
     () => ensureSelectedOption(items, value),
@@ -83,11 +102,22 @@ export function SearchableCombobox({
     [options, value]
   )
 
+  const displayItems = useMemo(() => {
+    if (asyncSearch) return options
+    return filterOptions(options, inputValue)
+  }, [asyncSearch, options, inputValue])
+
   useEffect(() => {
     if (!open) {
       setInputValue(selectedItem?.label ?? "")
     }
   }, [open, selectedItem, value])
+
+  const emptyContent = searchError
+    ? "Unable to load options."
+    : isLoading || isSearching
+      ? "Searching..."
+      : emptyMessage
 
   return (
     <Field data-invalid={Boolean(error) || undefined}>
@@ -97,11 +127,13 @@ export function SearchableCombobox({
       <FieldContent>
         <Combobox
           items={options}
+          filteredItems={displayItems}
           open={open}
           onOpenChange={(nextOpen) => {
             setOpen(nextOpen)
             if (nextOpen) {
               setInputValue("")
+              onSearchTermChange?.("")
               return
             }
             setInputValue(selectedItem?.label ?? "")
@@ -110,11 +142,13 @@ export function SearchableCombobox({
           inputValue={inputValue}
           onInputValueChange={(nextValue) => {
             setInputValue(nextValue)
+            onSearchTermChange?.(nextValue)
           }}
           onValueChange={(item) => {
             const nextValue = item?.value ?? ""
             onValueChange(nextValue)
             setInputValue(item?.label ?? "")
+            onSearchTermChange?.("")
           }}
           itemToStringLabel={(item) => item?.label ?? ""}
           isItemEqualToValue={(a, b) => (a?.value ?? "") === (b?.value ?? "")}
@@ -136,9 +170,7 @@ export function SearchableCombobox({
             />
           </div>
           <ComboboxContent anchor={anchor} className="p-0">
-            <ComboboxEmpty>
-              {isLoading ? "Loading..." : emptyMessage}
-            </ComboboxEmpty>
+            <ComboboxEmpty>{emptyContent}</ComboboxEmpty>
             <ComboboxList>
               {(item) => (
                 <ComboboxItem key={item.value} value={item}>
@@ -172,6 +204,10 @@ export function SearchableCombobox({
           </em>
         ) : description ? (
           <FieldDescription>{description}</FieldDescription>
+        ) : searchError ? (
+          <FieldDescription>
+            Options could not be loaded. Your saved selection is still kept.
+          </FieldDescription>
         ) : null}
       </FieldContent>
     </Field>

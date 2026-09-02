@@ -130,19 +130,9 @@ Authentication is handled by [Better Auth](https://better-auth.com). The auth ha
 
 ### Sign Up
 
-```
-POST /auth/sign-up/email
-Content-Type: application/json
+Public self-registration is **disabled**. `POST /auth/sign-up/email` is rejected. Clients cannot set `role` or `roleId` on any Better Auth path.
 
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "yourpassword",
-  "role": "viewer"
-}
-```
-
-`role` is one of the values listed in [Authorization (Roles)](#authorization-roles). Defaults to `viewer`.
+Create users through the authenticated admin API only — see [Users](#users) (`POST /users`).
 
 ### Sign In
 
@@ -172,7 +162,7 @@ GET /auth/get-session
 
 ### Protected Endpoints
 
-Every endpoint outside of `/auth/*` and the health routes requires a valid session. Requests without a valid session receive:
+Every endpoint outside of `/auth/*` and the health routes requires a valid session. Requests without a valid session receive **401**:
 
 ```json
 {
@@ -228,10 +218,11 @@ Every protected route checks the authenticated user's `role`. Write operations (
 Any authenticated user may:
 
 - `GET /users/:id` — view their own profile
-- `PUT /users/:id` — update their own profile (cannot change `role`)
+- `PUT /users/:id` — update their own name, email, or image (privilege fields such as `role`, `roleId`, `isActive`, and `emailVerified` are ignored)
 - `PUT /users/:id/password` — change their own password (requires `currentPassword`)
+- `POST /users/:id/avatar` — upload their own avatar
 
-User management (list users, create users, delete users, reset passwords, change others' roles) requires `admin` or `superadmin`.
+User management (list, create, edit others, deactivate, reset password) requires the matching `USER` permission. Only `admin` / `superadmin` may assign the `admin` or `superadmin` role. Other-user password changes use `POST /users/:id/reset-password`.
 
 ---
 
@@ -266,7 +257,8 @@ On success, `data` contains the result and `error` is absent. On failure, `data`
 
 | HTTP Status | Error Code | Cause |
 |---|---|---|
-| `401` | — | No valid session (middleware) |
+| `401` | `UNAUTHORIZED` | No valid session (auth middleware) |
+| `401` | `USER_INACTIVE` | Deactivated account with a leftover session |
 | `403` | `FORBIDDEN` | Role lacks permission for this action |
 | `404` | `*_NOT_FOUND` | Resource does not exist |
 | `409` | `*_ALREADY_EXISTS` | Unique constraint violation (duplicate code/name) |
@@ -1099,7 +1091,7 @@ Manage application users (Better Auth `User` + credential `Account`). Passwords 
 
 Users are **soft-deleted** via `isActive: false` (default `true`). Deactivating a user does not remove ports, shipments, costings, or other records they created — those foreign keys stay intact. All active sessions are revoked on deactivation.
 
-> **Note:** Public self-registration remains available at `POST /auth/sign-up/email`. Use `/users` for admin-managed user CRUD.
+> **Note:** Public self-registration is disabled. Use `POST /users` for admin-managed user CRUD.
 
 #### `GET /users`
 List all **active** users (`isActive: true`), newest first.
@@ -1142,19 +1134,23 @@ Create a new user with email/password credentials.
 | `name` | string | Yes | min 1 char |
 | `email` | string | Yes | Must be unique |
 | `password` | string | Yes | min 8 chars |
-| `role` | See [User Role](#user-role) | No | Defaults to `viewer` |
+| `role` / `roleId` | See [User Role](#user-role) | No | Defaults to `viewer`. Assigning `admin` or `superadmin` requires a system admin. |
 | `image` | string \| null | No | Profile image URL |
 | `emailVerified` | boolean | No | Defaults to `false` |
 
 #### `PUT /users/:id`
 Update a user's profile (does not change password). All fields optional.
 
+Self-service (`:id` is the signed-in user) accepts only `name`, `email`, and `image`. Privilege fields (`role`, `roleId`, `isActive`, `emailVerified`) are stripped.
+
+Updating another user requires `USER.edit`. Assigning `admin` or `superadmin` requires the actor to be a system admin.
+
 **Request body example:**
 ```json
 {
   "name": "John Updated",
   "email": "john.updated@example.com",
-  "role": "admin",
+  "role": "viewer",
   "image": null,
   "emailVerified": true
 }
@@ -1164,13 +1160,13 @@ Update a user's profile (does not change password). All fields optional.
 |---|---|---|
 | `name` | string | min 1 char |
 | `email` | string | Must be unique if changed |
-| `role` | See [User Role](#user-role) | Admin/superadmin only when updating other users |
+| `role` / `roleId` | See [User Role](#user-role) | Other-user updates only; `admin` / `superadmin` require a system admin |
 | `image` | string \| null | Profile image URL |
-| `emailVerified` | boolean | |
-| `isActive` | boolean | Admin/superadmin only; set `true` to reactivate |
+| `emailVerified` | boolean | Other-user updates only |
+| `isActive` | boolean | Other-user updates only; set `true` to reactivate |
 
 #### `PUT /users/:id/password`
-Change a user's password. Requires the current password to match before updating.
+Change the signed-in user's own password. Requires the current password to match. Requests for another user are rejected with **403** — use `POST /users/:id/reset-password` instead.
 
 **Request body:**
 ```json
@@ -1188,28 +1184,23 @@ Change a user's password. Requires the current password to match before updating
 **Response `data`:** Updated user object (password is never included).
 
 #### `POST /users/:id/reset-password`
-Generate a new random 8-character password (letters and numbers), update the user's credential account, and return the temporary password once in the response. Use when a user forgets their password.
+Set a new password for another user (admin `USER.edit`). The client generates the one-time password and sends it in the body. The API hashes it and **does not echo it back** — it must not appear in logs, proxies, or the JSON envelope. Share the password with the user out of band (chat, phone, or in person). There is no email delivery yet.
 
-No request body.
+**Request body:**
 
-**Response `data`:**
 ```json
 {
-  "user": {
-    "id": "cuid",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "emailVerified": false,
-    "image": null,
-    "role": "user",
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-01T00:00:00.000Z"
-  },
-  "temporaryPassword": "aB3xY9zK"
+  "password": "Tmp!a7kQ2nR4"
 }
 ```
 
-> Share `temporaryPassword` with the user securely. It is not stored in plain text and cannot be retrieved again.
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `password` | string | Yes | min 8 chars |
+
+**Response `data`:** Updated user object (password is never included).
+
+> The plaintext password exists only in the admin's browser for this dialog session. Close the dialog and it cannot be retrieved again. The user should change it from their profile after signing in.
 
 #### `DELETE /users/:id`
 Deactivate a user (soft delete). Sets `isActive` to `false` and deletes all `Session` records so the user can no longer sign in. Does **not** delete business data created by the user.

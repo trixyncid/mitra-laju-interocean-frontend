@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { formatDate } from "@/lib/utils"
+import { formatCalendarDate } from "@/lib/date-input"
 import { IconArrowRight } from "@tabler/icons-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
@@ -80,7 +80,7 @@ export const columns: ColumnDef<LinkedShipment>[] = [
       return (
         row.original.eta !== "" ? (
           <div className="flex flex-row items-center gap-x-2">
-            <p className="text-sm text-muted-foreground">{ formatDate(row.original.eta) }</p>
+            <p className="text-sm text-muted-foreground">{ formatCalendarDate(row.original.eta) }</p>
           </div>
         ) : (
           <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-md w-fit">Unavailable</p>
