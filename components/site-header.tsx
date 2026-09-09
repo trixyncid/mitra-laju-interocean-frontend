@@ -1,7 +1,11 @@
 "use client"
 
+import Image from "next/image"
+import { IconArrowUpRight } from "@tabler/icons-react"
+
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 export function SiteHeader() {
   return (
@@ -20,14 +24,44 @@ export function SiteHeader() {
             Freight Forwarding Systems
           </h1>
         </div>
-        <div className="ml-auto hidden items-center gap-2 sm:flex">
+
+        <div className="ml-auto flex items-center pl-2">
           <a
             href="https://trixync.id"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-md border border-[rgba(214,227,255,0.5)] bg-[rgba(247,249,251,0.65)] px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground transition-colors hover:border-[rgba(214,227,255,0.8)] hover:text-foreground"
+            aria-label="Built by Trixync — opens in a new tab"
+            className={cn(
+              "group/trixync inline-flex items-center gap-2 rounded-lg border border-[rgba(214,227,255,0.45)]",
+              "bg-[rgba(247,249,251,0.55)] px-2 py-1.5 sm:gap-2.5 sm:px-2.5",
+              "shadow-[0_1px_0_rgba(255,255,255,0.65)_inset]",
+              "transition-[border-color,background-color,box-shadow,transform] duration-200",
+              "hover:border-[rgba(214,227,255,0.85)] hover:bg-[rgba(247,249,251,0.92)]",
+              "hover:shadow-[0_8px_20px_rgba(27,54,93,0.08)]",
+              "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
+              "active:scale-[0.98]"
+            )}
           >
-            Trixync
+            <Image
+              src="/brand/trixync/logo-icon.svg"
+              alt=""
+              width={28}
+              height={25}
+              className="h-5 w-auto"
+              priority
+            />
+            <span className="flex min-w-0 flex-col font-trixync leading-none">
+              <span className="hidden text-[9px] font-semibold tracking-[0.14em] text-muted-foreground uppercase sm:block">
+                Built by
+              </span>
+              <span className="text-[13px] font-semibold tracking-tight text-[#101726]">
+                Trixync
+              </span>
+            </span>
+            <IconArrowUpRight
+              className="size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200 group-hover/trixync:-translate-y-0.5 group-hover/trixync:translate-x-0.5 group-hover/trixync:text-[#101726]"
+              aria-hidden
+            />
           </a>
         </div>
       </div>
