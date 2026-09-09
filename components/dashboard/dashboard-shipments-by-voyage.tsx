@@ -1,10 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useState, type ReactNode } from "react"
+import { useEffect, useMemo, type ReactNode } from "react"
 import { IconArrowRight } from "@tabler/icons-react"
 
-import type { VoyageStatus } from "@/app/dashboard/dashboard-types"
+import type {
+  DashboardVoyageGroup,
+  VoyageStatus,
+} from "@/app/dashboard/dashboard-types"
 import { ContainerSummaryTags } from "@/components/ui/container-summary-tags"
 import {
   Card,
@@ -24,13 +27,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDashboardShipmentsByVoyage } from "@/hooks/use-dashboard-shipments-by-voyage"
+import {
+  usePersistedDashboardVoyageFilters,
+  type DashboardShipmentTypeFilter,
+} from "@/hooks/use-persisted-dashboard-voyage-filters"
 import { usePermissions } from "@/hooks/use-permissions"
 import {
   brandLink,
   brandText,
   glassPanel,
+  glassTabsTrigger,
   secondaryText,
   tableCellClass,
   tableHeaderCell,
@@ -39,6 +47,8 @@ import {
   tableShell,
 } from "@/lib/design"
 import { formatCalendarDate } from "@/lib/date-input"
+import type { ShipmentType } from "@/lib/permissions"
+import { formatShipmentType, SHIPMENT_TYPE_OPTIONS } from "@/lib/shipment-types"
 import { cn } from "@/lib/utils"
 
 const VOYAGE_STATUS_OPTIONS: {
@@ -50,22 +60,35 @@ const VOYAGE_STATUS_OPTIONS: {
   {
     value: "draft",
     label: "Draft",
-    description: "Shipments marked draft and linked to a vessel voyage.",
+    description: "Draft shipments linked to a vessel voyage.",
     empty: "No draft vessel voyages found.",
   },
   {
     value: "backup",
     label: "Backup",
-    description: "Shipments marked backup and linked to a vessel voyage.",
+    description: "Backup shipments linked to a vessel voyage.",
     empty: "No backup vessel voyages found.",
   },
   {
     value: "ongoing",
     label: "Ongoing",
-    description: "Shipments marked ongoing and linked to active voyage operations.",
+    description: "Active voyage operations currently in progress.",
     empty: "No ongoing vessel voyages right now.",
   },
 ]
+
+const TYPE_CHIP_IDLE =
+  "border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.55)] text-muted-foreground hover:border-[rgba(214,227,255,0.85)] hover:bg-[rgba(247,249,251,0.9)] hover:text-foreground"
+
+const TYPE_CHIP_ACTIVE: Record<DashboardShipmentTypeFilter, string> = {
+  all: "border-[var(--mli-primary-container)]/35 bg-[var(--mli-primary-container)] text-primary-foreground hover:bg-[var(--mli-primary-container)] hover:text-primary-foreground",
+  EXPORT:
+    "border-[var(--mli-export-container)]/50 bg-[var(--mli-export-container)] text-[var(--mli-on-export-container)] hover:bg-[var(--mli-export-container)] hover:text-[var(--mli-on-export-container)]",
+  IMPORT:
+    "border-[var(--mli-import-container)]/50 bg-[var(--mli-import-container)] text-[var(--mli-on-import-container)] hover:bg-[var(--mli-import-container)] hover:text-[var(--mli-on-import-container)]",
+  DOMESTIC:
+    "border-[var(--mli-domestic-container)]/50 bg-[var(--mli-domestic-container)] text-[var(--mli-on-domestic-container)] hover:bg-[var(--mli-domestic-container)] hover:text-[var(--mli-on-domestic-container)]",
+}
 
 function formatDateTime(value: string | null) {
   return formatCalendarDate(value, "—")
@@ -172,14 +195,153 @@ function OrderCell({
   return <div className="font-semibold text-foreground">{label}</div>
 }
 
+function shipmentTypeFilterOptions(allowed: ShipmentType[] | "all") {
+  const typeOptions =
+    allowed === "all"
+      ? SHIPMENT_TYPE_OPTIONS
+      : SHIPMENT_TYPE_OPTIONS.filter((option) => allowed.includes(option.value))
+
+  return [{ value: "all" as const, label: "All" }, ...typeOptions]
+}
+
+function filterVoyagesByShipmentType(
+  voyages: DashboardVoyageGroup[] | undefined,
+  shipmentType: DashboardShipmentTypeFilter
+) {
+  if (!voyages) return voyages
+  if (shipmentType === "all") return voyages
+
+  return voyages
+    .map((voyage) => ({
+      ...voyage,
+      shipments: voyage.shipments.filter(
+        (shipment) => shipment.shipmentType === shipmentType
+      ),
+    }))
+    .filter((voyage) => voyage.shipments.length > 0)
+}
+
+function countShipmentsByType(voyages: DashboardVoyageGroup[] | undefined) {
+  const counts: Record<DashboardShipmentTypeFilter, number> = {
+    all: 0,
+    EXPORT: 0,
+    IMPORT: 0,
+    DOMESTIC: 0,
+  }
+
+  if (!voyages) return counts
+
+  for (const voyage of voyages) {
+    for (const shipment of voyage.shipments) {
+      counts.all += 1
+      if (
+        shipment.shipmentType === "EXPORT" ||
+        shipment.shipmentType === "IMPORT" ||
+        shipment.shipmentType === "DOMESTIC"
+      ) {
+        counts[shipment.shipmentType] += 1
+      }
+    }
+  }
+
+  return counts
+}
+
+function summarizeVoyages(voyages: DashboardVoyageGroup[] | undefined) {
+  if (!voyages?.length) {
+    return { voyageCount: 0, shipmentCount: 0 }
+  }
+
+  return {
+    voyageCount: voyages.length,
+    shipmentCount: voyages.reduce(
+      (total, voyage) => total + voyage.shipments.length,
+      0
+    ),
+  }
+}
+
+function TypeFilterChip({
+  active,
+  label,
+  count,
+  tone,
+  onClick,
+  ariaLabel,
+}: {
+  active: boolean
+  label: string
+  count?: number
+  tone: DashboardShipmentTypeFilter
+  onClick: () => void
+  ariaLabel: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={ariaLabel}
+      className={cn(
+        "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow] duration-150",
+        "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
+        active ? TYPE_CHIP_ACTIVE[tone] : TYPE_CHIP_IDLE
+      )}
+    >
+      <span>{label}</span>
+      {typeof count === "number" ? (
+        <span
+          className={cn(
+            "rounded px-1 py-px text-[10px] font-semibold tabular-nums",
+            active ? "bg-black/10 text-inherit" : "bg-[rgba(214,227,255,0.55)] text-muted-foreground"
+          )}
+        >
+          {count}
+        </span>
+      ) : null}
+    </button>
+  )
+}
+
 export function DashboardShipmentsByVoyage() {
-  const [voyageStatus, setVoyageStatus] = useState<VoyageStatus>("ongoing")
-  const { canRead } = usePermissions()
+  const {
+    voyageStatus,
+    shipmentType,
+    setVoyageStatus,
+    setShipmentType,
+    isRestored,
+  } = usePersistedDashboardVoyageFilters()
+  const { canRead, allowedShipmentTypes } = usePermissions()
   const canReadShipments = canRead("shipments")
-  const { data, isLoading, error } = useDashboardShipmentsByVoyage(voyageStatus)
+  const { data, isLoading, error } = useDashboardShipmentsByVoyage(
+    voyageStatus,
+    { enabled: isRestored }
+  )
+  const typeOptions = useMemo(
+    () => shipmentTypeFilterOptions(allowedShipmentTypes),
+    [allowedShipmentTypes]
+  )
+  const showTypeFilter = typeOptions.length > 2
+  const typeCounts = useMemo(() => countShipmentsByType(data), [data])
+  const filteredData = useMemo(
+    () => filterVoyagesByShipmentType(data, shipmentType),
+    [data, shipmentType]
+  )
   const selectedStatus = VOYAGE_STATUS_OPTIONS.find(
     (option) => option.value === voyageStatus
   )
+  const typeLabel =
+    shipmentType === "all" ? null : formatShipmentType(shipmentType)
+  const { voyageCount, shipmentCount } = summarizeVoyages(filteredData)
+
+  useEffect(() => {
+    if (!isRestored) return
+    if (shipmentType === "all") return
+    if (allowedShipmentTypes === "all") return
+    if (!allowedShipmentTypes.includes(shipmentType)) {
+      setShipmentType("all")
+    }
+  }, [allowedShipmentTypes, isRestored, setShipmentType, shipmentType])
 
   return (
     <Card
@@ -192,55 +354,121 @@ export function DashboardShipmentsByVoyage() {
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
       />
-      <CardHeader className="gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
+
+      <CardHeader className="gap-5 pb-0">
         <div className="space-y-1">
           <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
             Operations
           </p>
           <CardTitle className="text-lg">Shipments by Vessel Voyage</CardTitle>
-          <CardDescription>{selectedStatus?.description}</CardDescription>
+          <CardDescription className="max-w-2xl">
+            {selectedStatus?.description}
+          </CardDescription>
         </div>
-        <ToggleGroup
-          type="single"
+
+        <Tabs
           value={voyageStatus}
           onValueChange={(value) => {
             if (value === "draft" || value === "backup" || value === "ongoing") {
               setVoyageStatus(value)
             }
           }}
-          variant="outline"
-          size="sm"
-          className="gap-0.5 rounded-md border border-[rgba(214,227,255,0.55)] bg-[rgba(214,227,255,0.35)] p-0.5 shadow-none"
+          className="gap-0"
         >
-          {VOYAGE_STATUS_OPTIONS.map((option) => (
-            <ToggleGroupItem
-              key={option.value}
-              value={option.value}
-              aria-label={`Show ${option.label.toLowerCase()} voyages`}
-              className="rounded-md border-0 px-4 text-muted-foreground shadow-none hover:bg-[rgba(247,249,251,0.65)] hover:text-foreground data-[spacing=0]:rounded-md data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md data-[state=on]:bg-[var(--mli-primary-container)] data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-[var(--mli-primary-container)] data-[state=on]:hover:text-primary-foreground"
-            >
-              {option.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+          <TabsList
+            className="h-auto w-full min-w-0 justify-start gap-1 overflow-x-auto rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-1 backdrop-blur-xl sm:w-fit"
+            aria-label="Voyage status"
+          >
+            {VOYAGE_STATUS_OPTIONS.map((option) => (
+              <TabsTrigger
+                key={option.value}
+                value={option.value}
+                className={cn(glassTabsTrigger, "min-w-[5.5rem] px-5")}
+              >
+                {option.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </CardHeader>
-      <CardContent className="space-y-5">
-        {isLoading ? (
+
+      <CardContent className="space-y-4 pt-4">
+        {showTypeFilter ? (
+          <div className="flex flex-col gap-3 border-b border-[rgba(214,227,255,0.35)] pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {!isRestored || isLoading ? (
+                <span>Loading voyages…</span>
+              ) : error ? (
+                <span>Unable to load summary</span>
+              ) : filteredData?.length ? (
+                <>
+                  <span className="font-medium text-foreground">
+                    {voyageCount} voyage{voyageCount === 1 ? "" : "s"}
+                  </span>
+                  <span className="mx-1.5 text-[rgba(214,227,255,0.9)]">·</span>
+                  <span>
+                    {shipmentCount} shipment{shipmentCount === 1 ? "" : "s"}
+                    {typeLabel ? (
+                      <>
+                        {" "}
+                        <span className="text-foreground/80">({typeLabel})</span>
+                      </>
+                    ) : null}
+                  </span>
+                </>
+              ) : (
+                <span>No matching voyages</span>
+              )}
+            </p>
+
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              role="group"
+              aria-label="Filter by shipment type"
+            >
+              <span className="mr-1 text-[10px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                Type
+              </span>
+              {typeOptions.map((option) => (
+                <TypeFilterChip
+                  key={option.value}
+                  label={option.label}
+                  tone={option.value}
+                  count={typeCounts[option.value]}
+                  active={shipmentType === option.value}
+                  onClick={() => setShipmentType(option.value)}
+                  ariaLabel={
+                    option.value === "all"
+                      ? "Show all shipment types"
+                      : `Show ${option.label.toLowerCase()} shipments`
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {!isRestored || isLoading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-28 rounded-lg bg-[rgba(214,227,255,0.35)]" />
+              <Skeleton
+                key={index}
+                className="h-28 rounded-lg bg-[rgba(214,227,255,0.35)]"
+              />
             ))}
           </div>
         ) : error ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {error.message || "Unable to load voyage shipments."}
           </p>
-        ) : !data?.length ? (
+        ) : !filteredData?.length ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {selectedStatus?.empty}
+            {shipmentType === "all"
+              ? selectedStatus?.empty
+              : `No ${typeLabel?.toLowerCase() ?? "matching"} shipments found for ${selectedStatus?.label.toLowerCase() ?? "these"} voyages.`}
           </p>
         ) : (
-          data.map((voyage) => (
+          filteredData.map((voyage) => (
             <div
               key={voyage.vesselId}
               className={cn(tableShell, "overflow-x-auto rounded-lg")}
