@@ -1,6 +1,6 @@
 import { Shipment } from "@/app/dashboard/shipments/columns";
 import { apiClient } from "@/lib/api-client";
-import { openFetchedUrl } from "@/lib/open-attachment";
+import { openFetchedAttachment } from "@/lib/open-attachment";
 import type { ShipmentDetail } from "@/lib/types/entity-details";
 import type { ShipmentStatus } from "@/lib/shipment-status";
 
@@ -45,6 +45,7 @@ export type ShipmentListParams = {
     pageSize: number;
     search?: string;
     status?: "all" | "true" | "false";
+    lifecycleStatus?: "all" | "DRAFT" | "BACKUP" | "ONGOING" | "FINISHED";
     from?: string;
     to?: string;
 };
@@ -65,6 +66,7 @@ export const shipmentsService = {
             page: String(params.page),
             pageSize: String(params.pageSize),
             status: params.status ?? "all",
+            lifecycleStatus: params.lifecycleStatus ?? "all",
         });
         if (params.search) query.set("search", params.search);
         if (params.from) query.set("from", params.from);
@@ -88,6 +90,12 @@ export const shipmentsService = {
     },
     create: async (shipment: CreateShipmentInput) => {
         return apiClient.post<CreatedShipment>("/shipments", shipment);
+    },
+    createWithOperational: async (payload: {
+        shipment: CreateShipmentInput
+        operational: Omit<CreateShipmentOperationalInput, "shipmentId">
+    }) => {
+        return apiClient.post<CreatedShipment>("/shipments/with-operational", payload);
     },
     update: async (id: string, shipment: Partial<Shipment>) => {
         const response = await apiClient.put(`/shipments/${id}`, shipment);
@@ -138,11 +146,17 @@ export const shipmentsService = {
         return response;
     },
     viewShipmentOperationalAttachment: async (shipmentId: string, id: string) => {
-        await openFetchedUrl(async () => {
-            const response = await apiClient.get<{ url: string }>(
-                `/shipments/${shipmentId}/attachments/${id}`
-            );
-            return response.url;
+        await openFetchedAttachment(async () => {
+            const response = await apiClient.get<{
+                url: string
+                contentType?: string | null
+                fileName?: string | null
+            }>(`/shipments/${shipmentId}/attachments/${id}`);
+            return {
+                url: response.url,
+                contentType: response.contentType,
+                fileName: response.fileName,
+            };
         });
     }
 }

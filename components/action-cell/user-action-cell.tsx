@@ -21,60 +21,76 @@ import {
 import { authClient } from "@/lib/auth-client"
 import { useDeleteUser } from "@/hooks/use-users"
 
-export default function UserActionCell({ row }: { row: Row<User> }) {
+export default function UserActionCell({
+  row,
+  canEditUsers,
+  canDeleteUsers,
+}: {
+  row: Row<User>
+  canEditUsers: boolean
+  canDeleteUsers: boolean
+}) {
   const deleteUser = useDeleteUser()
   const [open, setOpen] = useState(false)
   const { data: session } = authClient.useSession()
   const isSelf = session?.user?.id === row.original.id
 
+  if (!canEditUsers && !canDeleteUsers) {
+    return null
+  }
+
   return (
     <div className="flex items-center gap-x-2">
-      <Button variant="outline" size="icon" asChild>
-        <Link href={`/dashboard/users/${row.original.id}`}>
-          <IconPencil />
-        </Link>
-      </Button>
-      <Dialog
-        open={open}
-        onOpenChange={(next) => {
-          if (deleteUser.isPending) return
-          setOpen(next)
-        }}
-      >
-        <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" disabled={isSelf}>
-            <IconUserOff className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Deactivate User</DialogTitle>
-          </DialogHeader>
-          <DialogDescription>
-            {isSelf
-              ? "You cannot deactivate your own account while signed in."
-              : `Deactivate ${row.original.name}? They will be signed out and removed from this list. Their existing records are not deleted.`}
-          </DialogDescription>
-          <DialogFooter>
-            <DeleteConfirmButton
-              isPending={deleteUser.isPending}
-              disabled={isSelf}
-              idleLabel="Deactivate"
-              pendingLabel="Deactivating..."
-              onClick={() => {
-                deleteUser.mutate(row.original.id, {
-                  onSuccess: () => setOpen(false),
-                })
-              }}
-            />
-            <DialogClose asChild>
-              <Button variant="secondary" disabled={deleteUser.isPending}>
-                Cancel
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {canEditUsers ? (
+        <Button variant="outline" size="icon" asChild>
+          <Link href={`/dashboard/users/${row.original.id}`}>
+            <IconPencil />
+          </Link>
+        </Button>
+      ) : null}
+      {canDeleteUsers ? (
+        <Dialog
+          open={open}
+          onOpenChange={(next) => {
+            if (deleteUser.isPending) return
+            setOpen(next)
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" disabled={isSelf}>
+              <IconUserOff className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Deactivate User</DialogTitle>
+            </DialogHeader>
+            <DialogDescription>
+              {isSelf
+                ? "You cannot deactivate your own account while signed in."
+                : `Deactivate ${row.original.name}? They will be signed out and removed from this list. Their existing records are not deleted.`}
+            </DialogDescription>
+            <DialogFooter>
+              <DeleteConfirmButton
+                isPending={deleteUser.isPending}
+                disabled={isSelf}
+                idleLabel="Deactivate"
+                pendingLabel="Deactivating..."
+                onClick={() => {
+                  deleteUser.mutate(row.original.id, {
+                    onSuccess: () => setOpen(false),
+                  })
+                }}
+              />
+              <DialogClose asChild>
+                <Button variant="secondary" disabled={deleteUser.isPending}>
+                  Cancel
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   )
 }

@@ -5,9 +5,9 @@ import { Button } from "../ui/button"
 import { IconLink, IconLinkOff } from "@tabler/icons-react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 import { Label } from "../ui/label"
+import { useShipmentSearch } from "@/hooks/use-entity-searches"
 import { useUpdateSelling } from "@/hooks/use-sellings"
 import { useState, type ReactNode } from "react"
-import { useShipments } from "@/hooks/use-shipments"
 import { Shipment } from "@/app/dashboard/shipments/columns"
 import { shipmentSelectionSchema } from "@/lib/schemas/link"
 import { zodOnChange } from "@/lib/zod-form"
@@ -24,12 +24,13 @@ export default function LinkSellingShipmentForm({
     trigger?: ReactNode
 }) {
     const [open, setOpen] = useState(false)
+    const [shipmentSearch, setShipmentSearch] = useState("")
 
-    const { data: shipmentsPage, isLoading } = useShipments({
-        page: 1,
-        pageSize: 100,
-        status: "all",
-    })
+    const { data: shipmentsPage, isLoading, isFetching, isError } = useShipmentSearch(
+        shipmentSearch,
+        open,
+        "all"
+    )
     const updateSelling = useUpdateSelling()
 
     type ComboItem = { value: string; label: string }
@@ -101,6 +102,9 @@ export default function LinkSellingShipmentForm({
                                         error={fieldError(field.state.meta.errors)}
                                         required
                                         isLoading={isLoading}
+                                        isSearching={isFetching}
+                                        searchError={isError}
+                                        onSearchTermChange={setShipmentSearch}
                                         placeholder="Search shipment order number..."
                                         emptyMessage="No shipments found."
                                     />

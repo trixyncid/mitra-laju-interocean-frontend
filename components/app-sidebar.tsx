@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { authClient } from "@/lib/auth-client"
 import { usePermissions } from "@/hooks/use-permissions"
 import { FINANCIAL_MODULES_ENABLED, isFinancialModule } from "@/lib/feature-flags"
+import { canManageRoles } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
 const data = {
@@ -188,7 +189,7 @@ function SidebarLoading() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session, error } = authClient.useSession()
-  const { can, isPending } = usePermissions()
+  const { can, isPending, role } = usePermissions()
   const userId = session?.user?.id
 
   const mainNavItems = data.navMain.filter((item) => can(item.module, "view"))
@@ -200,7 +201,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     .filter((item) => can(item.module, "view"))
     .map(({ module: _m, ...item }) => item)
   const adminPanelItems = data.adminPanel
-    .filter((item) => can(item.module, "view"))
+    .filter((item) =>
+      item.module === "ROLE" ? canManageRoles(role) : can(item.module, "view")
+    )
     .map(({ module: _m, ...item }) => item)
 
   if (isPending) return <SidebarLoading />

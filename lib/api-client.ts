@@ -1,4 +1,19 @@
+import { signOutExpiredSession } from "@/lib/auth-client"
 import { getBackendBaseUrl } from "@/lib/backend-url"
+
+export class UnauthorizedError extends Error {
+  constructor(message = "Unauthorized") {
+    super(message)
+    this.name = "UnauthorizedError"
+  }
+}
+
+export function isUnauthorizedError(error: unknown): boolean {
+  return (
+    error instanceof UnauthorizedError ||
+    (error instanceof Error && error.name === "UnauthorizedError")
+  )
+}
 
 export type PaginationMeta = {
   page: number
@@ -71,6 +86,10 @@ export async function apiFetchEnvelope<T>(
 
   if (!response.ok) {
     console.error("API error:", response.status, result)
+    if (response.status === 401) {
+      void signOutExpiredSession()
+      throw new UnauthorizedError()
+    }
     throw new Error(getErrorMessage(result, response.status))
   }
 

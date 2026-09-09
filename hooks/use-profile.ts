@@ -7,10 +7,11 @@ import {
   type UpdateUserPayload,
 } from "@/services/users.service"
 import { authClient } from "@/lib/auth-client"
+import { userKeys } from "@/lib/query-keys"
 
 export function useUserProfile(userId: string | undefined) {
   return useQuery({
-    queryKey: ["user", userId],
+    queryKey: userKeys.detail(userId ?? ""),
     queryFn: () => usersService.getById(userId!),
     enabled: !!userId,
   })
@@ -23,12 +24,11 @@ export function useUpdateProfile() {
     mutationFn: ({ id, user }: { id: string; user: UpdateUserPayload }) =>
       usersService.update(id, user),
     onSuccess: async (_data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["user", id] })
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(id) })
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       await authClient.getSession()
       toast.success("Profile updated successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -39,10 +39,9 @@ export function useChangePassword() {
     mutationFn: ({ id, ...payload }: ChangePasswordPayload & { id: string }) =>
       usersService.changePassword(id, payload),
     onSuccess: (_data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["user", id] })
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(id) })
       toast.success("Password changed successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -53,13 +52,12 @@ export function useUploadAvatar() {
     mutationFn: ({ id, avatar }: { id: string; avatar: FormData }) =>
       usersService.uploadAvatar(id, avatar),
     onSuccess: async (data, { id }) => {
-      queryClient.setQueryData(["user", id], data)
+      queryClient.setQueryData(userKeys.detail(id), data)
       await queryClient.refetchQueries({ queryKey: ["user-avatar", id] })
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       await authClient.getSession()
       toast.success("Profile photo updated")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -70,12 +68,11 @@ export function useRemoveAvatar() {
     mutationFn: ({ id }: { id: string }) =>
       usersService.update(id, { image: null }),
     onSuccess: async (data, { id }) => {
-      queryClient.setQueryData(["user", id], data)
+      queryClient.setQueryData(userKeys.detail(id), data)
       queryClient.removeQueries({ queryKey: ["user-avatar", id] })
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       await authClient.getSession()
       toast.success("Profile photo removed")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }

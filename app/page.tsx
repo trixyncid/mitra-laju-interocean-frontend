@@ -6,10 +6,11 @@ import { Ship } from "lucide-react"
 
 import { LoginForm } from "@/components/forms/login-form"
 import { useGuestOnly } from "@/hooks/use-auth-redirect"
+import { Button } from "@/components/ui/button"
 import backgroundImage from "@/public/images/login-background.png"
 
 export default function LoginPage() {
-  const { isPending, isRedirecting } = useGuestOnly()
+  const { isPending, isRedirecting, error } = useGuestOnly()
 
   if (isPending || isRedirecting) {
     return <div className="min-h-svh bg-[#1b365d]" />
@@ -125,6 +126,27 @@ export default function LoginPage() {
                     Enter your credentials to access the dashboard.
                   </p>
                 </div>
+
+                {error ? (
+                  <div
+                    role="alert"
+                    className="mb-5 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                  >
+                    <p className="font-medium">Could not verify your session</p>
+                    <p className="mt-1 text-destructive/90">
+                      {error.message || "The server may be unreachable. You can still sign in below."}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
+                      onClick={() => window.location.reload()}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : null}
 
                 <LoginForm variant="glass" />
               </div>

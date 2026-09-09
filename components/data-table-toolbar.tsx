@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils"
 export type AppliedTableFilters = {
   search: string
   status: string
+  lifecycleStatus?: string
   dateRange: TableDateRange
 }
 
@@ -51,9 +52,12 @@ export function DataTableToolbar<TData>({
   const hasActiveFilters =
     applied.search !== "" ||
     applied.status !== "all" ||
+    (applied.lifecycleStatus !== undefined && applied.lifecycleStatus !== "all") ||
     hasDateRange(applied.dateRange)
 
-  const hasFilterControls = Boolean(filters?.status || filters?.date || extra)
+  const hasFilterControls = Boolean(
+    filters?.status || filters?.lifecycleStatus || filters?.date || extra
+  )
 
   const submitSearch = (event?: FormEvent) => {
     event?.preventDefault()
@@ -68,6 +72,7 @@ export function DataTableToolbar<TData>({
     onApply({
       search: "",
       status: "all",
+      lifecycleStatus: "all",
       dateRange: {},
     })
   }
@@ -125,6 +130,17 @@ export function DataTableToolbar<TData>({
               value={applied.status}
               options={filters.status.options}
               onChange={(status) => onApply({ ...applied, status })}
+            />
+          ) : null}
+
+          {filters?.lifecycleStatus ? (
+            <StatusFilter
+              label={filters.lifecycleStatus.label ?? "Lifecycle"}
+              value={applied.lifecycleStatus ?? "all"}
+              options={filters.lifecycleStatus.options}
+              onChange={(lifecycleStatus) =>
+                onApply({ ...applied, lifecycleStatus })
+              }
             />
           ) : null}
 

@@ -7,6 +7,7 @@ import { IconArrowLeft } from "@tabler/icons-react"
 import UserForm from "@/components/forms/user-form"
 import ErrorPage from "@/components/error-page"
 import TableSkeleton from "@/components/loading/table-skeleton"
+import { PermissionFallback } from "@/components/permission-fallback"
 import { UserMetadataCard } from "@/components/user-metadata-card"
 import UserResetPasswordDialog from "@/components/user-reset-password-dialog"
 import { Button } from "@/components/ui/button"
@@ -25,10 +26,36 @@ export default function EditUserPage({
   params: Promise<{ userId: string }>
 }) {
   const { userId } = use(params)
-  const { isPending: isSessionPending, canManageUsers, isRedirecting } = useRequireAdmin()
-  const { data: user, isLoading, error } = useUserById(userId)
+  const { isPending: isSessionPending, canEditUsers } = useRequireAdmin({
+    action: "edit",
+    redirect: false,
+  })
+  const { data: user, isLoading, error } = useUserById(
+    canEditUsers ? userId : undefined
+  )
 
-  if (isSessionPending || isRedirecting || !canManageUsers || isLoading) {
+  if (isSessionPending) {
+    return (
+      <DashboardPage atmosphere>
+        <DashboardPageCard>
+          <TableSkeleton />
+        </DashboardPageCard>
+      </DashboardPage>
+    )
+  }
+
+  if (!canEditUsers) {
+    return (
+      <PermissionFallback
+        title="Edit staff"
+        message="You do not have permission to edit users."
+        backHref="/dashboard/users"
+        backLabel="Back to users"
+      />
+    )
+  }
+
+  if (isLoading) {
     return (
       <DashboardPage atmosphere>
         <DashboardPageCard>

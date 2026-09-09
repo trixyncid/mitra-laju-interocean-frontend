@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { sellingService, type SellingListParams } from "@/services/selling.service"
+import { sellingKeys, shipmentKeys } from "@/lib/query-keys"
 import { toast } from "sonner"
 
 export const useSellings = (params: SellingListParams, enabled = true) => {
     return useQuery({
-        queryKey: ["sellings", params],
+        queryKey: sellingKeys.list(params),
         queryFn: () => sellingService.getAll(params),
         enabled,
     })
@@ -12,7 +13,7 @@ export const useSellings = (params: SellingListParams, enabled = true) => {
 
 export const useSellingById = (id: string) => {
     return useQuery({
-        queryKey: ["sellings", id],
+        queryKey: sellingKeys.detail(id),
         queryFn: () => sellingService.getById(id),
         enabled: !!id,
     })
@@ -24,12 +25,9 @@ export const useCreateSelling = () => {
     return useMutation({
         mutationFn: (selling: unknown) => sellingService.create(selling),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["sellings"] })
-            queryClient.invalidateQueries({ queryKey: ["shipments"] })
+            queryClient.invalidateQueries({ queryKey: sellingKeys.all })
+            queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
             toast.success("Selling created successfully")
-        },
-        onError: (error: Error) => {
-            toast.error(error.message)
         },
     })
 }
@@ -40,12 +38,9 @@ export const useUpdateSelling = () => {
     return useMutation({
         mutationFn: ({ id, selling }: { id: string, selling: unknown }) => sellingService.update(id, selling),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["sellings"] })
-            queryClient.invalidateQueries({ queryKey: ["shipments"] })
+            queryClient.invalidateQueries({ queryKey: sellingKeys.all })
+            queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
             toast.success("Selling updated successfully")
-        },
-        onError: (error: Error) => {
-            toast.error(error.message)
         },
     })
 }
@@ -56,12 +51,9 @@ export const useDeleteSelling = () => {
     return useMutation({
         mutationFn: (id: string) => sellingService.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["sellings"] })
-            queryClient.invalidateQueries({ queryKey: ["shipments"] })
+            queryClient.invalidateQueries({ queryKey: sellingKeys.all })
+            queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
             toast.success("Selling deleted successfully")
-        },
-        onError: (error: Error) => {
-            toast.error(error.message)
         },
     })
 }

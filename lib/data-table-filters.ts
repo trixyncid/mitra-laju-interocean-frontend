@@ -12,6 +12,12 @@ export type TableFilterConfig<TData> = {
     options: FilterOption[]
     getValue: (row: TData) => unknown
   }
+  lifecycleStatus?: {
+    id: string
+    label?: string
+    options: FilterOption[]
+    getValue: (row: TData) => unknown
+  }
   date?: {
     id: string
     label: string
@@ -23,6 +29,14 @@ export const ACTIVE_STATUS_OPTIONS: FilterOption[] = [
   { value: "all", label: "All" },
   { value: "true", label: "Active" },
   { value: "false", label: "Inactive" },
+]
+
+export const SHIPMENT_LIFECYCLE_OPTIONS: FilterOption[] = [
+  { value: "all", label: "All" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "BACKUP", label: "Backup" },
+  { value: "ONGOING", label: "Ongoing" },
+  { value: "FINISHED", label: "Finished" },
 ]
 
 export const PAYMENT_STATUS_OPTIONS: FilterOption[] = [

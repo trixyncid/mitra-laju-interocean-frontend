@@ -26,6 +26,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   ACTIVE_STATUS_OPTIONS,
+  SHIPMENT_LIFECYCLE_OPTIONS,
 } from "@/lib/data-table-filters"
 import { glassControl, tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
 import { cn } from "@/lib/utils"
@@ -46,6 +47,7 @@ interface DataTableProps {
 const emptyFilter: AppliedTableFilters = {
   search: "",
   status: "all",
+  lifecycleStatus: "all",
   dateRange: {},
 }
 
@@ -103,9 +105,15 @@ export function DataTable({
         searchPlaceholder="Search by order number and customer code..."
         filters={{
           status: {
-            id: "status",
-            label: "Status",
+            id: "isActive",
+            label: "Active",
             options: ACTIVE_STATUS_OPTIONS,
+            getValue: () => undefined,
+          },
+          lifecycleStatus: {
+            id: "lifecycleStatus",
+            label: "Status",
+            options: SHIPMENT_LIFECYCLE_OPTIONS,
             getValue: () => undefined,
           },
           date: {

@@ -6,7 +6,6 @@ import { SiteHeader } from "@/components/site-header";
 
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { DashboardRouteGuard } from "@/components/dashboard-route-guard";
-import ErrorPage from "@/components/error-page";
 import DashboardPrepLoading from "@/components/loading/dashboard-prep-loading";
 
 export default function DashboardLayout({
@@ -14,13 +13,11 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { session, isPending, error, isRedirecting } = useRequireAuth()
+  const { session, isPending, isRedirecting } = useRequireAuth()
 
   if (isPending || isRedirecting) {
     return <DashboardPrepLoading />
   }
-
-  if (error) return <ErrorPage message={error.message} />
 
   if (!session) return null
 

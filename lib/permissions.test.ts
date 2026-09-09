@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test"
 
 import {
+  can,
   canAccessRouteWithPermissions,
+  canManageRoles,
   canReadResource,
   canWriteResource,
   canWriteShipmentTypeWithPermissions,
@@ -82,6 +84,41 @@ describe("dynamic permissions", () => {
         "EXPORT",
         "domestic_admin"
       )
+    ).toBe(false)
+  })
+
+  test("USER view is not manage access", () => {
+    const userViewOnly: MyPermissions["permissions"] = {
+      USER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    }
+    expect(can(userViewOnly, "USER", "view", "custom")).toBe(true)
+    expect(can(userViewOnly, "USER", "create", "custom")).toBe(false)
+    expect(can(userViewOnly, "USER", "edit", "custom")).toBe(false)
+    expect(can(userViewOnly, "USER", "delete", "custom")).toBe(false)
+    expect(canAccessRouteWithPermissions(userViewOnly, "/dashboard/users", "custom")).toBe(
+      true
+    )
+    expect(can({}, "USER", "create", "admin")).toBe(true)
+    expect(can({}, "USER", "delete", "superadmin")).toBe(true)
+  })
+
+  test("ROLE view is not role management access", () => {
+    const roleViewOnly: MyPermissions["permissions"] = {
+      ROLE: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    }
+    expect(can(roleViewOnly, "ROLE", "view", "custom")).toBe(true)
+    expect(canManageRoles("custom")).toBe(false)
+    expect(canAccessRouteWithPermissions(roleViewOnly, "/dashboard/roles", "custom")).toBe(
+      false
+    )
+  })
+
+  test("financial modules blocked when flag is off", () => {
+    expect(
+      canAccessRouteWithPermissions(viewerPerms, "/dashboard/costings", "viewer")
+    ).toBe(false)
+    expect(
+      canAccessRouteWithPermissions(viewerPerms, "/dashboard/sellings", "viewer")
     ).toBe(false)
   })
 })

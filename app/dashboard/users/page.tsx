@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import Link from "next/link"
 import { IconPlus } from "@tabler/icons-react"
 
-import { columns } from "./columns"
+import { getUserColumns } from "./columns"
 import { DataTable } from "./data-table"
 import ErrorPage from "@/components/error-page"
 import { Button } from "@/components/ui/button"
@@ -39,12 +39,20 @@ export default function UserManagementPage() {
     }),
     [page, pageSize, applied]
   )
-  const { isPending: isSessionPending, canManageUsers, isRedirecting } = useRequireAdmin()
+  const {
+    isPending: isSessionPending,
+    canViewUsers,
+    canCreateUsers,
+    canEditUsers,
+    canDeleteUsers,
+    isRedirecting,
+  } = useRequireAdmin({ action: "view" })
   const { data, isLoading, error } = useUsers(params, isRestored)
   const users = data?.items ?? []
   const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
+  const columns = getUserColumns({ canEditUsers, canDeleteUsers })
 
-  if (isSessionPending || isRedirecting || !canManageUsers) {
+  if (isSessionPending || isRedirecting || !canViewUsers) {
     return (
       <DashboardPage atmosphere>
         <DashboardPageCard>
@@ -64,12 +72,14 @@ export default function UserManagementPage() {
         title="User Management"
         description="Create, update, and deactivate application users. Deactivated users cannot sign in; their existing data is preserved."
         action={
-          <Button asChild>
-            <Link href="/dashboard/users/new">
-              <IconPlus className="size-4" />
-              Add staff
-            </Link>
-          </Button>
+          canCreateUsers ? (
+            <Button asChild>
+              <Link href="/dashboard/users/new">
+                <IconPlus className="size-4" />
+                Add staff
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
       <DashboardPageCard>

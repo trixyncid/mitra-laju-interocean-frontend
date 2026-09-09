@@ -51,7 +51,7 @@ export function DatePicker({
   required,
   placeholder = "Pick a date",
   clearable = true,
-  outputFormat = "iso",
+  outputFormat = "date-only",
   className,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)

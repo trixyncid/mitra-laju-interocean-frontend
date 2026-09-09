@@ -5,14 +5,14 @@ import type { User } from "@/app/dashboard/users/columns"
 import {
   usersService,
   type CreateUserPayload,
-  type ResetPasswordResponse,
   type UserListParams,
   type UpdateUserPayload,
 } from "@/services/users.service"
+import { userKeys } from "@/lib/query-keys"
 
 export const useUsers = (params: UserListParams, enabled = true) => {
   return useQuery({
-    queryKey: ["users", params],
+    queryKey: userKeys.list(params),
     queryFn: () => usersService.getAll(params),
     enabled,
   })
@@ -20,7 +20,7 @@ export const useUsers = (params: UserListParams, enabled = true) => {
 
 export function useUserById(userId: string | undefined) {
   return useQuery({
-    queryKey: ["user", userId],
+    queryKey: userKeys.detail(userId ?? ""),
     queryFn: () => usersService.getById(userId!),
     enabled: !!userId,
   })
@@ -32,11 +32,10 @@ export const useCreateUser = () => {
   return useMutation({
     mutationFn: (user: CreateUserPayload) => usersService.create(user) as Promise<User>,
     onSuccess: (data) => {
-      queryClient.setQueryData(["user", data.id], data)
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.setQueryData(userKeys.detail(data.id), data)
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       toast.success("User created successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -47,11 +46,10 @@ export const useUpdateUser = () => {
     mutationFn: ({ id, user }: { id: string; user: UpdateUserPayload }) =>
       usersService.update(id, user),
     onSuccess: (data, { id }) => {
-      queryClient.setQueryData(["user", id], data)
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.setQueryData(userKeys.detail(id), data)
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       toast.success("User updated successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -61,10 +59,9 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: usersService.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       toast.success("User deactivated successfully")
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
 
@@ -72,12 +69,10 @@ export const useResetPassword = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: usersService.resetPassword,
+    mutationFn: ({ id, password }: { id: string; password: string }) =>
+      usersService.resetPassword(id, password),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
     },
-    onError: (error: Error) => toast.error(error.message),
   })
 }
-
-export type { ResetPasswordResponse }

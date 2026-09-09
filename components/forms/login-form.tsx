@@ -8,7 +8,7 @@ import { useForm } from "@tanstack/react-form"
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react"
 import { useRef, useState } from "react"
 import { authClient } from "@/lib/auth-client"
-import { getRoleHomePath } from "@/lib/role-home"
+import { resolveRoleHomePathAfterAuth } from "@/lib/role-home"
 import { loginEmailSchema, loginPasswordSchema } from "@/lib/schemas/login"
 import { zodOnChange } from "@/lib/zod-form"
 import { toast } from "sonner"
@@ -87,7 +87,8 @@ export function LoginForm({
 
         toast.success("Login successful")
         const { data: session } = await authClient.getSession()
-        router.replace(getRoleHomePath(session?.user))
+        const homePath = await resolveRoleHomePathAfterAuth(session?.user)
+        router.replace(homePath)
       } finally {
         setIsSubmitting(false)
       }

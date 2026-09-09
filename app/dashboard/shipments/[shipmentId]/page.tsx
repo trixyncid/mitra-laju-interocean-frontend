@@ -28,10 +28,10 @@ import LinkShipmentSellingForm, {
 } from "@/components/forms/link-shipment-selling-form"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useShipmentById, useUpdateShipment } from "@/hooks/use-shipments"
+import { formatCalendarDate } from "@/lib/date-input"
 import {
     amountCalculation,
     cn,
-    formatDate,
     localDate,
     sellingNetAmount,
 } from "@/lib/utils"
@@ -384,9 +384,7 @@ export default function ShipmentDetailPage({
                                             <Dot className="hidden size-4 sm:inline" />
                                             <span>
                                                 Updated{" "}
-                                                {formatDate(
-                                                    operational.updatedAt.split("T")[0]
-                                                )}{" "}
+                                                {localDate(operational.updatedAt)}{" "}
                                                 by {operational.updatedBy.name}
                                             </span>
                                         </>
@@ -469,7 +467,7 @@ export default function ShipmentDetailPage({
                                 label="ETA"
                                 value={
                                     operational.eta
-                                        ? formatDate(operational.eta.split("T")[0])
+                                        ? formatCalendarDate(operational.eta)
                                         : "—"
                                 }
                                 hint={
@@ -589,21 +587,21 @@ export default function ShipmentDetailPage({
                                 </OverviewField>
                                 <OverviewField label="ETA">
                                     {operational.eta ? (
-                                        formatDate(operational.eta.split("T")[0])
+                                        formatCalendarDate(operational.eta)
                                     ) : (
                                         <WarningChip>Unavailable</WarningChip>
                                     )}
                                 </OverviewField>
                                 <OverviewField label="Loading in at">
                                     {operational.loadingInAt ? (
-                                        formatDate(operational.loadingInAt.split("T")[0])
+                                        formatCalendarDate(operational.loadingInAt)
                                     ) : (
                                         <WarningChip>Unavailable</WarningChip>
                                     )}
                                 </OverviewField>
                                 <OverviewField label="Loading out at">
                                     {operational.loadingOutAt ? (
-                                        formatDate(operational.loadingOutAt.split("T")[0])
+                                        formatCalendarDate(operational.loadingOutAt)
                                     ) : (
                                         <WarningChip>Unavailable</WarningChip>
                                     )}
@@ -693,11 +691,7 @@ export default function ShipmentDetailPage({
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
                                                             Last modified{" "}
-                                                            {formatDate(
-                                                                attachment.updatedAt.split(
-                                                                    "T"
-                                                                )[0]
-                                                            )}{" "}
+                                                            {localDate(attachment.updatedAt)}{" "}
                                                             by {attachment.updatedBy.name}
                                                         </p>
                                                     </div>
@@ -845,11 +839,7 @@ export default function ShipmentDetailPage({
                                                             {container.updatedBy.name}
                                                         </td>
                                                         <td className={tableCellClass}>
-                                                            {formatDate(
-                                                                container.updatedAt.split(
-                                                                    "T"
-                                                                )[0]
-                                                            )}
+                                                            {localDate(container.updatedAt)}
                                                         </td>
                                                         <td className={tableCellClass}>
                                                             <PermissionGate

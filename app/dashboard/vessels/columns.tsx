@@ -1,7 +1,8 @@
 "use client"
 
 import VesselActionCell from "@/components/action-cell/vessel-action-cell"
-import { localDate, formatDate } from "@/lib/utils"
+import { formatCalendarDate } from "@/lib/date-input"
+import { localDate } from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusChip, TbdChip } from "@/components/ui/status-chip"
 import { primaryText, secondaryText } from "@/lib/design"
@@ -49,7 +50,7 @@ export const columns: ColumnDef<Vessel>[] = [
             return row.original.etd === null || row.original.etd === undefined ? (
                 <TbdChip />
             ) : (
-                <span className={secondaryText}>{formatDate(row.original.etd)}</span>
+                <span className={secondaryText}>{formatCalendarDate(row.original.etd)}</span>
             )
         }
     },
@@ -61,7 +62,7 @@ export const columns: ColumnDef<Vessel>[] = [
             return row.original.closingReefer === null || row.original.closingReefer === undefined ? (
                 <TbdChip />
             ) : (
-                <span className={secondaryText}>{formatDate(row.original.closingReefer)}</span>
+                <span className={secondaryText}>{formatCalendarDate(row.original.closingReefer)}</span>
             )
         }
     },

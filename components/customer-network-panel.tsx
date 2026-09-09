@@ -30,7 +30,7 @@ import CustomerLocationForm from "@/components/forms/customer-location-form"
 import CustomerShipperForm from "@/components/forms/customer-shipper-form"
 import { MasterDataWriteGate } from "@/components/write-gates"
 import { glassInset, tableSearchInput } from "@/lib/design"
-import { cn, formatDate, getInitialContactName } from "@/lib/utils"
+import { cn, localDate, getInitialContactName } from "@/lib/utils"
 import { toWhatsAppUrl } from "@/lib/whatsapp"
 
 export type NetworkContact = {
@@ -256,7 +256,7 @@ function LocationSection({
             <p className="pl-6 text-sm text-muted-foreground">{secondaryAddress}</p>
           ) : null}
           <p className="pl-6 text-xs text-muted-foreground">
-            Updated {formatDate(location.updatedAt)} by {location.updatedBy?.name ?? "Unknown"}
+            Updated {localDate(location.updatedAt)} by {location.updatedBy?.name ?? "Unknown"}
           </p>
         </div>
 

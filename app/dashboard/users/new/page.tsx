@@ -5,6 +5,7 @@ import { IconArrowLeft } from "@tabler/icons-react"
 
 import UserForm from "@/components/forms/user-form"
 import TableSkeleton from "@/components/loading/table-skeleton"
+import { PermissionFallback } from "@/components/permission-fallback"
 import { UserCreateSidebar } from "@/components/user-create-sidebar"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,15 +16,29 @@ import {
 import { useRequireAdmin } from "@/hooks/use-require-admin"
 
 export default function NewUserPage() {
-  const { isPending, canManageUsers, isRedirecting } = useRequireAdmin()
+  const { isPending, canCreateUsers } = useRequireAdmin({
+    action: "create",
+    redirect: false,
+  })
 
-  if (isPending || isRedirecting || !canManageUsers) {
+  if (isPending) {
     return (
       <DashboardPage atmosphere>
         <DashboardPageCard>
           <TableSkeleton />
         </DashboardPageCard>
       </DashboardPage>
+    )
+  }
+
+  if (!canCreateUsers) {
+    return (
+      <PermissionFallback
+        title="Add Staff"
+        message="You do not have permission to create users."
+        backHref="/dashboard/users"
+        backLabel="Back to users"
+      />
     )
   }
 

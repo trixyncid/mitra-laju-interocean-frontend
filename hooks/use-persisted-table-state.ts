@@ -9,6 +9,7 @@ const STORAGE_PREFIX = "mli:list-state:"
 export const EMPTY_TABLE_FILTERS: AppliedTableFilters = {
   search: "",
   status: "all",
+  lifecycleStatus: "all",
   dateRange: {},
 }
 
@@ -35,6 +36,8 @@ function parseApplied(value: unknown): AppliedTableFilters {
   return {
     search: typeof value.search === "string" ? value.search : "",
     status: typeof value.status === "string" ? value.status : "all",
+    lifecycleStatus:
+      typeof value.lifecycleStatus === "string" ? value.lifecycleStatus : "all",
     dateRange: parseDateRange(value.dateRange),
   }
 }

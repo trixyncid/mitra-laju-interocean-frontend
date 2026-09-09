@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
+import { IBM_Plex_Sans, Poppins, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
@@ -12,6 +12,12 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 });
@@ -35,16 +41,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${ibmPlexSans.variable} ${spaceGrotesk.variable} font-sans antialiased`}
-          suppressHydrationWarning
-        >
-          <Providers>
-            {children}
-            <Toaster position="top-center" />
-          </Providers>
-        </body>
-      </html>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${ibmPlexSans.variable} ${spaceGrotesk.variable} ${poppins.variable} font-sans antialiased`}
+        suppressHydrationWarning
+      >
+        <Providers>
+          {children}
+          <Toaster position="top-center" />
+        </Providers>
+      </body>
+    </html>
   );
 }
