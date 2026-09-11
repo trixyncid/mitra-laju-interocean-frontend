@@ -156,8 +156,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
         orderNumber: shipment.orderNumber,
         customerCode: `${shipment.customerCode?.customerName ?? ""} (${shipment.customerCode?.customerCode ?? ""})`,
         customerShipper: shipment.customerShipper?.name ?? "",
-        departureCountry: shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
-        arrivalCountry: shipment.shipmentOperational?.portDestination?.portCountry ?? "",
+        departurePort: shipment.shipmentOperational?.portDeparture?.portName ?? "",
+        arrivalPort: shipment.shipmentOperational?.portDestination?.portName ?? "",
         eta: shipment.shipmentOperational?.eta?.split("T")[0] ?? "",
         status: shipment.status,
         costingTotal: (shipment.costings ?? []).reduce(
