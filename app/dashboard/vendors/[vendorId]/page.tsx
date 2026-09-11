@@ -224,8 +224,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                 orderNumber: shipment.orderNumber ?? "",
                 customerCode: shipment.customerCode?.customerCode ?? "",
                 customerShipper: shipment.customerShipper?.name ?? "",
-                departureCountry: shipment.shipmentOperational?.portDeparture?.portCountry ?? "",
-                arrivalCountry: shipment.shipmentOperational?.portDestination?.portCountry ?? "",
+                departurePort: shipment.shipmentOperational?.portDeparture?.portName ?? "",
+                arrivalPort: shipment.shipmentOperational?.portDestination?.portName ?? "",
                 status: shipment.status,
             }
         })

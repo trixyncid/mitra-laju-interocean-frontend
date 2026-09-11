@@ -45,8 +45,8 @@ export type CustomerShipment = {
   customerCode: { customerName: string; customerCode: string }
   customerShipper: { name: string }
   shipmentOperational: {
-    portDeparture: { portCountry: string } | null
-    portDestination: { portCountry: string } | null
+    portDeparture: { portName: string; portCountry: string } | null
+    portDestination: { portName: string; portCountry: string } | null
     eta: string
   } | null
   costings: Costing[]

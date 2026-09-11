@@ -19,8 +19,8 @@ export type LinkedShipment = {
   orderNumber: string
   customerCode: string
   customerShipper: string
-  departureCountry: string
-  arrivalCountry: string
+  departurePort: string
+  arrivalPort: string
   status: ShipmentStatus
 }
 
@@ -55,16 +55,16 @@ export const columns: ColumnDef<LinkedShipment>[] = [
   },
   {
     id: "route",
-    accessorFn: (row) => `${row.departureCountry} ${row.arrivalCountry}`,
+    accessorFn: (row) => `${row.departurePort} ${row.arrivalPort}`,
     header: ({ column }) => sortHeader(column, "Route"),
     ...textSort,
     cell: ({ row }) => {
       return (
-        row.original.departureCountry !== "" || row.original.arrivalCountry !== "" ? (
+        row.original.departurePort !== "" || row.original.arrivalPort !== "" ? (
           <div className="flex flex-row items-center gap-x-2">
-            <p className="text-sm text-muted-foreground">{ row.original.departureCountry || "—" }</p>
+            <p className="text-sm text-muted-foreground">{ row.original.departurePort || "—" }</p>
             <IconArrowRight className="w-4 h-4" />
-            <p className="text-sm text-muted-foreground">{ row.original.arrivalCountry || "—" }</p>
+            <p className="text-sm text-muted-foreground">{ row.original.arrivalPort || "—" }</p>
           </div>
         ) : (
           <p className="text-sm text-[var(--mli-on-warning-container)] bg-[var(--mli-warning-container)] px-2 rounded-md w-fit">Unavailable</p>
