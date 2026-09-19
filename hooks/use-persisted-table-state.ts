@@ -10,6 +10,7 @@ export const EMPTY_TABLE_FILTERS: AppliedTableFilters = {
   search: "",
   status: "all",
   lifecycleStatus: "all",
+  shipmentType: "all",
   dateRange: {},
 }
 
@@ -38,6 +39,8 @@ function parseApplied(value: unknown): AppliedTableFilters {
     status: typeof value.status === "string" ? value.status : "all",
     lifecycleStatus:
       typeof value.lifecycleStatus === "string" ? value.lifecycleStatus : "all",
+    shipmentType:
+      typeof value.shipmentType === "string" ? value.shipmentType : "all",
     dateRange: parseDateRange(value.dateRange),
   }
 }

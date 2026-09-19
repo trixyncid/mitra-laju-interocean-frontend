@@ -21,6 +21,7 @@ export type AppliedTableFilters = {
   search: string
   status: string
   lifecycleStatus?: string
+  shipmentType?: string
   dateRange: TableDateRange
 }
 
@@ -53,10 +54,15 @@ export function DataTableToolbar<TData>({
     applied.search !== "" ||
     applied.status !== "all" ||
     (applied.lifecycleStatus !== undefined && applied.lifecycleStatus !== "all") ||
+    (applied.shipmentType !== undefined && applied.shipmentType !== "all") ||
     hasDateRange(applied.dateRange)
 
   const hasFilterControls = Boolean(
-    filters?.status || filters?.lifecycleStatus || filters?.date || extra
+    filters?.status ||
+      filters?.lifecycleStatus ||
+      filters?.shipmentType ||
+      filters?.date ||
+      extra
   )
 
   const submitSearch = (event?: FormEvent) => {
@@ -73,6 +79,7 @@ export function DataTableToolbar<TData>({
       search: "",
       status: "all",
       lifecycleStatus: "all",
+      shipmentType: "all",
       dateRange: {},
     })
   }
@@ -91,16 +98,11 @@ export function DataTableToolbar<TData>({
   ) : null
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-2 pb-5 sm:flex-row sm:flex-wrap sm:items-center",
-        className
-      )}
-    >
+    <div className={cn("flex flex-col gap-3 pb-5", className)}>
       {showSearch ? (
         <form
           onSubmit={submitSearch}
-          className="flex min-w-0 flex-1 items-center gap-2 sm:min-w-[20rem]"
+          className="flex w-full min-w-0 items-center gap-2"
         >
           <div className="relative min-w-0 flex-1">
             <Search
@@ -123,7 +125,7 @@ export function DataTableToolbar<TData>({
       ) : null}
 
       {hasFilterControls || (!showSearch && hasActiveFilters) ? (
-        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+        <div className="flex w-full flex-wrap items-center gap-2">
           {filters?.status ? (
             <StatusFilter
               label={filters.status.label ?? "Status"}
@@ -140,6 +142,17 @@ export function DataTableToolbar<TData>({
               options={filters.lifecycleStatus.options}
               onChange={(lifecycleStatus) =>
                 onApply({ ...applied, lifecycleStatus })
+              }
+            />
+          ) : null}
+
+          {filters?.shipmentType ? (
+            <StatusFilter
+              label={filters.shipmentType.label ?? "Shipment Type"}
+              value={applied.shipmentType ?? "all"}
+              options={filters.shipmentType.options}
+              onChange={(shipmentType) =>
+                onApply({ ...applied, shipmentType })
               }
             />
           ) : null}

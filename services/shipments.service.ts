@@ -46,6 +46,7 @@ export type ShipmentListParams = {
     search?: string;
     status?: "all" | "true" | "false";
     lifecycleStatus?: "all" | "DRAFT" | "BACKUP" | "ONGOING" | "FINISHED";
+    shipmentType?: "all" | "EXPORT" | "IMPORT" | "DOMESTIC";
     from?: string;
     to?: string;
 };
@@ -60,6 +61,17 @@ export type PaginatedShipments = {
     };
 };
 
+export type ShipmentExportFilterParams = Omit<ShipmentListParams, "page" | "pageSize">;
+
+function buildShipmentExportFilename(lifecycleStatus?: string): string {
+    const statusPart =
+        !lifecycleStatus || lifecycleStatus === "all"
+            ? "all"
+            : lifecycleStatus.toLowerCase();
+    const datePart = new Date().toISOString().slice(0, 10);
+    return `shipments-${statusPart}-${datePart}.xlsx`;
+}
+
 export const shipmentsService = {
     getAll: async (params: ShipmentListParams): Promise<PaginatedShipments> => {
         const query = new URLSearchParams({
@@ -67,6 +79,7 @@ export const shipmentsService = {
             pageSize: String(params.pageSize),
             status: params.status ?? "all",
             lifecycleStatus: params.lifecycleStatus ?? "all",
+            shipmentType: params.shipmentType ?? "all",
         });
         if (params.search) query.set("search", params.search);
         if (params.from) query.set("from", params.from);
@@ -84,6 +97,27 @@ export const shipmentsService = {
             items: (response.data ?? []) as Shipment[],
             pagination,
         };
+    },
+    exportExcel: async (
+        params: ShipmentExportFilterParams
+    ): Promise<{ rowCount: number | null }> => {
+        const query = new URLSearchParams({
+            status: params.status ?? "all",
+            lifecycleStatus: params.lifecycleStatus ?? "all",
+            shipmentType: params.shipmentType ?? "all",
+        });
+        if (params.search) query.set("search", params.search);
+        if (params.from) query.set("from", params.from);
+        if (params.to) query.set("to", params.to);
+
+        const fallbackFilename = buildShipmentExportFilename(
+            params.lifecycleStatus
+        );
+        const result = await apiClient.download(
+            `/shipments/export?${query.toString()}`,
+            fallbackFilename
+        );
+        return { rowCount: result.rowCount };
     },
     getById: async (id: string): Promise<ShipmentDetail> => {
         return apiClient.get<ShipmentDetail>(`/shipments/${id}`);
