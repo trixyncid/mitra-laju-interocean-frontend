@@ -4,22 +4,17 @@ import { ServerEntityDataTable } from "@/components/server-entity-data-table"
 import type { Customer } from "@/app/dashboard/customers/columns"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
 import {
-  ACTIVE_STATUS_OPTIONS,
+  SHIPMENT_TYPE_FILTER_OPTIONS,
   type TableFilterConfig,
 } from "@/lib/data-table-filters"
 import { ColumnDef } from "@tanstack/react-table"
 
 const customerFilters: TableFilterConfig<Customer> = {
-  status: {
-    id: "isActive",
-    label: "Status",
-    options: ACTIVE_STATUS_OPTIONS,
-    getValue: (row) => row.isActive,
-  },
-  date: {
-    id: "updatedAt",
-    label: "Modified",
-    getValue: (row) => row.updatedAt,
+  shipmentType: {
+    id: "shipmentTypes",
+    label: "Shipment Type",
+    options: SHIPMENT_TYPE_FILTER_OPTIONS,
+    getValue: (row) => row.shipmentTypes ?? [],
   },
 }
 

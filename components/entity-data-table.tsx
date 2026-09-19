@@ -51,6 +51,7 @@ type EntityDataTableProps<TData, TValue> = {
 const initialFilters: AppliedTableFilters = {
   search: "",
   status: "all",
+  shipmentType: "all",
   dateRange: {},
 }
 
@@ -75,9 +76,10 @@ export function EntityDataTable<TData, TValue>({
         data,
         filters,
         applied.status ?? "all",
-        dateRange
+        dateRange,
+        applied.shipmentType ?? "all"
       ),
-    [data, filters, applied.status, dateRange]
+    [data, filters, applied.status, applied.shipmentType, dateRange]
   )
 
   const table = useReactTable({
@@ -122,6 +124,7 @@ export function EntityDataTable<TData, TValue>({
           applied={{
             search: applied.search ?? "",
             status: applied.status ?? "all",
+            shipmentType: applied.shipmentType ?? "all",
             dateRange,
           }}
           onApply={handleApply}

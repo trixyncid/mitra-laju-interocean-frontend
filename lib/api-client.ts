@@ -59,6 +59,84 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}): Promi
   return result.data
 }
 
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = filename
+  anchor.rel = "noopener noreferrer"
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
+
+function filenameFromContentDisposition(
+  header: string | null,
+  fallback: string
+): string {
+  if (!header) return fallback
+  const utfMatch = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (utfMatch?.[1]) {
+    try {
+      return decodeURIComponent(utfMatch[1].trim())
+    } catch {
+      return utfMatch[1].trim()
+    }
+  }
+  const plainMatch = /filename="?([^";]+)"?/i.exec(header)
+  return plainMatch?.[1]?.trim() || fallback
+}
+
+/**
+ * Authenticated binary download (e.g. Excel export). Does not parse JSON on success.
+ */
+export async function apiFetchDownload(
+  url: string,
+  fallbackFilename: string,
+  options: RequestInit = {}
+): Promise<{ filename: string; rowCount: number | null }> {
+  let response: Response
+  try {
+    response = await fetch(`${getBackendBaseUrl()}${url}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        ...(options.headers as Record<string, string>),
+      },
+    })
+  } catch {
+    throw new Error(
+      "Cannot reach the API. Ensure the backend is running and NEXT_PUBLIC_BACKEND_URL is correct."
+    )
+  }
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}))
+    console.error("API error:", response.status, result)
+    if (response.status === 401) {
+      void signOutExpiredSession()
+      throw new UnauthorizedError()
+    }
+    throw new Error(getErrorMessage(result, response.status))
+  }
+
+  const blob = await response.blob()
+  const filename = filenameFromContentDisposition(
+    response.headers.get("Content-Disposition"),
+    fallbackFilename
+  )
+  const rowCountHeader = response.headers.get("X-Export-Row-Count")
+  const rowCount = rowCountHeader ? Number(rowCountHeader) : null
+
+  downloadBlob(blob, filename)
+
+  return {
+    filename,
+    rowCount: Number.isFinite(rowCount) ? rowCount : null,
+  }
+}
+
 export async function apiFetchEnvelope<T>(
   url: string,
   options: RequestInit = {}
@@ -99,6 +177,8 @@ export async function apiFetchEnvelope<T>(
 export const apiClient = {
   get: <T = unknown>(endpoint: string) => apiFetch<T>(endpoint),
   getEnvelope: <T = unknown>(endpoint: string) => apiFetchEnvelope<T>(endpoint),
+  download: (endpoint: string, fallbackFilename: string) =>
+    apiFetchDownload(endpoint, fallbackFilename),
   post: <T = unknown>(endpoint: string, body: unknown) =>
     apiFetch<T>(endpoint, {
       method: "POST",

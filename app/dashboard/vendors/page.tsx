@@ -33,9 +33,11 @@ export default function VendorMasterDataPage() {
       page,
       pageSize,
       search: applied.search || undefined,
-      status: applied.status as "all" | "true" | "false",
-      from: applied.dateRange.from,
-      to: applied.dateRange.to,
+      shipmentType: (applied.shipmentType ?? "all") as
+        | "all"
+        | "EXPORT"
+        | "IMPORT"
+        | "DOMESTIC",
     }),
     [page, pageSize, applied]
   )
@@ -49,7 +51,7 @@ export default function VendorMasterDataPage() {
     <DashboardPage atmosphere>
       <DashboardPageHeader
         title="Vendor Management"
-        description="View and manage vendors based on vendor code, name, NPWP, and status."
+        description="View and manage vendors based on vendor code, name, NPWP, and shipment type."
         action={
           <PermissionGate resource="masterData" write>
             <Button asChild>

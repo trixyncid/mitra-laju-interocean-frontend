@@ -33,9 +33,11 @@ export default function CustomerMasterDataPage() {
       page,
       pageSize,
       search: applied.search || undefined,
-      status: applied.status as "all" | "true" | "false",
-      from: applied.dateRange.from,
-      to: applied.dateRange.to,
+      shipmentType: (applied.shipmentType ?? "all") as
+        | "all"
+        | "EXPORT"
+        | "IMPORT"
+        | "DOMESTIC",
     }),
     [page, pageSize, applied]
   )

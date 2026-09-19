@@ -7,6 +7,7 @@ import {
   PaymentStatusChip,
   StatusChip,
 } from "@/components/ui/status-chip"
+import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,13 @@ function FilterOptionVisual({ option }: { option: FilterOption }) {
   if (option.value === "false") return <StatusChip active={false} />
   if (option.value === "PAID") return <PaymentStatusChip paid />
   if (option.value === "UNPAID") return <PaymentStatusChip paid={false} />
+  if (
+    option.value === "EXPORT" ||
+    option.value === "IMPORT" ||
+    option.value === "DOMESTIC"
+  ) {
+    return <ShipmentTypeTag type={option.value} className="px-2 py-0.5 text-xs" />
+  }
   return <span>{option.label}</span>
 }
 

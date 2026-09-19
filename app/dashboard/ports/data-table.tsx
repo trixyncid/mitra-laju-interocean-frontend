@@ -16,11 +16,6 @@ const portFilters: TableFilterConfig<Port> = {
     options: ACTIVE_STATUS_OPTIONS,
     getValue: (row) => row.isActive,
   },
-  date: {
-    id: "updatedAt",
-    label: "Modified",
-    getValue: (row) => row.updatedAt,
-  },
 }
 
 interface DataTableProps {

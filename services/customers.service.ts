@@ -7,6 +7,7 @@ export type CustomerListParams = {
     pageSize: number;
     search?: string;
     status?: "all" | "true" | "false";
+    shipmentType?: "all" | "EXPORT" | "IMPORT" | "DOMESTIC";
     from?: string;
     to?: string;
 };
@@ -41,6 +42,7 @@ export const customersService = {
             page: String(params.page),
             pageSize: String(params.pageSize),
             status: params.status ?? "all",
+            shipmentType: params.shipmentType ?? "all",
         });
         if (params.search) query.set("search", params.search);
         if (params.from) query.set("from", params.from);

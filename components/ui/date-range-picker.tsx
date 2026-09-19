@@ -116,10 +116,12 @@ function DateRangePanel({
   value,
   onChange,
   onPresetSelect,
+  open = true,
 }: {
   value: TableDateRange
   onChange: (next: TableDateRange) => void
   onPresetSelect?: () => void
+  open?: boolean
 }) {
   const presets = useMemo(() => getDatePresets(), [])
   const [draft, setDraft] = useState<DateRange | undefined>(() =>
@@ -130,8 +132,11 @@ function DateRangePanel({
   )
 
   useEffect(() => {
-    setDraft(toDateRange(value))
-  }, [value.from, value.to])
+    if (!open) return
+    const next = toDateRange(value)
+    setDraft(next)
+    setMonth(next?.from ?? next?.to ?? new Date())
+  }, [open, value.from, value.to])
 
   const summary = formatRangeLabel(
     {
@@ -193,28 +198,43 @@ function DateRangePanel({
           selected={draft}
           onSelect={(range) => {
             setDraft(range)
-            if (!range?.from || !range.to) return
-            applyRange(
-              {
-                from: toIsoDateOnly(range.from),
-                to: toIsoDateOnly(range.to),
-              },
-              true
-            )
+            if (range?.from) setMonth(range.from)
           }}
         />
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-[rgba(214,227,255,0.4)] px-3 py-2">
-        <p className="truncate text-xs text-muted-foreground">{summary}</p>
-        {draft?.from || draft?.to ? (
-          <button
+        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {summary}
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          {draft?.from || draft?.to ? (
+            <button
+              type="button"
+              className="cursor-pointer text-xs font-medium text-[var(--mli-primary-container)] hover:underline"
+              onClick={() => setDraft(undefined)}
+            >
+              Clear
+            </button>
+          ) : null}
+          <Button
             type="button"
-            className="cursor-pointer text-xs font-medium text-[var(--mli-primary-container)] hover:underline"
-            onClick={() => applyRange({}, true)}
+            size="sm"
+            className="h-8 cursor-pointer px-3"
+            disabled={!draft?.from || !draft?.to}
+            onClick={() => {
+              if (!draft?.from || !draft.to) return
+              applyRange(
+                {
+                  from: toIsoDateOnly(draft.from),
+                  to: toIsoDateOnly(draft.to),
+                },
+                true
+              )
+            }}
           >
-            Clear
-          </button>
-        ) : null}
+            Apply
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -240,7 +260,7 @@ export function DateRangePicker({
           : "w-fit min-w-[16rem] gap-2"
       )}
     >
-      <Popover open={layout === "inline" ? open : undefined} onOpenChange={layout === "inline" ? setOpen : undefined}>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -263,9 +283,10 @@ export function DateRangePicker({
           align={layout === "inline" ? "end" : "start"}
         >
           <DateRangePanel
+            open={open}
             value={value}
             onChange={onChange}
-            onPresetSelect={layout === "inline" ? () => setOpen(false) : undefined}
+            onPresetSelect={() => setOpen(false)}
           />
         </PopoverContent>
       </Popover>
@@ -309,6 +330,7 @@ export function DateRangePicker({
         </FilterChip>
         <PopoverContent className={cn(glassMenu, "w-auto p-0")} align="end">
           <DateRangePanel
+            open={open}
             value={value}
             onChange={onChange}
             onPresetSelect={() => setOpen(false)}

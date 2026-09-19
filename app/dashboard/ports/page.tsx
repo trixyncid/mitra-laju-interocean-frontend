@@ -31,8 +31,6 @@ export default function PortMasterDataPage() {
             pageSize,
             search: applied.search || undefined,
             status: applied.status as "all" | "true" | "false",
-            from: applied.dateRange.from,
-            to: applied.dateRange.to,
         }),
         [page, pageSize, applied]
     )

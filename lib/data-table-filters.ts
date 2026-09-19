@@ -18,6 +18,12 @@ export type TableFilterConfig<TData> = {
     options: FilterOption[]
     getValue: (row: TData) => unknown
   }
+  shipmentType?: {
+    id: string
+    label?: string
+    options: FilterOption[]
+    getValue: (row: TData) => unknown
+  }
   date?: {
     id: string
     label: string
@@ -29,6 +35,13 @@ export const ACTIVE_STATUS_OPTIONS: FilterOption[] = [
   { value: "all", label: "All" },
   { value: "true", label: "Active" },
   { value: "false", label: "Inactive" },
+]
+
+export const SHIPMENT_TYPE_FILTER_OPTIONS: FilterOption[] = [
+  { value: "all", label: "All" },
+  { value: "EXPORT", label: "Export" },
+  { value: "IMPORT", label: "Import" },
+  { value: "DOMESTIC", label: "Domestic" },
 ]
 
 export const SHIPMENT_LIFECYCLE_OPTIONS: FilterOption[] = [
@@ -49,6 +62,19 @@ export function matchesStatusFilter(value: unknown, filter: string): boolean {
   if (!filter || filter === "all") return true
   if (typeof value === "boolean") return String(value) === filter
   return String(value ?? "").toLowerCase() === filter.toLowerCase()
+}
+
+export function matchesShipmentTypeFilter(
+  value: unknown,
+  filter: string
+): boolean {
+  if (!filter || filter === "all") return true
+  if (Array.isArray(value)) {
+    return value.some(
+      (entry) => String(entry).toUpperCase() === filter.toUpperCase()
+    )
+  }
+  return String(value ?? "").toUpperCase() === filter.toUpperCase()
 }
 
 function startOfDay(date: Date) {
@@ -94,7 +120,8 @@ export function applyTableFilters<TData>(
   data: TData[],
   filters: TableFilterConfig<TData> | undefined,
   status: string,
-  dateRange?: TableDateRange | null
+  dateRange?: TableDateRange | null,
+  shipmentType = "all"
 ): TData[] {
   if (!filters) return data
 
@@ -102,6 +129,15 @@ export function applyTableFilters<TData>(
 
   return data.filter((row) => {
     if (filters.status && !matchesStatusFilter(filters.status.getValue(row), status)) {
+      return false
+    }
+    if (
+      filters.shipmentType &&
+      !matchesShipmentTypeFilter(
+        filters.shipmentType.getValue(row),
+        shipmentType
+      )
+    ) {
       return false
     }
     if (filters.date && !isDateInRange(filters.date.getValue(row), range)) {
