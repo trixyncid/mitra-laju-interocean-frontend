@@ -13,7 +13,10 @@ import {
   sortHeader,
   textSort,
 } from "@/lib/data-table"
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import {
+  COSTING_MODULE_ENABLED,
+  SELLING_MODULE_ENABLED,
+} from "@/lib/feature-flags"
 
 export type LinkedShipment = {
   id: string
@@ -57,7 +60,7 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     header: ({ column }) => sortHeader(column, "Shipper"),
     ...textSort,
   },
-  ...(FINANCIAL_MODULES_ENABLED
+  ...(COSTING_MODULE_ENABLED
     ? ([
         {
           accessorKey: "costingTotal",
@@ -72,6 +75,10 @@ export const columns: ColumnDef<LinkedShipment>[] = [
             </span>
           ),
         },
+      ] as ColumnDef<LinkedShipment>[])
+    : []),
+  ...(SELLING_MODULE_ENABLED
+    ? ([
         {
           accessorKey: "sellingTotal",
           header: ({ column }) => sortHeader(column, "Selling"),

@@ -11,6 +11,10 @@ export const EMPTY_TABLE_FILTERS: AppliedTableFilters = {
   status: "all",
   lifecycleStatus: "all",
   shipmentType: "all",
+  vendorId: undefined,
+  vendorLabel: undefined,
+  date: undefined,
+  paymentDate: undefined,
   dateRange: {},
 }
 
@@ -41,6 +45,12 @@ function parseApplied(value: unknown): AppliedTableFilters {
       typeof value.lifecycleStatus === "string" ? value.lifecycleStatus : "all",
     shipmentType:
       typeof value.shipmentType === "string" ? value.shipmentType : "all",
+    vendorId: typeof value.vendorId === "string" ? value.vendorId : undefined,
+    vendorLabel:
+      typeof value.vendorLabel === "string" ? value.vendorLabel : undefined,
+    date: typeof value.date === "string" ? value.date : undefined,
+    paymentDate:
+      typeof value.paymentDate === "string" ? value.paymentDate : undefined,
     dateRange: parseDateRange(value.dateRange),
   }
 }

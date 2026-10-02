@@ -1,10 +1,11 @@
 "use client"
 
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
+import { ExportSellingVatButton } from "@/app/dashboard/sellings/export-vat-button"
 import type { Selling } from "@/app/dashboard/sellings/columns"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
 import {
-  PAYMENT_STATUS_OPTIONS,
+  SELLING_STATUS_OPTIONS,
   type TableFilterConfig,
 } from "@/lib/data-table-filters"
 import { ColumnDef } from "@tanstack/react-table"
@@ -12,14 +13,14 @@ import { ColumnDef } from "@tanstack/react-table"
 const sellingFilters: TableFilterConfig<Selling> = {
   status: {
     id: "status",
-    label: "Payment",
-    options: PAYMENT_STATUS_OPTIONS,
+    label: "Status",
+    options: SELLING_STATUS_OPTIONS,
     getValue: (row) => row.status,
   },
   date: {
-    id: "updatedAt",
-    label: "Modified",
-    getValue: (row) => row.updatedAt,
+    id: "invoiceDate",
+    label: "Invoice date",
+    getValue: (row) => row.invoiceDate,
   },
 }
 
@@ -60,8 +61,9 @@ export function DataTable({
       onApply={onApply}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
-      searchPlaceholder="Search by description..."
+      searchPlaceholder="Search invoice #, customer, shipment…"
       filters={sellingFilters}
+      extra={<ExportSellingVatButton />}
     />
   )
 }

@@ -33,6 +33,9 @@ export const costingKeys = {
   all: ["costings"] as const,
   lists: () => [...costingKeys.all, "list"] as const,
   list: (params: unknown) => [...costingKeys.lists(), params] as const,
+  breakdownLists: () => [...costingKeys.all, "breakdown-list"] as const,
+  breakdownList: (params: unknown) =>
+    [...costingKeys.breakdownLists(), params] as const,
   details: () => [...costingKeys.all, "detail"] as const,
   detail: (id: string) => [...costingKeys.details(), id] as const,
 }

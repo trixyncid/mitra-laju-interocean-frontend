@@ -2,6 +2,7 @@
 
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
 import type { Costing } from "@/app/dashboard/costings/columns"
+import { CostingExportActions } from "@/app/dashboard/costings/costing-export-actions"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
 import {
   PAYMENT_STATUS_OPTIONS,
@@ -12,14 +13,24 @@ import { ColumnDef } from "@tanstack/react-table"
 const costingFilters: TableFilterConfig<Costing> = {
   status: {
     id: "status",
-    label: "Payment",
+    label: "Payment status",
     options: PAYMENT_STATUS_OPTIONS,
     getValue: (row) => row.status,
   },
+  vendor: {
+    id: "vendorId",
+    label: "Vendor",
+  },
   date: {
-    id: "updatedAt",
-    label: "Modified",
-    getValue: (row) => row.updatedAt,
+    id: "vendorInvoiceDate",
+    label: "Invoice date",
+    mode: "single",
+    getValue: (row) => row.vendorInvoiceDate,
+  },
+  paymentDate: {
+    id: "paymentDate",
+    label: "Payment date",
+    getValue: (row) => row.paymentDate,
   },
 }
 
@@ -60,8 +71,9 @@ export function DataTable({
       onApply={onApply}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
-      searchPlaceholder="Search by description..."
+      searchPlaceholder="Search costing #, vendor, invoice, vessel..."
       filters={costingFilters}
+      extra={<CostingExportActions />}
     />
   )
 }

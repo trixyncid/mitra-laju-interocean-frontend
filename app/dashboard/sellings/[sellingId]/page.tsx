@@ -1,709 +1,609 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
-    IconArrowLeft,
-    IconCash,
-    IconLink,
-    IconLinkOff,
-    IconPencil,
-    IconReceipt,
-    IconShip,
-    IconTags,
-    IconTrendingDown,
-    IconTrendingUp,
+  IconArrowLeft,
+  IconBuildingStore,
+  IconReceipt,
+  IconShip,
+  IconTrash,
 } from "@tabler/icons-react"
-import { Dot } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { useQueryClient } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
-import SellingForm from "@/components/forms/selling-form"
-import LinkSellingCostingForm from "@/components/forms/link-selling-costing-form"
-import LinkSellingShipmentForm from "@/components/forms/link-selling-shipment-form"
-import { useSellingById, useUpdateSelling } from "@/hooks/use-sellings"
-import { useUpdateCosting } from "@/hooks/use-costings"
-import { amountCalculation, cn, localDate, sellingNetAmount } from "@/lib/utils"
-import SellingLoading from "@/components/loading/selling-loading"
+import { DatePicker } from "@/components/ui/date-picker"
+import { TextField } from "@/components/ui/text-field"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
 import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
-import { SellingWriteGate } from "@/components/write-gates"
 import ErrorPage from "@/components/error-page"
+import SellingLoading from "@/components/loading/selling-loading"
+import { PermissionGate } from "@/components/permission-gate"
+import LinkSellingLinesForm from "@/components/forms/link-selling-lines-form"
+import { SellingStatusChip } from "@/components/ui/status-chip"
 import {
-    PaymentStatusChip,
-    UnlinkedChip,
-    WarningChip,
-} from "@/components/ui/status-chip"
-import {
-    brandLink,
-    brandText,
-    glassInset,
-    glassPanel,
-    glassShine,
-} from "@/lib/design"
-
-type LinkedCosting = {
-    id: string
-    costingNumber: string
-    description: string
-    price: number
-    currency: number
-    vatPercentage: number
-    pph23Percentage: number
-    vendor: { vendorName: string } | null
-}
+  useDeleteSelling,
+  useDeleteSellingLine,
+  useIssueSelling,
+  useMarkSellingPaid,
+  useMarkSellingUnpaid,
+  useRevertSellingToDraft,
+  useSellingById,
+  useUpdateSelling,
+} from "@/hooks/use-sellings"
+import { usePermissions } from "@/hooks/use-permissions"
+import { useShipmentById } from "@/hooks/use-shipments"
+import { brandLink, brandText, glassInset, glassPanel, glassShine } from "@/lib/design"
+import { cn, costingSellingLineNet, localDate } from "@/lib/utils"
 
 function SectionIntro({
-    title,
-    description,
-    action,
+  title,
+  description,
+  action,
 }: {
-    title: string
-    description: string
-    action?: React.ReactNode
+  title: string
+  description: string
+  action?: React.ReactNode
 }) {
-    return (
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1">
-                <h2 className="text-headline-md font-semibold tracking-tight">{title}</h2>
-                <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
-            </div>
-            {action ? <div className="shrink-0">{action}</div> : null}
-        </div>
-    )
+  return (
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="space-y-1">
+        <h2 className="text-headline-md font-semibold tracking-tight">{title}</h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  )
 }
 
 function OverviewField({
-    label,
-    children,
-    className,
+  label,
+  children,
+  className,
 }: {
-    label: string
-    children: React.ReactNode
-    className?: string
+  label: string
+  children: React.ReactNode
+  className?: string
 }) {
-    return (
-        <div className={cn("space-y-1.5", className)}>
-            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                {label}
-            </p>
-            <div className="text-sm font-medium text-foreground">{children}</div>
-        </div>
-    )
-}
-
-function EmptyState({
-    icon: Icon,
-    title,
-    description,
-    action,
-}: {
-    icon: React.ComponentType<{ className?: string }>
-    title: string
-    description: string
-    action?: React.ReactNode
-}) {
-    return (
-        <div
-            className={cn(
-                glassInset,
-                "flex flex-col items-center justify-center gap-3 px-6 py-14 text-center"
-            )}
-        >
-            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
-                <Icon className="size-6" />
-            </div>
-            <div className="space-y-1">
-                <p className="font-semibold text-foreground">{title}</p>
-                <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
-            </div>
-            {action ? <div className="pt-1">{action}</div> : null}
-        </div>
-    )
-}
-
-function SummaryRow({
-    label,
-    value,
-    muted,
-    emphasize,
-}: {
-    label: string
-    value: React.ReactNode
-    muted?: boolean
-    emphasize?: boolean
-}) {
-    return (
-        <div
-            className={cn(
-                "flex items-start justify-between gap-4 border-b border-[rgba(214,227,255,0.35)] py-3 last:border-b-0",
-                emphasize && "pt-4"
-            )}
-        >
-            <p
-                className={cn(
-                    "text-sm",
-                    emphasize ? "font-medium text-foreground" : "text-muted-foreground"
-                )}
-            >
-                {label}
-            </p>
-            <div
-                className={cn(
-                    "text-right text-sm font-medium tabular-nums",
-                    muted ? "text-muted-foreground" : "text-foreground",
-                    emphasize && "text-base font-semibold"
-                )}
-            >
-                {value}
-            </div>
-        </div>
-    )
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div className="text-sm text-foreground">{children}</div>
+    </div>
+  )
 }
 
 function formatIdr(value: number) {
-    return value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
+  return value.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
 }
 
-function costingTotal(costing: LinkedCosting) {
-    return amountCalculation(
-        costing.price,
-        costing.currency,
-        costing.vatPercentage,
-        costing.pph23Percentage
-    )
+function toDateInput(value?: string | null) {
+  if (!value) return ""
+  return value.slice(0, 10)
+}
+
+function TaxInvoiceFields({
+  sellingId,
+  taxInvoice,
+  taxInvoiceDate,
+}: {
+  sellingId: string
+  taxInvoice?: string | null
+  taxInvoiceDate?: string | null
+}) {
+  const updateSelling = useUpdateSelling()
+  const [invoice, setInvoice] = useState(taxInvoice ?? "")
+  const [date, setDate] = useState(toDateInput(taxInvoiceDate))
+
+  useEffect(() => {
+    setInvoice(taxInvoice ?? "")
+    setDate(toDateInput(taxInvoiceDate))
+  }, [taxInvoice, taxInvoiceDate])
+
+  const savedInvoice = (taxInvoice ?? "").trim()
+  const savedDate = toDateInput(taxInvoiceDate)
+  const dirty = invoice.trim() !== savedInvoice || date !== savedDate
+
+  return (
+    <div className="space-y-3 sm:col-span-2 lg:col-span-3">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          id="tax-invoice"
+          label="Tax invoice"
+          value={invoice}
+          onChange={(event) => setInvoice(event.target.value)}
+          placeholder="Tax invoice number"
+          disabled={updateSelling.isPending}
+        />
+        <DatePicker
+          id="tax-invoice-date"
+          label="Tax invoice date"
+          value={date}
+          onValueChange={setDate}
+          placeholder="Pick tax invoice date"
+          outputFormat="date-only"
+        />
+      </div>
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          size="sm"
+          disabled={!dirty || updateSelling.isPending}
+          onClick={() =>
+            updateSelling.mutate(
+              {
+                id: sellingId,
+                selling: {
+                  taxInvoice: invoice.trim() === "" ? null : invoice.trim(),
+                  taxInvoiceDate: date === "" ? null : date,
+                },
+              },
+              { onError: (err: Error) => toast.error(err.message) }
+            )
+          }
+        >
+          {updateSelling.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            "Save tax invoice"
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function DraftTermsOfPaymentField({
+  sellingId,
+  initialValue,
+}: {
+  sellingId: string
+  initialValue?: string | null
+}) {
+  const updateSelling = useUpdateSelling()
+  const [value, setValue] = useState(initialValue ?? "")
+
+  useEffect(() => {
+    setValue(initialValue ?? "")
+  }, [initialValue])
+
+  const saved = (initialValue ?? "").trim()
+  const dirty = value.trim() !== saved
+
+  return (
+    <div className="space-y-3 sm:col-span-2 lg:col-span-3">
+      <TextField
+        id="terms-of-payment"
+        label="Terms of payment"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        placeholder="Payment terms for this invoice"
+        disabled={updateSelling.isPending}
+      />
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          size="sm"
+          disabled={!dirty || updateSelling.isPending}
+          onClick={() =>
+            updateSelling.mutate(
+              {
+                id: sellingId,
+                selling: {
+                  termsOfPayment: value.trim() === "" ? null : value.trim(),
+                },
+              },
+              { onError: (err: Error) => toast.error(err.message) }
+            )
+          }
+        >
+          {updateSelling.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            "Save terms"
+          )}
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 export default function SellingDetailPage({
-    params,
+  params,
 }: {
-    params: Promise<{ sellingId: string }>
+  params: Promise<{ sellingId: string }>
 }) {
-    const { sellingId } = use(params)
+  const { sellingId } = use(params)
+  const router = useRouter()
+  const { canWrite } = usePermissions()
+  const { data, isLoading, error } = useSellingById(sellingId)
+  const { data: shipment } = useShipmentById(data?.shipmentId ?? "")
+  const issueSelling = useIssueSelling()
+  const markPaid = useMarkSellingPaid()
+  const markUnpaid = useMarkSellingUnpaid()
+  const revertToDraft = useRevertSellingToDraft()
+  const deleteSelling = useDeleteSelling()
+  const deleteLine = useDeleteSellingLine()
 
-    const { data: selling, isLoading, error } = useSellingById(sellingId)
-    const updateSelling = useUpdateSelling()
-    const updateCosting = useUpdateCosting()
-    const queryClient = useQueryClient()
-
-    if (isLoading) return <SellingLoading />
-    if (error) return <ErrorPage message={error.message} />
-    if (!selling) {
-        return (
-            <ErrorPage
-                title="Selling not found"
-                message="Unable to load this selling."
-            />
-        )
-    }
-
-    const costings = (selling.costings ?? []) as LinkedCosting[]
-    const gross = Number(selling.amount) || 0
-    const vatPercentage = Number(selling.vatPercentage) || 0
-    const pph23Percentage = Number(selling.pph23Percentage) || 0
-    const net = sellingNetAmount(gross, vatPercentage, pph23Percentage)
-    const totalFromCostings = costings.reduce(
-        (acc, costing) => acc + costingTotal(costing),
-        0
-    )
-    const revenue = net - totalFromCostings
-    const marginPercent = net > 0 ? (revenue / net) * 100 : null
-    const isPaid = selling.status === "PAID"
-    const shipment = selling.shipment
-    const linkedShipmentId = shipment?.id ?? undefined
-    const updatedByName =
-        typeof selling.updatedBy === "string"
-            ? selling.updatedBy
-            : "name" in selling.updatedBy
-              ? selling.updatedBy.name
-              : undefined
-    const isProfitable = revenue >= 0
-
+  if (isLoading) return <SellingLoading />
+  if (error) return <ErrorPage message={error.message} />
+  if (!data) {
     return (
-        <DashboardPage atmosphere>
-            <div className="mb-6">
-                <Button asChild variant="ghost" className="text-muted-foreground">
-                    <Link href="/dashboard/sellings">
-                        <IconArrowLeft className="size-5" />
-                        Back to sellings
-                    </Link>
-                </Button>
-            </div>
-
-            <section className={cn(glassPanel, "relative mb-8 overflow-hidden")}>
-                <div aria-hidden className={glassShine} />
-
-                <div className="relative space-y-8 p-6 lg:p-8">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-                            <div
-                                className={cn(
-                                    glassInset,
-                                    "flex size-14 shrink-0 items-center justify-center sm:size-16"
-                                )}
-                            >
-                                <IconCash className="size-8 text-[var(--mli-primary-container)] sm:size-9" />
-                            </div>
-
-                            <div className="min-w-0 space-y-3">
-                                <div className="space-y-2">
-                                    <div className="flex flex-wrap items-center gap-2.5">
-                                        <h1 className="text-headline-lg tracking-tight">
-                                            {selling.sellingNumber}
-                                        </h1>
-                                        <PaymentStatusChip paid={isPaid} />
-                                    </div>
-                                    <p
-                                        className={cn(
-                                            "font-mono text-sm font-medium tracking-wide",
-                                            brandText
-                                        )}
-                                    >
-                                        Selling invoice
-                                    </p>
-                                </div>
-
-                                <p className="max-w-2xl text-sm text-muted-foreground">
-                                    {selling.description || "No description provided."}
-                                </p>
-
-                                <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
-                                    <span>
-                                        Updated{" "}
-                                        {selling.updatedAt
-                                            ? localDate(selling.updatedAt)
-                                            : "—"}
-                                        {updatedByName ? ` by ${updatedByName}` : ""}
-                                    </span>
-                                    {selling.createdAt ? (
-                                        <>
-                                            <Dot className="hidden size-4 sm:inline" />
-                                            <span>
-                                                Created {localDate(selling.createdAt)}
-                                            </span>
-                                        </>
-                                    ) : null}
-                                </p>
-                            </div>
-                        </div>
-
-                        <SellingWriteGate>
-                            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                                <Button
-                                    size="sm"
-                                    variant={isPaid ? "outline" : "default"}
-                                    onClick={() => {
-                                        updateSelling.mutate(
-                                            {
-                                                id: sellingId,
-                                                selling: {
-                                                    status: isPaid ? "UNPAID" : "PAID",
-                                                },
-                                            },
-                                            {
-                                                onSuccess: () =>
-                                                    toast.success(
-                                                        isPaid
-                                                            ? "Selling marked as unpaid"
-                                                            : "Selling marked as paid"
-                                                    ),
-                                                onError: (err: Error) =>
-                                                    toast.error(err.message),
-                                            }
-                                        )
-                                    }}
-                                    disabled={updateSelling.isPending}
-                                >
-                                    {updateSelling.isPending
-                                        ? "Updating..."
-                                        : isPaid
-                                          ? "Mark as Unpaid"
-                                          : "Mark as Paid"}
-                                </Button>
-                                <SellingForm
-                                    mode="edit"
-                                    id={sellingId}
-                                    sellingNumber={selling.sellingNumber}
-                                    description={selling.description}
-                                    amount={selling.amount}
-                                    vatPercentage={selling.vatPercentage}
-                                    pph23Percentage={selling.pph23Percentage}
-                                    trigger={
-                                        <Button size="sm" variant="outline">
-                                            <IconPencil className="size-4" />
-                                            Edit
-                                        </Button>
-                                    }
-                                />
-                            </div>
-                        </SellingWriteGate>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
-                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                                Net amount
-                            </p>
-                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums break-words sm:text-2xl">
-                                {formatIdr(net)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                After VAT & PPH 23
-                            </p>
-                        </div>
-
-                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
-                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                                Revenue
-                            </p>
-                            <p
-                                className={cn(
-                                    "flex items-center gap-2 text-xl font-semibold tracking-tight tabular-nums break-words sm:text-2xl",
-                                    isProfitable
-                                        ? "text-[var(--mli-on-success-container)]"
-                                        : "text-[var(--mli-on-error-container)]"
-                                )}
-                            >
-                                {isProfitable ? (
-                                    <IconTrendingUp className="size-5 shrink-0" />
-                                ) : (
-                                    <IconTrendingDown className="size-5 shrink-0" />
-                                )}
-                                {formatIdr(revenue)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {marginPercent != null
-                                    ? `${marginPercent.toFixed(1)}% of net`
-                                    : "Net minus linked costings"}
-                            </p>
-                        </div>
-
-                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
-                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                                Linked costings
-                            </p>
-                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums sm:text-2xl">
-                                {costings.length}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {formatIdr(totalFromCostings)} total cost
-                            </p>
-                        </div>
-
-                        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
-                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                                Tax rates
-                            </p>
-                            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums sm:text-2xl">
-                                {vatPercentage}% / {pph23Percentage}%
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                VAT / PPH 23
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
-                <div className="min-w-0 space-y-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Selling details"
-                            description="Core invoice fields and tax configuration for this selling."
-                        />
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            <OverviewField label="Selling number">
-                                <span className={cn(brandText, "font-mono tracking-wide")}>
-                                    {selling.sellingNumber}
-                                </span>
-                            </OverviewField>
-                            <OverviewField label="Payment status">
-                                <PaymentStatusChip paid={isPaid} />
-                            </OverviewField>
-                            <OverviewField label="VAT">
-                                {vatPercentage !== 0 ? (
-                                    `${vatPercentage}%`
-                                ) : (
-                                    <WarningChip>Not applicable</WarningChip>
-                                )}
-                            </OverviewField>
-                            <OverviewField label="PPH 23">
-                                {`${pph23Percentage}%`}
-                            </OverviewField>
-                            <OverviewField label="Description" className="sm:col-span-2">
-                                {selling.description || "—"}
-                            </OverviewField>
-                        </div>
-                    </DashboardPageCard>
-
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Linked shipment"
-                            description="Connect this selling to the operational shipment it belongs to."
-                            action={
-                                <SellingWriteGate>
-                                    <LinkSellingShipmentForm
-                                        sellingId={sellingId}
-                                        shipmentId={linkedShipmentId}
-                                        trigger={
-                                            <Button variant="outline" size="sm">
-                                                <IconLink className="size-4" />
-                                                {linkedShipmentId
-                                                    ? "Change shipment"
-                                                    : "Link shipment"}
-                                            </Button>
-                                        }
-                                    />
-                                </SellingWriteGate>
-                            }
-                        />
-                        {linkedShipmentId ? (
-                            <div
-                                className={cn(
-                                    glassInset,
-                                    "flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
-                                )}
-                            >
-                                <div className="flex min-w-0 items-start gap-3">
-                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
-                                        <IconShip className="size-5" />
-                                    </div>
-                                    <div className="min-w-0 space-y-1">
-                                        <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                                            Shipment order
-                                        </p>
-                                        <Link
-                                            href={`/dashboard/shipments/${linkedShipmentId}`}
-                                            className={cn(brandLink, "font-mono text-base")}
-                                        >
-                                            {shipment?.orderNumber ?? "View shipment"}
-                                        </Link>
-                                        <p className="text-xs text-muted-foreground">
-                                            Open linked shipment detail
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <EmptyState
-                                icon={IconShip}
-                                title="No shipment linked"
-                                description="Link a shipment so this selling stays connected to the right job."
-                                action={
-                                    <SellingWriteGate>
-                                        <LinkSellingShipmentForm
-                                            sellingId={sellingId}
-                                            shipmentId={undefined}
-                                            trigger={
-                                                <Button variant="outline" size="sm">
-                                                    <IconLink className="size-4" />
-                                                    Link shipment
-                                                </Button>
-                                            }
-                                        />
-                                    </SellingWriteGate>
-                                }
-                            />
-                        )}
-                    </DashboardPageCard>
-
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Linked costings"
-                            description="Vendor charges applied against this selling. Revenue is net amount minus these costs."
-                            action={
-                                <SellingWriteGate>
-                                    <LinkSellingCostingForm sellingId={sellingId} />
-                                </SellingWriteGate>
-                            }
-                        />
-                        {costings.length === 0 ? (
-                            <EmptyState
-                                icon={IconReceipt}
-                                title="No costings linked"
-                                description="Add vendor costings to track true revenue for this selling."
-                                action={
-                                    <SellingWriteGate>
-                                        <LinkSellingCostingForm sellingId={sellingId} />
-                                    </SellingWriteGate>
-                                }
-                            />
-                        ) : (
-                            <ul className="space-y-3">
-                                {costings.map((costing) => {
-                                    const amount = costingTotal(costing)
-                                    return (
-                                        <li
-                                            key={costing.id}
-                                            className={cn(
-                                                glassInset,
-                                                "flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                                            )}
-                                        >
-                                            <div className="flex min-w-0 items-start gap-3">
-                                                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
-                                                    <IconTags className="size-5" />
-                                                </div>
-                                                <div className="min-w-0 space-y-1">
-                                                    <Link
-                                                        href={`/dashboard/costings/${costing.id}`}
-                                                        className={cn(
-                                                            brandLink,
-                                                            "font-mono text-sm tracking-wide"
-                                                        )}
-                                                    >
-                                                        {costing.costingNumber}
-                                                    </Link>
-                                                    <p className="truncate text-sm text-foreground">
-                                                        {costing.description}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {costing.vendor?.vendorName ??
-                                                            "No vendor"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex shrink-0 items-center justify-between gap-3 self-end sm:self-center sm:justify-end">
-                                                <p className="text-sm font-semibold tabular-nums text-foreground">
-                                                    {formatIdr(amount)}
-                                                </p>
-                                                <SellingWriteGate>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)] hover:text-red-600"
-                                                        disabled={updateCosting.isPending}
-                                                        aria-label={`Unlink ${costing.costingNumber}`}
-                                                        onClick={() => {
-                                                            updateCosting.mutate(
-                                                                {
-                                                                    id: costing.id,
-                                                                    costing: {
-                                                                        sellingId: null,
-                                                                    },
-                                                                },
-                                                                {
-                                                                    onSuccess: () => {
-                                                                        queryClient.invalidateQueries(
-                                                                            {
-                                                                                queryKey: [
-                                                                                    "sellings",
-                                                                                    sellingId,
-                                                                                ],
-                                                                            }
-                                                                        )
-                                                                        toast.success(
-                                                                            "Costing unlinked"
-                                                                        )
-                                                                    },
-                                                                    onError: (
-                                                                        err: Error
-                                                                    ) =>
-                                                                        toast.error(
-                                                                            err.message
-                                                                        ),
-                                                                }
-                                                            )
-                                                        }}
-                                                    >
-                                                        <IconLinkOff className="size-3.5" />
-                                                    </Button>
-                                                </SellingWriteGate>
-                                            </div>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
-                        )}
-                    </DashboardPageCard>
-                </div>
-
-                <aside className="lg:sticky lg:top-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Amount summary"
-                            description="How net selling and linked costs produce revenue."
-                        />
-
-                        <div
-                            className={cn(
-                                glassInset,
-                                "mb-5 space-y-1 px-5 py-5 text-center"
-                            )}
-                        >
-                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                                Revenue
-                            </p>
-                            <p
-                                className={cn(
-                                    "text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl",
-                                    isProfitable
-                                        ? brandText
-                                        : "text-[var(--mli-on-error-container)]"
-                                )}
-                            >
-                                {formatIdr(revenue)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {isProfitable ? "Positive margin" : "Cost exceeds net"}
-                            </p>
-                        </div>
-
-                        <div>
-                            <SummaryRow
-                                label="Gross selling amount"
-                                value={formatIdr(gross)}
-                            />
-                            <SummaryRow
-                                label="VAT"
-                                value={
-                                    vatPercentage !== 0 ? (
-                                        `${vatPercentage}%`
-                                    ) : (
-                                        <WarningChip>Not applicable</WarningChip>
-                                    )
-                                }
-                            />
-                            <SummaryRow
-                                label="PPH 23"
-                                value={`${pph23Percentage}%`}
-                            />
-                            <SummaryRow
-                                label="Net selling amount"
-                                value={formatIdr(net)}
-                            />
-                            <SummaryRow
-                                label="Linked costings"
-                                value={formatIdr(totalFromCostings)}
-                                muted={costings.length === 0}
-                            />
-                            <SummaryRow
-                                label="Revenue"
-                                value={
-                                    <span
-                                        className={
-                                            isProfitable
-                                                ? undefined
-                                                : "text-[var(--mli-on-error-container)]"
-                                        }
-                                    >
-                                        {formatIdr(revenue)}
-                                    </span>
-                                }
-                                emphasize
-                            />
-                        </div>
-
-                        {costings.length === 0 ? (
-                            <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                                <UnlinkedChip />
-                                <span>Link costings to refine revenue.</span>
-                            </div>
-                        ) : null}
-                    </DashboardPageCard>
-                </aside>
-            </div>
-        </DashboardPage>
+      <ErrorPage
+        title="Invoice not found"
+        message="Unable to load this customer invoice."
+      />
     )
+  }
+
+  const lines = data.costingBreakdowns ?? []
+  const isDraft = data.status === "DRAFT"
+  const isUnpaid = data.status === "UNPAID"
+  const isPaid = data.status === "PAID"
+  const canEditTerms = isDraft && canWrite("sellings")
+  const canEditTaxInvoice = canWrite("sellings")
+  const netTotal = lines.reduce(
+    (sum, line) => sum + costingSellingLineNet(line),
+    0
+  )
+  const actionPending =
+    issueSelling.isPending ||
+    markPaid.isPending ||
+    markUnpaid.isPending ||
+    revertToDraft.isPending ||
+    deleteSelling.isPending
+
+  return (
+    <DashboardPage atmosphere>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <Link
+            href="/dashboard/sellings"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <IconArrowLeft className="size-4" />
+            Back to invoices
+          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className={cn(brandText, "text-headline-lg tracking-tight")}>
+              {data.sellingNumber}
+            </h1>
+            <SellingStatusChip status={data.status} />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Customer invoice for{" "}
+            {data.customer?.customerName ?? "customer"} on shipment{" "}
+            {data.shipment?.orderNumber ?? "—"}.
+          </p>
+        </div>
+        <PermissionGate resource="sellings" write>
+          <div className="flex flex-wrap gap-2">
+            {isDraft ? (
+              <Button
+                type="button"
+                onClick={() =>
+                  issueSelling.mutate(data.id, {
+                    onError: (err: Error) => toast.error(err.message),
+                  })
+                }
+                disabled={actionPending || lines.length === 0}
+              >
+                {issueSelling.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  "Issue invoice"
+                )}
+              </Button>
+            ) : null}
+            {isUnpaid ? (
+              <Button
+                type="button"
+                onClick={() =>
+                  markPaid.mutate(data.id, {
+                    onError: (err: Error) => toast.error(err.message),
+                  })
+                }
+                disabled={actionPending}
+              >
+                {markPaid.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  "Mark paid"
+                )}
+              </Button>
+            ) : null}
+            {isPaid ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  markUnpaid.mutate(data.id, {
+                    onError: (err: Error) => toast.error(err.message),
+                  })
+                }
+                disabled={actionPending}
+              >
+                {markUnpaid.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  "Mark unpaid"
+                )}
+              </Button>
+            ) : null}
+            {!isDraft ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  revertToDraft.mutate(data.id, {
+                    onError: (err: Error) => toast.error(err.message),
+                  })
+                }
+                disabled={actionPending}
+              >
+                {revertToDraft.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  "Revert to draft"
+                )}
+              </Button>
+            ) : null}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button type="button" variant="outline" disabled={actionPending}>
+                  <IconTrash className="size-4" />
+                  Delete
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete invoice</DialogTitle>
+                </DialogHeader>
+                <DialogDescription>
+                  Delete {data.sellingNumber}? Linked costing lines will be
+                  available to invoice again.
+                </DialogDescription>
+                <DialogFooter>
+                  <DeleteConfirmButton
+                    isPending={deleteSelling.isPending}
+                    onClick={() =>
+                      deleteSelling.mutate(data.id, {
+                        onSuccess: () => router.push("/dashboard/sellings"),
+                        onError: (err: Error) => toast.error(err.message),
+                      })
+                    }
+                  />
+                  <DialogClose asChild>
+                    <Button
+                      variant="secondary"
+                      disabled={deleteSelling.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </PermissionGate>
+      </div>
+
+      <div className="grid gap-6">
+        <DashboardPageCard>
+          <SectionIntro
+            title="Overview"
+            description="Customer-facing invoice header. Amounts are frozen when the invoice is issued."
+          />
+          <div className={cn(glassPanel, "relative overflow-hidden p-5 sm:p-6")}>
+            <div className={glassShine} aria-hidden />
+            <div className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <OverviewField label="Customer">
+                <span className="inline-flex items-center gap-2">
+                  <IconBuildingStore className="size-4 text-muted-foreground" />
+                  {data.customer?.customerName ?? "—"}
+                </span>
+              </OverviewField>
+              <OverviewField label="Shipment">
+                {data.shipment?.id ? (
+                  <Link
+                    href={`/dashboard/shipments/${data.shipment.id}`}
+                    className={cn(brandLink, "inline-flex items-center gap-2")}
+                  >
+                    <IconShip className="size-4" />
+                    {data.shipment.orderNumber}
+                  </Link>
+                ) : (
+                  "—"
+                )}
+              </OverviewField>
+              <OverviewField label="Net total">
+                <span className="inline-flex items-center gap-2 font-medium">
+                  <IconReceipt className="size-4 text-muted-foreground" />
+                  {formatIdr(netTotal)}
+                </span>
+              </OverviewField>
+              <OverviewField label="Invoice date">
+                {data.invoiceDate ? localDate(data.invoiceDate) : "—"}
+              </OverviewField>
+              <OverviewField label="Payment date">
+                {data.paymentDate ? localDate(data.paymentDate) : "—"}
+              </OverviewField>
+              <OverviewField label="Remarks">
+                {data.remarks?.trim() || "—"}
+              </OverviewField>
+              {canEditTerms ? (
+                <DraftTermsOfPaymentField
+                  sellingId={data.id}
+                  initialValue={data.termsOfPayment}
+                />
+              ) : (
+                <OverviewField label="Terms of payment">
+                  {data.termsOfPayment?.trim() || "—"}
+                </OverviewField>
+              )}
+              {canEditTaxInvoice ? (
+                <TaxInvoiceFields
+                  sellingId={data.id}
+                  taxInvoice={data.taxInvoice}
+                  taxInvoiceDate={data.taxInvoiceDate}
+                />
+              ) : (
+                <>
+                  <OverviewField label="Tax invoice">
+                    {data.taxInvoice?.trim() || "—"}
+                  </OverviewField>
+                  <OverviewField label="Tax invoice date">
+                    {data.taxInvoiceDate ? localDate(data.taxInvoiceDate) : "—"}
+                  </OverviewField>
+                </>
+              )}
+            </div>
+          </div>
+        </DashboardPageCard>
+
+        <DashboardPageCard>
+          <SectionIntro
+            title="Invoice lines"
+            description="Linked costing lines on this invoice. While it is a draft, add more lines from the connected shipment."
+            action={
+              canEditTerms ? (
+                <LinkSellingLinesForm
+                  sellingId={data.id}
+                  orderNumber={
+                    data.shipment?.orderNumber ?? shipment?.orderNumber ?? "this shipment"
+                  }
+                  breakdowns={shipment?.costingBreakdowns ?? []}
+                />
+              ) : null
+            }
+          />
+          {lines.length === 0 ? (
+            <div className={cn(glassInset, "p-6 text-sm text-muted-foreground")}>
+              No lines on this invoice yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-[rgba(214,227,255,0.45)]">
+              <table className="w-full min-w-[56rem] text-left">
+                <thead>
+                  <tr className="border-b border-[rgba(214,227,255,0.4)] bg-[rgba(232,238,246,0.45)]">
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Line
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Amount
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      VAT
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      PPH23
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Net
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Sourced from
+                    </th>
+                    {isDraft ? (
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground" />
+                    ) : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((line) => {
+                    const amount = Number(line.sellingAmount) || 0
+                    const vat = Number(line.sellingVatPercentage) || 0
+                    const pph = Number(line.sellingPph23Percentage) || 0
+                    const net = costingSellingLineNet(line)
+                    const source = line.costing
+
+                    return (
+                      <tr
+                        key={line.id}
+                        className="border-b border-[rgba(214,227,255,0.3)] last:border-0"
+                      >
+                        <td className="px-4 py-3 align-top">
+                          <p className="text-sm font-medium">
+                            {line.productDescription ?? "—"}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 align-top text-sm">
+                          {formatIdr(amount)}
+                        </td>
+                        <td className="px-4 py-3 align-top text-sm">{vat}%</td>
+                        <td className="px-4 py-3 align-top text-sm">{pph}%</td>
+                        <td className="px-4 py-3 align-top text-sm font-medium">
+                          {formatIdr(net)}
+                        </td>
+                        <td className="px-4 py-3 align-top text-xs text-muted-foreground">
+                          <div className="space-y-1">
+                            {source?.id ? (
+                              <Link
+                                href={`/dashboard/costings/${source.id}`}
+                                className={brandLink}
+                              >
+                                {source.costingNumber}
+                              </Link>
+                            ) : (
+                              "—"
+                            )}
+                            <p>{source?.vendor?.vendorName ?? "—"}</p>
+                          </div>
+                        </td>
+                        {isDraft ? (
+                          <td className="px-4 py-3 align-top">
+                            <PermissionGate resource="sellings" write>
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={deleteLine.isPending}
+                                  onClick={() =>
+                                    deleteLine.mutate(
+                                      { id: data.id, lineId: line.id },
+                                      {
+                                        onError: (err: Error) =>
+                                          toast.error(err.message),
+                                      }
+                                    )
+                                  }
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </PermissionGate>
+                          </td>
+                        ) : null}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-4 flex justify-end text-sm text-muted-foreground">
+            Total net:{" "}
+            <span className="ml-2 font-semibold text-foreground">
+              {formatIdr(netTotal)}
+            </span>
+          </div>
+        </DashboardPageCard>
+      </div>
+    </DashboardPage>
+  )
 }

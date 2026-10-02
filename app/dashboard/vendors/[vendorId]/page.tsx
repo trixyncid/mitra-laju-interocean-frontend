@@ -29,10 +29,26 @@ import {
     glassTabCount,
     glassTabsTrigger,
 } from "@/lib/design"
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import { COSTING_MODULE_ENABLED } from "@/lib/feature-flags"
 import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
-import { amountCalculation, cn, localDate } from "@/lib/utils"
+import { cn, costingInvoiceTotals, localDate } from "@/lib/utils"
 import { Costing } from "../../costings/columns"
+import type { ShipmentStatus } from "@/lib/shipment-status"
+
+type CostingWithShipment = Costing & {
+    shipment?: {
+        id?: string | null
+        orderNumber?: string | null
+        status?: ShipmentStatus
+        customerCode?: { customerCode?: string }
+        customerShipper?: { name?: string }
+        shipmentOperational?: {
+            eta?: string | null
+            portDeparture?: { portName?: string } | null
+            portDestination?: { portName?: string } | null
+        } | null
+    } | null
+}
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
 import { LinkedShipment } from "./(shipments)/shipment-columns"
 import CostingHistoryPage from "./(costings)/costing-history-page"
@@ -146,7 +162,9 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
 
     const updatedByName =
         typeof data.updatedBy === "string" ? data.updatedBy : data.updatedBy?.name
-    const costings = Array.isArray(data.costings) ? data.costings : []
+    const costings: CostingWithShipment[] = Array.isArray(data.costings)
+        ? data.costings
+        : []
     const vendorLocations: VendorLocation[] = Array.isArray(data.vendorLocations)
         ? data.vendorLocations
         : []
@@ -157,15 +175,12 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
         0
     )
 
-    const vendorCostings = costings.map((costing: Costing) => ({
+    const vendorCostings = costings.map((costing) => ({
         id: costing.id,
-        invoiceNumber: costing.vendorInvoiceNumber,
-        amount: amountCalculation(
-            costing.price,
-            costing.currency,
-            costing.vatPercentage,
-            costing.pph23Percentage
-        ),
+        invoiceNumber: costing.vendorInvoiceNumber ?? "",
+        amount: costingInvoiceTotals(
+            costing.costingBreakdowns ?? []
+        ).net,
         shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
         updatedAt: costing.updatedAt ?? "",
     }))
@@ -195,12 +210,9 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
             monthlyMap.set(key, row)
         }
 
-        const amount = amountCalculation(
-            costing.price,
-            costing.currency,
-            costing.vatPercentage,
-            costing.pph23Percentage
-        )
+        const amount = costingInvoiceTotals(
+            costing.costingBreakdowns ?? []
+        ).net
         row.costingCount += 1
         row.costingTotal += amount
         if (costing.status === "PAID") {
@@ -215,8 +227,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
     )
 
     const vendorShipments: LinkedShipment[] = costings
-        .filter((costing: Costing) => costing.shipment != null)
-        .map((costing: Costing) => {
+        .filter((costing) => costing.shipment != null)
+        .map((costing) => {
             const shipment = costing.shipment!
             return {
                 id: shipment.id ?? "",
@@ -226,12 +238,12 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                 customerShipper: shipment.customerShipper?.name ?? "",
                 departurePort: shipment.shipmentOperational?.portDeparture?.portName ?? "",
                 arrivalPort: shipment.shipmentOperational?.portDestination?.portName ?? "",
-                status: shipment.status,
+                status: shipment.status ?? "ONGOING",
             }
         })
         .filter(
-            (shipment: LinkedShipment, index: number, self: LinkedShipment[]) =>
-                self.findIndex((s: LinkedShipment) => s.id === shipment.id) === index
+            (shipment, index, self) =>
+                self.findIndex((s) => s.id === shipment.id) === index
         )
 
     const calculateYTDSpend = () => {
@@ -240,31 +252,25 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
         for (const costing of costings) {
             const created = new Date(costing.createdAt ?? costing.updatedAt ?? "")
             if (!Number.isNaN(created.getTime()) && created.getFullYear() === year) {
-                total += amountCalculation(
-                    costing.price,
-                    costing.currency,
-                    costing.vatPercentage,
-                    costing.pph23Percentage
-                )
+                total += costingInvoiceTotals(
+                    costing.costingBreakdowns ?? []
+                ).net
             }
         }
         return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
     }
 
     const totalActiveShipments = () => {
-        return costings.filter((costing: Costing) => costing.shipment?.status === "ONGOING").length
+        return costings.filter((costing) => costing.shipment?.status === "ONGOING").length
     }
 
     const calculateOutstandingBills = () => {
         let total = 0
         for (const costing of costings) {
             if (costing.status !== "PAID") {
-                total += amountCalculation(
-                    costing.price,
-                    costing.currency,
-                    costing.vatPercentage,
-                    costing.pph23Percentage
-                )
+                total += costingInvoiceTotals(
+                    costing.costingBreakdowns ?? []
+                ).net
             }
         }
         return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
@@ -339,7 +345,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                             value={totalActiveShipments()}
                             hint="Currently in progress"
                         />
-                        {FINANCIAL_MODULES_ENABLED ? (
+                        {COSTING_MODULE_ENABLED ? (
                             <>
                                 <MetricTile
                                     label="Total assignments"
@@ -376,7 +382,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                             Shipments
                             <span className={glassTabCount}>{vendorShipments.length}</span>
                         </TabsTrigger>
-                        {FINANCIAL_MODULES_ENABLED ? (
+                        {COSTING_MODULE_ENABLED ? (
                             <>
                                 <TabsTrigger value="costings" className={glassTabsTrigger}>
                                     Costings
@@ -431,7 +437,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                         <SectionIntro
                             title="Shipment history"
                             description={
-                                FINANCIAL_MODULES_ENABLED
+                                COSTING_MODULE_ENABLED
                                     ? "Shipments linked through this vendor’s costings, including routes and ETAs."
                                     : "Shipments linked to this vendor, including routes and ETAs."
                             }
@@ -441,7 +447,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                                 icon={IconShip}
                                 title="No shipments yet"
                                 description={
-                                    FINANCIAL_MODULES_ENABLED
+                                    COSTING_MODULE_ENABLED
                                         ? "Shipments tied to this vendor’s costings will appear here."
                                         : "Shipments tied to this vendor will appear here."
                                 }
@@ -452,7 +458,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                     </DashboardPageCard>
                 </TabsContent>
 
-                {FINANCIAL_MODULES_ENABLED ? (
+                {COSTING_MODULE_ENABLED ? (
                 <>
                 <TabsContent value="costings" className="mt-6">
                     <DashboardPageCard>

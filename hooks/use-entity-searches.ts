@@ -58,14 +58,15 @@ export function useVendorSearch(
 export function useShipmentSearch(
   search: string,
   enabled = true,
-  status: "all" | "true" | "false" = "all"
+  status: "all" | "true" | "false" = "all",
+  lifecycleStatus: "all" | "DRAFT" | "BACKUP" | "ONGOING" | "FINISHED" = "all"
 ) {
   return useEntityListSearch(
-    [...shipmentKeys.all, "search", status],
+    [...shipmentKeys.all, "search", status, lifecycleStatus],
     shipmentsService.getAll,
     search,
     enabled,
-    { status },
+    { status, lifecycleStatus },
     PICKER_PAGE_SIZE
   )
 }
@@ -78,6 +79,24 @@ export function useCostingSearch(search: string, enabled = true) {
     enabled,
     undefined,
     PICKER_PAGE_SIZE
+  )
+}
+
+export function useCostingBreakdownSearch(
+  search: string,
+  enabled = true,
+  assigned: "all" | "linked" | "unlinked" = "unlinked",
+  page = 1,
+  pageSize = PICKER_PAGE_SIZE
+) {
+  return useEntityListSearch(
+    [...costingKeys.breakdownLists(), "search", assigned],
+    costingService.getBreakdowns,
+    search,
+    enabled,
+    { assigned },
+    pageSize,
+    page
   )
 }
 

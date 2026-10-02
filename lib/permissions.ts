@@ -1,4 +1,8 @@
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import {
+  COSTING_MODULE_ENABLED,
+  SELLING_MODULE_ENABLED,
+  isModuleEnabled,
+} from "@/lib/feature-flags"
 
 export type ShipmentType = "EXPORT" | "IMPORT" | "DOMESTIC"
 
@@ -237,8 +241,8 @@ export function canAccessRouteWithPermissions(
   if (module === null || module === "profile") return true
   if (module === "ROLE") return isAdminRole(roleSlug)
   if (
-    !FINANCIAL_MODULES_ENABLED &&
-    (module === "COSTING" || module === "SELLING")
+    (module === "COSTING" || module === "SELLING") &&
+    !isModuleEnabled(module)
   ) {
     return false
   }
@@ -293,11 +297,11 @@ export function getHomePathFromPermissions(
   const order: { module: AppModule; path: string }[] = [
     { module: "DASHBOARD", path: "/dashboard" },
     { module: "SHIPMENT", path: "/dashboard/shipments" },
-    ...(FINANCIAL_MODULES_ENABLED
-      ? [
-          { module: "COSTING" as const, path: "/dashboard/costings" },
-          { module: "SELLING" as const, path: "/dashboard/sellings" },
-        ]
+    ...(COSTING_MODULE_ENABLED
+      ? [{ module: "COSTING" as const, path: "/dashboard/costings" }]
+      : []),
+    ...(SELLING_MODULE_ENABLED
+      ? [{ module: "SELLING" as const, path: "/dashboard/sellings" }]
       : []),
     { module: "CUSTOMER", path: "/dashboard/customers" },
     { module: "USER", path: "/dashboard/users" },

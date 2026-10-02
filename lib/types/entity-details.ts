@@ -1,6 +1,5 @@
 import type { Costing } from "@/app/dashboard/costings/columns"
 import type { Customer } from "@/app/dashboard/customers/columns"
-import type { Selling } from "@/app/dashboard/sellings/columns"
 import type { Shipment } from "@/app/dashboard/shipments/columns"
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import type { ShipmentStatus } from "@/lib/shipment-status"
@@ -50,7 +49,23 @@ export type CustomerShipment = {
     eta: string
   } | null
   costings: Costing[]
-  sellings: Selling[]
+  sellings: Array<{
+    id: string
+    sellingNumber: string
+    status: string
+    remarks?: string | null
+    invoiceDate?: string | null
+    paymentDate?: string | null
+    createdAt?: string
+    updatedAt?: string
+    costingBreakdowns?: Array<{
+      id: string
+      productDescription?: string | null
+      sellingAmount?: number | string | null
+      sellingVatPercentage?: number | string | null
+      sellingPph23Percentage?: number | string | null
+    }>
+  }>
   isActive: boolean
 }
 
@@ -108,17 +123,45 @@ export type SellingLinkedCosting = {
 export type SellingDetail = {
   id: string
   sellingNumber: string
-  description: string
-  amount: number
-  vatPercentage: number
-  pph23Percentage: number
   status: string
-  shipmentId: string | null
-  shipment: { orderNumber: string | null; id: string | null } | null
-  costings?: SellingLinkedCosting[]
+  termsOfPayment?: string | null
+  taxInvoice?: string | null
+  taxInvoiceDate?: string | null
+  remarks?: string | null
+  invoiceDate?: string | null
+  paymentDate?: string | null
+  shipmentId: string
+  customerId: string
+  shipment?: {
+    id: string
+    orderNumber: string
+    status?: string
+  } | null
+  customer?: {
+    id: string
+    customerCode: string
+    customerName: string
+  } | null
+  costingBreakdowns?: Array<{
+    id: string
+    productDescription?: string | null
+    sellingAmount?: number | string | null
+    sellingVatPercentage?: number | string | null
+    sellingPph23Percentage?: number | string | null
+    costing?: {
+      id: string
+      costingNumber: string
+      vendor?: {
+        id: string
+        vendorName: string
+        vendorCode: string
+      } | null
+    } | null
+  }>
   createdAt?: string
   updatedAt: string
   updatedBy: { name: string } | string
+  createdBy?: { name: string } | string
 }
 
 export type ShipmentOperationalContainer = {
@@ -148,12 +191,26 @@ export type ShipmentOperationalAttachment = {
 export type ShipmentLinkedSelling = {
   id: string
   sellingNumber: string
-  description: string
-  amount: number
-  vatPercentage: number
-  pph23Percentage: number
   status: string
+  remarks?: string | null
+  invoiceDate?: string | null
+  paymentDate?: string | null
   updatedAt?: string
+  costingBreakdowns?: Array<{
+    id: string
+    price?: number | string | null
+    currencyPrice?: number | string | null
+    quantity?: number | string | null
+    vatPercentage?: number | string | null
+    sellingAmount?: number | string | null
+    sellingVatPercentage?: number | string | null
+    sellingPph23Percentage?: number | string | null
+  }>
+  customer?: {
+    id: string
+    customerCode: string
+    customerName: string
+  } | null
 }
 
 export type ShipmentOperationalDetail = {
@@ -188,6 +245,19 @@ export type ShipmentDetail = Shipment & {
   customerShipper: { name: string }
   shipmentOperational: ShipmentOperationalDetail | null
   shipmentOperationalAttachments: ShipmentOperationalAttachment[]
-  costings: Costing[]
-  sellings: ShipmentLinkedSelling[]
+  costingBreakdowns?: Array<{
+    id: string
+    price: number | string
+    currencyPrice: number | string
+    quantity?: number | string | null
+    productDescription?: string
+    vatPercentage?: number | string | null
+    pph23Percentage?: number | string | null
+    sellingAmount?: number | string | null
+    sellingVatPercentage?: number | string | null
+    sellingPph23Percentage?: number | string | null
+    sellingId?: string | null
+    costing?: Costing | null
+  }>
+  sellings?: ShipmentLinkedSelling[]
 }
