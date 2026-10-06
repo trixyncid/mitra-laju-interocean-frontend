@@ -4,6 +4,12 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
 type PaginatedResult<T> = {
   items: T[]
+  pagination?: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
 }
 
 type ListParams = {
@@ -18,15 +24,16 @@ export function useEntityListSearch<TItem, TParams extends ListParams>(
   search: string,
   enabled: boolean,
   baseParams?: Omit<TParams, keyof ListParams>,
-  pageSize = 25
+  pageSize = 25,
+  page = 1
 ) {
   const debouncedSearch = useDebouncedValue(search.trim(), 300)
 
   return useQuery({
-    queryKey: [...queryKey, debouncedSearch, baseParams],
+    queryKey: [...queryKey, debouncedSearch, baseParams, page, pageSize],
     queryFn: () =>
       queryFn({
-        page: 1,
+        page,
         pageSize,
         search: debouncedSearch || undefined,
         ...baseParams,

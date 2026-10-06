@@ -22,7 +22,11 @@ import {
   type TableDateRange,
 } from "@/components/ui/date-range-picker"
 import { useDashboard } from "@/hooks/use-dashboard"
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import {
+  COSTING_MODULE_ENABLED,
+  FINANCIAL_MODULES_ENABLED,
+  SELLING_MODULE_ENABLED,
+} from "@/lib/feature-flags"
 
 function getDefaultDashboardDateRange(): TableDateRange {
   const end = new Date()
@@ -64,7 +68,11 @@ export default function DashboardHomePage() {
         title="Operations overview"
         description={
           FINANCIAL_MODULES_ENABLED
-            ? "Net figures are after VAT & PPH23."
+            ? COSTING_MODULE_ENABLED && SELLING_MODULE_ENABLED
+              ? "Net figures are after VAT & PPH23."
+              : COSTING_MODULE_ENABLED
+                ? "Costing totals are after VAT for the selected period."
+                : "Selling totals are after VAT & PPH23 for the selected period."
             : "Shipment volume, TEU, and open pipeline for the selected period."
         }
         action={

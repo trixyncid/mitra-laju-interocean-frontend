@@ -78,7 +78,7 @@ const VOYAGE_STATUS_OPTIONS: {
   {
     value: "finished",
     label: "Finished",
-    description: "Shipments marked finished and linked to a vessel voyage.",
+    description: "Completed shipments linked to a vessel voyage.",
     empty: "No finished vessel voyages found.",
   },
 ]

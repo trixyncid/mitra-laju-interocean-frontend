@@ -24,7 +24,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function parseVoyageStatus(value: unknown): VoyageStatus {
-  if (value === "draft" || value === "backup" || value === "ongoing") {
+  if (
+    value === "draft" ||
+    value === "backup" ||
+    value === "ongoing" ||
+    value === "finished"
+  ) {
     return value
   }
   return DEFAULT_FILTERS.voyageStatus

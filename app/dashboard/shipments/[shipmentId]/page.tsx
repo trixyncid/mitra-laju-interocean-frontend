@@ -1,12 +1,13 @@
 "use client"
 
-import { use } from "react"
+import { use, useState } from "react"
 import Link from "next/link"
 import {
     IconArrowLeft,
     IconBox,
     IconEye,
     IconFile,
+    IconFileInvoice,
     IconReceipt,
     IconRoute,
     IconShip,
@@ -16,26 +17,29 @@ import { Dot } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import ShipmentOperationalForm from "@/components/forms/shipment-operational-form"
 import ShipmentContainerForm from "@/components/forms/shipment-container-form"
 import DocumentUploadForm from "@/components/forms/document-upload-form"
 import LinkShipmentCostingForm, {
     UnlinkShipmentCostingButton,
 } from "@/components/forms/link-shipment-costing-form"
-import LinkShipmentSellingForm, {
-    UnlinkShipmentSellingButton,
-} from "@/components/forms/link-shipment-selling-form"
+import ShipmentCostingBreakdownTaxForm from "@/components/forms/shipment-costing-breakdown-tax-form"
+import CreateSellingInvoiceForm, {
+    isInvoicableBreakdown,
+} from "@/components/forms/create-selling-invoice-form"
+import { Checkbox } from "@/components/ui/checkbox"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useShipmentById, useUpdateShipment } from "@/hooks/use-shipments"
 import { formatCalendarDate } from "@/lib/date-input"
 import {
-    amountCalculation,
     cn,
+    costingLineUnitPlusPpn,
+    costingSellingLineNet,
+    costingShipmentLineNet,
+    costingShipmentNetTotal,
+    invoiceProfit,
     localDate,
-    sellingNetAmount,
 } from "@/lib/utils"
-import { costingCurrencyRequiresRate } from "@/lib/costing-currencies"
 import { Costing } from "../../costings/columns"
 import { shipmentsService } from "@/services/shipments.service"
 import ShipmentLoading from "@/components/loading/shipment-loading"
@@ -44,11 +48,17 @@ import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-
 import { ShipmentStatusControl } from "@/components/ui/shipment-status-control"
 import {
     PaymentStatusChip,
+    SellingStatusChip,
     ShipmentLifecycleChip,
     TbdChip,
+    VendorInvoiceTypeChip,
     WarningChip,
 } from "@/components/ui/status-chip"
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import {
+    COSTING_MODULE_ENABLED,
+    FINANCIAL_MODULES_ENABLED,
+    SELLING_MODULE_ENABLED,
+} from "@/lib/feature-flags"
 import type { ShipmentStatus } from "@/lib/shipment-status"
 import ErrorPage from "@/components/error-page"
 import type { ShipmentLinkedSelling } from "@/lib/types/entity-details"
@@ -95,14 +105,87 @@ function formatContainerLookup(item?: { name: string } | null) {
     return item?.name || "—"
 }
 
-const SETUP_STEPS = FINANCIAL_MODULES_ENABLED
-    ? ([
-          "Route & vessel",
-          "Containers",
-          "Documents",
-          "Linked costings & sellings",
-      ] as const)
-    : (["Route & vessel", "Containers", "Documents"] as const)
+function linkedFinancialSetupStep(): string | null {
+    if (!FINANCIAL_MODULES_ENABLED) return null
+    if (COSTING_MODULE_ENABLED && SELLING_MODULE_ENABLED) {
+        return "Linked costings & invoices"
+    }
+    if (COSTING_MODULE_ENABLED) return "Linked costings"
+    if (SELLING_MODULE_ENABLED) return "Customer invoices"
+    return null
+}
+
+const SETUP_STEPS = (() => {
+    const base = ["Route & vessel"] as const
+    const financialStep = linkedFinancialSetupStep()
+    const rest = ["Containers", "Documents"] as const
+    return financialStep ? [...base, financialStep, ...rest] : [...base, ...rest]
+})()
+
+function operationalSetupDescription() {
+    if (!FINANCIAL_MODULES_ENABLED) {
+        return "Set the route, vessel, and shipment type to unlock containers and documents."
+    }
+    const linkedParts: string[] = []
+    if (COSTING_MODULE_ENABLED) linkedParts.push("costings")
+    if (SELLING_MODULE_ENABLED) linkedParts.push("sellings")
+    const linkedLabel =
+        linkedParts.length === 2
+            ? "linked costings and sellings"
+            : linkedParts.length === 1
+              ? `linked ${linkedParts[0]}`
+              : "financial links"
+    return `Set the route, vessel, and shipment type to unlock ${linkedLabel}, containers, and documents.`
+}
+
+type ShipmentLinkedBreakdown = {
+    id: string
+    price: number | string
+    currencyPrice: number | string
+    quantity?: number | string | null
+    productDescription?: string
+    vatPercentage?: number | string | null
+    pph23Percentage?: number | string | null
+    sellingAmount?: number | string | null
+    sellingVatPercentage?: number | string | null
+    sellingPph23Percentage?: number | string | null
+    sellingId?: string | null
+    costing?: Costing | null
+}
+
+function costingNetAmount(costing: Costing) {
+    return costingShipmentNetTotal(costing.costingBreakdowns ?? [])
+}
+
+function linkedCostingsFromBreakdowns(
+    breakdowns: ShipmentLinkedBreakdown[] | undefined
+): Array<Costing & { linkedBreakdownIds: string[]; linkedLines: ShipmentLinkedBreakdown[] }> {
+    const map = new Map<
+        string,
+        Costing & { linkedBreakdownIds: string[]; linkedLines: ShipmentLinkedBreakdown[] }
+    >()
+    for (const line of breakdowns ?? []) {
+        const costing = line.costing
+        if (!costing?.id) continue
+        const existing = map.get(costing.id)
+        if (existing) {
+            existing.linkedBreakdownIds.push(line.id)
+            existing.linkedLines.push(line)
+            existing.costingBreakdowns = [
+                ...(existing.costingBreakdowns ?? []),
+                line as never,
+            ]
+        } else {
+            map.set(costing.id, {
+                ...costing,
+                costingBreakdowns: [line as never],
+                linkedBreakdownIds: [line.id],
+                linkedLines: [line],
+            })
+        }
+    }
+    return Array.from(map.values())
+}
 
 function MetricTile({
     label,
@@ -221,6 +304,10 @@ export default function ShipmentDetailPage({
     const { data, isLoading, error } = useShipmentById(shipmentId)
     const updateShipment = useUpdateShipment()
     const { canWrite, canWriteShipmentType } = usePermissions()
+    const [selectedInvoiceLineIds, setSelectedInvoiceLineIds] = useState<
+        string[]
+    >([])
+    const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false)
 
     if (isLoading) return <ShipmentLoading />
     if (error) return <ErrorPage message={error.message} />
@@ -234,6 +321,16 @@ export default function ShipmentDetailPage({
     }
 
     const sellings: ShipmentLinkedSelling[] = data.sellings ?? []
+    const linkedCostings = linkedCostingsFromBreakdowns(data.costingBreakdowns)
+    const linkedLines = data.costingBreakdowns ?? []
+    const invoicableLines = linkedLines.filter(isInvoicableBreakdown)
+    const invoicableIds = invoicableLines.map((line) => line.id)
+    const allInvoicableSelected =
+        invoicableIds.length > 0 &&
+        invoicableIds.every((id) => selectedInvoiceLineIds.includes(id))
+    const someInvoicableSelected =
+        invoicableIds.some((id) => selectedInvoiceLineIds.includes(id)) &&
+        !allInvoicableSelected
     const operational = data.shipmentOperational
     const containers = operational?.shipmentOperationalContainers ?? []
     const attachments = data.shipmentOperationalAttachments ?? []
@@ -292,25 +389,12 @@ export default function ShipmentDetailPage({
         />
     ) : null
 
-    const totalVendorCost = data.costings.reduce(
-        (acc: number, costing: Costing) =>
-            acc +
-            amountCalculation(
-                costing.price,
-                costing.currency,
-                costing.vatPercentage,
-                costing.pph23Percentage
-            ),
+    const totalVendorCost = linkedCostings.reduce(
+        (acc: number, costing) => acc + costingNetAmount(costing),
         0
     )
-    const totalCustomerCharge = sellings.reduce(
-        (acc, selling) =>
-            acc +
-            sellingNetAmount(
-                selling.amount,
-                selling.vatPercentage,
-                selling.pph23Percentage
-            ),
+    const totalCustomerCharge = linkedLines.reduce(
+        (acc, line) => acc + costingSellingLineNet(line),
         0
     )
     const grossProfit = totalCustomerCharge - totalVendorCost
@@ -427,17 +511,17 @@ export default function ShipmentDetailPage({
                                             {attachments.length} document
                                             {attachments.length === 1 ? "" : "s"}
                                         </CountPill>
-                                        {FINANCIAL_MODULES_ENABLED ? (
-                                            <>
-                                                <CountPill>
-                                                    {data.costings.length} costing
-                                                    {data.costings.length === 1 ? "" : "s"}
-                                                </CountPill>
-                                                <CountPill>
-                                                    {sellings.length} selling
-                                                    {sellings.length === 1 ? "" : "s"}
-                                                </CountPill>
-                                            </>
+                                        {COSTING_MODULE_ENABLED ? (
+                                            <CountPill>
+                                                {linkedCostings.length} costing
+                                                {linkedCostings.length === 1 ? "" : "s"}
+                                            </CountPill>
+                                        ) : null}
+                                        {SELLING_MODULE_ENABLED ? (
+                                            <CountPill>
+                                                {sellings.length} selling
+                                                {sellings.length === 1 ? "" : "s"}
+                                            </CountPill>
                                         ) : null}
                                     </div>
                                     {editOperationalForm}
@@ -487,11 +571,7 @@ export default function ShipmentDetailPage({
                         <EmptyState
                             icon={IconRoute}
                             title="Add shipment operational details"
-                            description={
-                                FINANCIAL_MODULES_ENABLED
-                                    ? "Set the route, vessel, and shipment type to unlock containers, documents, and linked costings and sellings."
-                                    : "Set the route, vessel, and shipment type to unlock containers and documents."
-                            }
+                            description={operationalSetupDescription()}
                             action={createOperationalForm}
                         />
                         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 px-4 pb-2">
@@ -517,14 +597,7 @@ export default function ShipmentDetailPage({
                     </DashboardPageCard>
                 </div>
             ) : (
-                <div
-                    className={cn(
-                        "mt-8 grid gap-6 lg:items-start",
-                        FINANCIAL_MODULES_ENABLED &&
-                            "lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]"
-                    )}
-                >
-                    <div className="min-w-0 space-y-6">
+                <div className="mt-8 space-y-6">
                         <DashboardPageCard>
                             <SectionIntro
                                 title="Shipment overview"
@@ -621,129 +694,425 @@ export default function ShipmentDetailPage({
                             </div>
                         </DashboardPageCard>
 
+                        {COSTING_MODULE_ENABLED ? (
                         <DashboardPageCard>
                             <SectionIntro
-                                title="Document uploads"
-                                description="Supporting files attached to this shipment."
+                                title="Linked costings"
+                                description="Vendor cost lines on this shipment. Select lines with selling amounts to create a customer invoice with remarks."
                                 action={
-                                    <PermissionGate
-                                        resource="shipments"
-                                        write
-                                        shipmentType={operational.shipmentType}
-                                    >
-                                        <DocumentUploadForm
-                                            mode="create"
-                                            module="shipment"
+                                    <div className="flex flex-wrap items-center justify-end gap-2">
+                                        {SELLING_MODULE_ENABLED &&
+                                        selectedInvoiceLineIds.length > 0 ? (
+                                            <PermissionGate
+                                                resource="sellings"
+                                                write
+                                            >
+                                                <>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setSelectedInvoiceLineIds(
+                                                                []
+                                                            )
+                                                        }
+                                                    >
+                                                        Clear selection
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        className="gap-2"
+                                                        onClick={() => {
+                                                            const invalid =
+                                                                selectedInvoiceLineIds.filter(
+                                                                    (id) =>
+                                                                        !invoicableIds.includes(
+                                                                            id
+                                                                        )
+                                                                )
+                                                            if (
+                                                                invalid.length >
+                                                                0
+                                                            ) {
+                                                                toast.error(
+                                                                    "Selected lines need a selling amount and must not already be invoiced."
+                                                                )
+                                                                return
+                                                            }
+                                                            setInvoiceDialogOpen(
+                                                                true
+                                                            )
+                                                        }}
+                                                    >
+                                                        <IconFileInvoice className="size-4" />
+                                                        Create invoice (
+                                                        {
+                                                            selectedInvoiceLineIds.length
+                                                        }
+                                                        )
+                                                    </Button>
+                                                </>
+                                            </PermissionGate>
+                                        ) : null}
+                                        <LinkShipmentCostingForm
                                             shipmentId={data.id}
-                                            costingId={undefined}
-                                            id={undefined}
-                                            attachmentName={undefined}
-                                            document={undefined}
+                                            orderNumber={data.orderNumber}
                                         />
-                                    </PermissionGate>
+                                    </div>
                                 }
                             />
-                            {attachments.length === 0 ? (
+                            {SELLING_MODULE_ENABLED ? (
+                                <CreateSellingInvoiceForm
+                                    shipmentId={data.id}
+                                    orderNumber={data.orderNumber}
+                                    breakdowns={linkedLines}
+                                    open={invoiceDialogOpen}
+                                    onOpenChange={(next) => {
+                                        setInvoiceDialogOpen(next)
+                                        if (!next) {
+                                            setSelectedInvoiceLineIds([])
+                                        }
+                                    }}
+                                    preselectedIds={selectedInvoiceLineIds}
+                                />
+                            ) : null}
+                            {linkedCostings.length === 0 ? (
                                 <EmptyState
-                                    icon={IconFile}
-                                    title="No documents yet"
-                                    description="Upload bills of lading, invoices, or other supporting files for this shipment."
+                                    icon={IconReceipt}
+                                    title="No linked costings"
+                                    description="Link an existing costing to include vendor costs in this shipment’s financial summary."
                                     action={
-                                        <PermissionGate
-                                            resource="shipments"
-                                            write
-                                            shipmentType={operational.shipmentType}
-                                        >
-                                            <DocumentUploadForm
-                                                mode="create"
-                                                module="shipment"
-                                                shipmentId={data.id}
-                                                costingId={undefined}
-                                                id={undefined}
-                                                attachmentName={undefined}
-                                                document={undefined}
-                                            />
-                                        </PermissionGate>
+                                        <LinkShipmentCostingForm
+                                            shipmentId={data.id}
+                                            orderNumber={data.orderNumber}
+                                        />
                                     }
                                 />
                             ) : (
-                                <div className="space-y-3">
-                                    {attachments.map(
-                                        (attachment: ShipmentOperationalAttachment) => (
-                                            <div
-                                                key={attachment.id}
-                                                className={cn(
-                                                    glassInset,
-                                                    "flex items-center justify-between gap-3 px-4 py-3"
-                                                )}
-                                            >
-                                                <div className="flex min-w-0 items-center gap-3">
-                                                    <div className={metadataIconWell}>
-                                                        <IconFile className="size-4" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-sm font-medium text-foreground">
-                                                            {attachment.attachmentName}
-                                                            <span className="text-muted-foreground">
-                                                                {" "}
-                                                                — {attachment.fileName}
-                                                            </span>
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            Last modified{" "}
-                                                            {localDate(attachment.updatedAt)}{" "}
-                                                            by {attachment.updatedBy.name}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex shrink-0 items-center gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => {
-                                                            void shipmentsService
-                                                                .viewShipmentOperationalAttachment(
-                                                                    data.id,
-                                                                    attachment.id!
-                                                                )
-                                                                .catch((err: unknown) => {
-                                                                    toast.error(
-                                                                        err instanceof Error
-                                                                            ? err.message
-                                                                            : "Unable to open attachment"
-                                                                    )
-                                                                })
-                                                        }}
+                                <div className={tableShell}>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[56rem] text-left">
+                                        <thead>
+                                            <tr className={tableHeaderRow}>
+                                                {SELLING_MODULE_ENABLED ? (
+                                                    <th
+                                                        className={cn(
+                                                            tableHeaderCell,
+                                                            "w-10"
+                                                        )}
                                                     >
-                                                        <IconEye className="size-4 text-muted-foreground" />
-                                                    </Button>
-                                                    <PermissionGate
-                                                        resource="shipments"
-                                                        write
-                                                        shipmentType={
-                                                            operational.shipmentType
-                                                        }
-                                                    >
-                                                        <DocumentUploadForm
-                                                            mode="edit"
-                                                            module="shipment"
-                                                            shipmentId={data.id}
-                                                            costingId={undefined}
-                                                            id={attachment.id}
-                                                            attachmentName={
-                                                                attachment.attachmentName
+                                                        <Checkbox
+                                                            checked={
+                                                                allInvoicableSelected
+                                                                    ? true
+                                                                    : someInvoicableSelected
+                                                                      ? "indeterminate"
+                                                                      : false
                                                             }
-                                                            document={undefined}
+                                                            disabled={
+                                                                invoicableIds.length ===
+                                                                0
+                                                            }
+                                                            onCheckedChange={(
+                                                                value
+                                                            ) => {
+                                                                setSelectedInvoiceLineIds(
+                                                                    value ===
+                                                                        true
+                                                                        ? invoicableIds
+                                                                        : []
+                                                                )
+                                                            }}
+                                                            aria-label="Select all invoicable lines"
                                                         />
-                                                    </PermissionGate>
-                                                </div>
-                                            </div>
-                                        )
-                                    )}
+                                                    </th>
+                                                ) : null}
+                                                <th className={tableHeaderCell}>
+                                                    Costing / invoice
+                                                </th>
+                                                <th className={tableHeaderCell}>Line</th>
+                                                <th className={tableHeaderCell}>
+                                                    Net amount
+                                                </th>
+                                                <th className={tableHeaderCell}>
+                                                    Amount + VAT
+                                                </th>
+                                                <th className={tableHeaderCell}>
+                                                    VAT
+                                                </th>
+                                                <th className={tableHeaderCell}>
+                                                    PPH23
+                                                </th>
+                                                <th className={tableHeaderCell}>
+                                                    Selling amt
+                                                </th>
+                                                <th className={tableHeaderCell}>
+                                                    Selling net
+                                                </th>
+                                                <th className={tableHeaderCell} />
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {linkedCostings.map((costing) => {
+                                                const lines = costing.linkedLines
+                                                const rowSpan = lines.length
+
+                                                return lines.map((line, index) => {
+                                                    const lineNet =
+                                                        costingShipmentLineNet(line)
+                                                    const amountPlusVat =
+                                                        costingLineUnitPlusPpn(line)
+                                                    const sellingNet =
+                                                        costingSellingLineNet(line)
+                                                    const sellingVat =
+                                                        Number(
+                                                            line.sellingVatPercentage
+                                                        ) || 0
+                                                    const sellingPph =
+                                                        Number(
+                                                            line.sellingPph23Percentage
+                                                        ) || 0
+                                                    const sellingAmount =
+                                                        Number(line.sellingAmount) || 0
+                                                    const isFirst = index === 0
+                                                    const canInvoice =
+                                                        isInvoicableBreakdown(line)
+                                                    const isSelected =
+                                                        selectedInvoiceLineIds.includes(
+                                                            line.id
+                                                        )
+
+                                                    return (
+                                                        <tr
+                                                            key={line.id}
+                                                            className={tableRowClass}
+                                                        >
+                                                            {SELLING_MODULE_ENABLED ? (
+                                                                <td
+                                                                    className={
+                                                                        tableCellClass
+                                                                    }
+                                                                >
+                                                                    <Checkbox
+                                                                        checked={
+                                                                            isSelected
+                                                                        }
+                                                                        disabled={
+                                                                            !canInvoice
+                                                                        }
+                                                                        title={
+                                                                            canInvoice
+                                                                                ? "Select for customer invoice"
+                                                                                : line.sellingId
+                                                                                  ? "Already on a customer invoice"
+                                                                                  : "Set a selling amount first"
+                                                                        }
+                                                                        onCheckedChange={(
+                                                                            value
+                                                                        ) => {
+                                                                            setSelectedInvoiceLineIds(
+                                                                                (
+                                                                                    prev
+                                                                                ) => {
+                                                                                    if (
+                                                                                        value ===
+                                                                                        true
+                                                                                    ) {
+                                                                                        return prev.includes(
+                                                                                            line.id
+                                                                                        )
+                                                                                            ? prev
+                                                                                            : [
+                                                                                                  ...prev,
+                                                                                                  line.id,
+                                                                                              ]
+                                                                                    }
+                                                                                    return prev.filter(
+                                                                                        (
+                                                                                            id
+                                                                                        ) =>
+                                                                                            id !==
+                                                                                            line.id
+                                                                                    )
+                                                                                }
+                                                                            )
+                                                                        }}
+                                                                        aria-label={`Select ${line.productDescription ?? "line"}`}
+                                                                    />
+                                                                </td>
+                                                            ) : null}
+                                                            {isFirst ? (
+                                                                <td
+                                                                    className={
+                                                                        tableCellClass
+                                                                    }
+                                                                    rowSpan={rowSpan}
+                                                                >
+                                                                    <div className="space-y-1.5">
+                                                                        <Link
+                                                                            href={`/dashboard/costings/${costing.id}`}
+                                                                            className={
+                                                                                brandLink
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                costing.costingNumber
+                                                                            }
+                                                                        </Link>
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            {costing
+                                                                                .vendor
+                                                                                ?.vendorName ??
+                                                                                "—"}
+                                                                        </p>
+                                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                                            <VendorInvoiceTypeChip
+                                                                                type={
+                                                                                    costing.vendorInvoiceType
+                                                                                }
+                                                                            />
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {costing.vendorInvoiceNumber ||
+                                                                                    "—"}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            ) : null}
+                                                            <td
+                                                                className={
+                                                                    tableCellClass
+                                                                }
+                                                            >
+                                                                {line.productDescription ??
+                                                                    "—"}
+                                                            </td>
+                                                            <td
+                                                                className={cn(
+                                                                    tableCellClass,
+                                                                    "font-medium"
+                                                                )}
+                                                            >
+                                                                {formatIdr(lineNet)}
+                                                            </td>
+                                                            <td
+                                                                className={cn(
+                                                                    tableCellClass,
+                                                                    "font-medium"
+                                                                )}
+                                                            >
+                                                                {formatIdr(amountPlusVat)}
+                                                            </td>
+                                                            <td
+                                                                className={
+                                                                    tableCellClass
+                                                                }
+                                                            >
+                                                                {sellingVat}%
+                                                            </td>
+                                                            <td
+                                                                className={
+                                                                    tableCellClass
+                                                                }
+                                                            >
+                                                                {sellingPph}%
+                                                            </td>
+                                                            <td
+                                                                className={
+                                                                    tableCellClass
+                                                                }
+                                                            >
+                                                                {formatIdr(
+                                                                    sellingAmount
+                                                                )}
+                                                            </td>
+                                                            <td
+                                                                className={cn(
+                                                                    tableCellClass,
+                                                                    "font-medium"
+                                                                )}
+                                                            >
+                                                                {formatIdr(sellingNet)}
+                                                            </td>
+                                                            <td
+                                                                className={
+                                                                    tableCellClass
+                                                                }
+                                                            >
+                                                                <div className="flex items-center justify-end gap-1.5">
+                                                                    <PermissionGate
+                                                                        resource="costings"
+                                                                        write
+                                                                    >
+                                                                        <ShipmentCostingBreakdownTaxForm
+                                                                            costingId={
+                                                                                costing.id
+                                                                            }
+                                                                            breakdownId={
+                                                                                line.id
+                                                                            }
+                                                                            productDescription={
+                                                                                line.productDescription ??
+                                                                                "Line item"
+                                                                            }
+                                                                            sellingAmount={
+                                                                                line.sellingAmount
+                                                                            }
+                                                                            sellingVatPercentage={
+                                                                                line.sellingVatPercentage
+                                                                            }
+                                                                            sellingPph23Percentage={
+                                                                                line.sellingPph23Percentage
+                                                                            }
+                                                                        />
+                                                                    </PermissionGate>
+                                                                    <UnlinkShipmentCostingButton
+                                                                        costingId={
+                                                                            costing.id
+                                                                        }
+                                                                        costingNumber={
+                                                                            costing.costingNumber
+                                                                        }
+                                                                        shipmentId={
+                                                                            data.id
+                                                                        }
+                                                                        breakdownId={
+                                                                            line.id
+                                                                        }
+                                                                        lineLabel={
+                                                                            line.productDescription ??
+                                                                            "this line"
+                                                                        }
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })
+                                            })}
+                                        </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex flex-wrap justify-end gap-x-6 gap-y-1 border-t border-[rgba(214,227,255,0.35)] px-4 py-3">
+                                        <p className="text-sm text-muted-foreground">
+                                            Vendor payable:{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {formatIdr(totalVendorCost)}
+                                            </span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Customer charge:{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {formatIdr(totalCustomerCharge)}
+                                            </span>
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </DashboardPageCard>
+                        ) : null}
 
                         <DashboardPageCard>
                             <SectionIntro
@@ -884,189 +1253,158 @@ export default function ShipmentDetailPage({
                             )}
                         </DashboardPageCard>
 
-                        {FINANCIAL_MODULES_ENABLED ? (
-                        <>
                         <DashboardPageCard>
                             <SectionIntro
-                                title="Linked costings"
-                                description="Vendor costs associated with this shipment."
+                                title="Document uploads"
+                                description="Supporting files attached to this shipment."
                                 action={
-                                    <LinkShipmentCostingForm
-                                        shipmentId={data.id}
-                                        orderNumber={data.orderNumber}
-                                    />
+                                    <PermissionGate
+                                        resource="shipments"
+                                        write
+                                        shipmentType={operational.shipmentType}
+                                    >
+                                        <DocumentUploadForm
+                                            mode="create"
+                                            module="shipment"
+                                            shipmentId={data.id}
+                                            costingId={undefined}
+                                            id={undefined}
+                                            attachmentName={undefined}
+                                            document={undefined}
+                                        />
+                                    </PermissionGate>
                                 }
                             />
-                            {data.costings.length === 0 ? (
+                            {attachments.length === 0 ? (
                                 <EmptyState
-                                    icon={IconReceipt}
-                                    title="No linked costings"
-                                    description="Link an existing costing to include vendor costs in this shipment’s financial summary."
+                                    icon={IconFile}
+                                    title="No documents yet"
+                                    description="Upload bills of lading, invoices, or other supporting files for this shipment."
                                     action={
-                                        <LinkShipmentCostingForm
-                                            shipmentId={data.id}
-                                            orderNumber={data.orderNumber}
-                                        />
+                                        <PermissionGate
+                                            resource="shipments"
+                                            write
+                                            shipmentType={operational.shipmentType}
+                                        >
+                                            <DocumentUploadForm
+                                                mode="create"
+                                                module="shipment"
+                                                shipmentId={data.id}
+                                                costingId={undefined}
+                                                id={undefined}
+                                                attachmentName={undefined}
+                                                document={undefined}
+                                            />
+                                        </PermissionGate>
                                     }
                                 />
                             ) : (
-                                <div className={tableShell}>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full min-w-[56rem] text-left">
-                                        <thead>
-                                            <tr className={tableHeaderRow}>
-                                                <th className={tableHeaderCell}>
-                                                    Costing #
-                                                </th>
-                                                <th className={tableHeaderCell}>
-                                                    Description
-                                                </th>
-                                                <th className={tableHeaderCell}>Vendor</th>
-                                                <th className={tableHeaderCell}>
-                                                    Vendor invoice
-                                                </th>
-                                                <th className={tableHeaderCell}>
-                                                    Container
-                                                </th>
-                                                <th className={tableHeaderCell}>Price</th>
-                                                <th className={tableHeaderCell}>Rate</th>
-                                                <th className={tableHeaderCell}>VAT</th>
-                                                <th className={tableHeaderCell}>
-                                                    PPH 23
-                                                </th>
-                                                <th className={tableHeaderCell}>
-                                                    Net amount (Rp)
-                                                </th>
-                                                <th className={tableHeaderCell}>
-                                                    Status
-                                                </th>
-                                                <th className={tableHeaderCell} />
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.costings.map((costing: Costing) => {
-                                                const currencyCode =
-                                                    costing.currencyCode ?? "IDR"
-                                                const netAmount = amountCalculation(
-                                                    costing.price,
-                                                    costing.currency,
-                                                    costing.vatPercentage,
-                                                    costing.pph23Percentage
-                                                )
+                                <div className="space-y-3">
+                                    {attachments.map(
+                                        (attachment: ShipmentOperationalAttachment) => (
+                                            <div
+                                                key={attachment.id}
+                                                className={cn(
+                                                    glassInset,
+                                                    "flex items-center justify-between gap-3 px-4 py-3"
+                                                )}
+                                            >
+                                                <div className="flex min-w-0 items-center gap-3">
+                                                    <div className={metadataIconWell}>
+                                                        <IconFile className="size-4" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-medium text-foreground">
+                                                            {attachment.attachmentName}
+                                                            <span className="text-muted-foreground">
+                                                                {" "}
+                                                                — {attachment.fileName}
+                                                            </span>
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Last modified{" "}
+                                                            {localDate(attachment.updatedAt)}{" "}
+                                                            by {attachment.updatedBy.name}
+                                                        </p>
+                                                    </div>
+                                                </div>
 
-                                                return (
-                                                    <tr
-                                                        key={costing.id}
-                                                        className={tableRowClass}
+                                                <div className="flex shrink-0 items-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => {
+                                                            void shipmentsService
+                                                                .viewShipmentOperationalAttachment(
+                                                                    data.id,
+                                                                    attachment.id!
+                                                                )
+                                                                .catch((err: unknown) => {
+                                                                    toast.error(
+                                                                        err instanceof Error
+                                                                            ? err.message
+                                                                            : "Unable to open attachment"
+                                                                    )
+                                                                })
+                                                        }}
                                                     >
-                                                        <td className={tableCellClass}>
-                                                            <Link
-                                                                href={`/dashboard/costings/${costing.id}`}
-                                                                className={brandLink}
-                                                            >
-                                                                {costing.costingNumber}
-                                                            </Link>
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {costing.description}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {costing.vendor?.vendorName ??
-                                                                "—"}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {costing.vendorInvoiceNumber ??
-                                                                "—"}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                                {costing.containerNumber ?? "—"}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {Number(
-                                                                costing.price
-                                                            ).toLocaleString("id-ID")}{" "}
-                                                            {currencyCode}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {costingCurrencyRequiresRate(
-                                                                currencyCode
-                                                            )
-                                                                ? Number(
-                                                                      costing.currency
-                                                                  ).toLocaleString(
-                                                                      "id-ID"
-                                                                  )
-                                                                : "—"}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {costing.vatPercentage}%
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            {costing.pph23Percentage}%
-                                                        </td>
-                                                        <td
-                                                            className={cn(
-                                                                tableCellClass,
-                                                                "font-medium"
-                                                            )}
-                                                        >
-                                                            {formatIdr(netAmount)}
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            <PaymentStatusChip
-                                                                paid={
-                                                                    costing.status ===
-                                                                    "PAID"
-                                                                }
-                                                            />
-                                                        </td>
-                                                        <td className={tableCellClass}>
-                                                            <UnlinkShipmentCostingButton
-                                                                costingId={costing.id}
-                                                                costingNumber={
-                                                                    costing.costingNumber
-                                                                }
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            })}
-                                        </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="flex justify-end border-t border-[rgba(214,227,255,0.35)] px-4 py-3">
-                                        <p className="text-sm text-muted-foreground">
-                                            Total cost:{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {formatIdr(totalVendorCost)}
-                                            </span>
-                                        </p>
-                                    </div>
+                                                        <IconEye className="size-4 text-muted-foreground" />
+                                                    </Button>
+                                                    <PermissionGate
+                                                        resource="shipments"
+                                                        write
+                                                        shipmentType={
+                                                            operational.shipmentType
+                                                        }
+                                                    >
+                                                        <DocumentUploadForm
+                                                            mode="edit"
+                                                            module="shipment"
+                                                            shipmentId={data.id}
+                                                            costingId={undefined}
+                                                            id={attachment.id}
+                                                            attachmentName={
+                                                                attachment.attachmentName
+                                                            }
+                                                            document={undefined}
+                                                        />
+                                                    </PermissionGate>
+                                                </div>
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                             )}
                         </DashboardPageCard>
 
+                        {SELLING_MODULE_ENABLED ? (
                         <DashboardPageCard>
                             <SectionIntro
-                                title="Linked sellings"
-                                description="Customer charges associated with this shipment."
+                                title="Customer invoices"
+                                description="Customer invoices created from this shipment. Each invoice has its own profit."
                                 action={
-                                    <LinkShipmentSellingForm
-                                        shipmentId={data.id}
-                                        orderNumber={data.orderNumber}
-                                    />
+                                    <PermissionGate resource="sellings" write>
+                                        <CreateSellingInvoiceForm
+                                            shipmentId={data.id}
+                                            orderNumber={data.orderNumber}
+                                            breakdowns={linkedLines}
+                                        />
+                                    </PermissionGate>
                                 }
                             />
                             {sellings.length === 0 ? (
                                 <EmptyState
                                     icon={IconTags}
-                                    title="No linked sellings"
-                                    description="Link an existing selling to include customer charges in this shipment’s financial summary."
+                                    title="No customer invoices"
+                                    description="Create an invoice from uninvoiced costing lines that already have selling amounts."
                                     action={
-                                        <LinkShipmentSellingForm
-                                            shipmentId={data.id}
-                                            orderNumber={data.orderNumber}
-                                        />
+                                        <PermissionGate resource="sellings" write>
+                                            <CreateSellingInvoiceForm
+                                                shipmentId={data.id}
+                                                orderNumber={data.orderNumber}
+                                                breakdowns={linkedLines}
+                                            />
+                                        </PermissionGate>
                                     }
                                 />
                             ) : (
@@ -1076,175 +1414,251 @@ export default function ShipmentDetailPage({
                                             <thead>
                                                 <tr className={tableHeaderRow}>
                                                     <th className={tableHeaderCell}>
-                                                        Selling #
+                                                        Invoice #
                                                     </th>
                                                     <th className={tableHeaderCell}>
-                                                        Description
-                                                    </th>
-                                                    <th className={tableHeaderCell}>
-                                                        Gross amount (Rp)
-                                                    </th>
-                                                    <th className={tableHeaderCell}>VAT</th>
-                                                    <th className={tableHeaderCell}>
-                                                        PPH 23
+                                                        Lines
                                                     </th>
                                                     <th className={tableHeaderCell}>
                                                         Net amount (Rp)
                                                     </th>
                                                     <th className={tableHeaderCell}>
+                                                        Profit
+                                                    </th>
+                                                    <th className={tableHeaderCell}>
                                                         Status
+                                                    </th>
+                                                    <th className={tableHeaderCell}>
+                                                        Invoice date
                                                     </th>
                                                     <th className={tableHeaderCell}>
                                                         Updated
                                                     </th>
-                                                    <th className={tableHeaderCell} />
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {sellings.map(
-                                                    (selling: ShipmentLinkedSelling) => (
-                                                        <tr
-                                                            key={selling.id}
-                                                            className={tableRowClass}
-                                                        >
-                                                            <td className={tableCellClass}>
-                                                                <Link
-                                                                    href={`/dashboard/sellings/${selling.id}`}
-                                                                    className={brandLink}
+                                                    (selling: ShipmentLinkedSelling) => {
+                                                        const lineCount =
+                                                            selling.costingBreakdowns
+                                                                ?.length ?? 0
+                                                        const lines =
+                                                            selling.costingBreakdowns ??
+                                                            []
+                                                        const net = lines.reduce(
+                                                            (sum, line) =>
+                                                                sum +
+                                                                costingSellingLineNet(
+                                                                    line
+                                                                ),
+                                                            0
+                                                        )
+                                                        const profit =
+                                                            invoiceProfit(lines)
+                                                        return (
+                                                            <tr
+                                                                key={selling.id}
+                                                                className={tableRowClass}
+                                                            >
+                                                                <td
+                                                                    className={
+                                                                        tableCellClass
+                                                                    }
                                                                 >
-                                                                    {selling.sellingNumber}
-                                                                </Link>
-                                                            </td>
-                                                            <td className={tableCellClass}>
-                                                                {selling.description}
-                                                            </td>
-                                                            <td className={tableCellClass}>
-                                                                {formatIdr(
-                                                                    Number(selling.amount)
-                                                                )}
-                                                            </td>
-                                                            <td className={tableCellClass}>
-                                                                {selling.vatPercentage}%
-                                                            </td>
-                                                            <td className={tableCellClass}>
-                                                                {selling.pph23Percentage}%
-                                                            </td>
-                                                            <td
-                                                                className={cn(
-                                                                    tableCellClass,
-                                                                    "font-medium"
-                                                                )}
-                                                            >
-                                                                {formatIdr(
-                                                                    sellingNetAmount(
-                                                                        selling.amount,
-                                                                        selling.vatPercentage,
-                                                                        selling.pph23Percentage
-                                                                    )
-                                                                )}
-                                                            </td>
-                                                            <td className={tableCellClass}>
-                                                                <PaymentStatusChip
-                                                                    paid={
-                                                                        selling.status ===
-                                                                        "PAID"
+                                                                    <Link
+                                                                        href={`/dashboard/sellings/${selling.id}`}
+                                                                        className={
+                                                                            brandLink
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            selling.sellingNumber
+                                                                        }
+                                                                    </Link>
+                                                                </td>
+                                                                <td
+                                                                    className={
+                                                                        tableCellClass
                                                                     }
-                                                                />
-                                                            </td>
-                                                            <td
-                                                                className={cn(
-                                                                    tableCellClass,
-                                                                    "text-muted-foreground"
-                                                                )}
-                                                            >
-                                                                {selling.updatedAt
-                                                                    ? localDate(
-                                                                          selling.updatedAt
-                                                                      )
-                                                                    : "—"}
-                                                            </td>
-                                                            <td className={tableCellClass}>
-                                                                <UnlinkShipmentSellingButton
-                                                                    sellingId={selling.id}
-                                                                    sellingNumber={
-                                                                        selling.sellingNumber
+                                                                >
+                                                                    {lineCount}
+                                                                </td>
+                                                                <td
+                                                                    className={cn(
+                                                                        tableCellClass,
+                                                                        "font-medium"
+                                                                    )}
+                                                                >
+                                                                    {formatIdr(net)}
+                                                                </td>
+                                                                <td
+                                                                    className={cn(
+                                                                        tableCellClass,
+                                                                        "font-medium tabular-nums",
+                                                                        profit >= 0
+                                                                            ? "text-secondary-foreground"
+                                                                            : "text-[var(--mli-on-error-container)]"
+                                                                    )}
+                                                                >
+                                                                    {formatIdr(profit)}
+                                                                </td>
+                                                                <td
+                                                                    className={
+                                                                        tableCellClass
                                                                     }
-                                                                />
-                                                            </td>
-                                                        </tr>
-                                                    )
+                                                                >
+                                                                    <SellingStatusChip
+                                                                        status={
+                                                                            selling.status
+                                                                        }
+                                                                    />
+                                                                </td>
+                                                                <td
+                                                                    className={
+                                                                        tableCellClass
+                                                                    }
+                                                                >
+                                                                    {selling.invoiceDate
+                                                                        ? localDate(
+                                                                              selling.invoiceDate
+                                                                          )
+                                                                        : "—"}
+                                                                </td>
+                                                                <td
+                                                                    className={cn(
+                                                                        tableCellClass,
+                                                                        "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    {selling.updatedAt
+                                                                        ? localDate(
+                                                                              selling.updatedAt
+                                                                          )
+                                                                        : "—"}
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    }
                                                 )}
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div className="flex justify-end border-t border-[rgba(214,227,255,0.35)] px-4 py-3">
+                                    <div className="flex flex-wrap justify-end gap-x-6 gap-y-1 border-t border-[rgba(214,227,255,0.35)] px-4 py-3">
                                         <p className="text-sm text-muted-foreground">
-                                            Total selling (net):{" "}
+                                            Issued invoice total (net):{" "}
                                             <span className="font-semibold text-foreground">
-                                                {formatIdr(totalCustomerCharge)}
+                                                {formatIdr(
+                                                    sellings
+                                                        .filter(
+                                                            (selling) =>
+                                                                selling.status !==
+                                                                "DRAFT"
+                                                        )
+                                                        .reduce(
+                                                            (sum, selling) =>
+                                                                sum +
+                                                                (
+                                                                    selling.costingBreakdowns ??
+                                                                    []
+                                                                ).reduce(
+                                                                    (
+                                                                        lineSum,
+                                                                        line
+                                                                    ) =>
+                                                                        lineSum +
+                                                                        costingSellingLineNet(
+                                                                            line
+                                                                        ),
+                                                                    0
+                                                                ),
+                                                            0
+                                                        )
+                                                )}
+                                            </span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Invoice profit:{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {formatIdr(
+                                                    sellings.reduce(
+                                                        (sum, selling) =>
+                                                            sum +
+                                                            invoiceProfit(
+                                                                selling.costingBreakdowns ??
+                                                                    []
+                                                            ),
+                                                        0
+                                                    )
+                                                )}
                                             </span>
                                         </p>
                                     </div>
                                 </div>
                             )}
                         </DashboardPageCard>
-                        </>
                         ) : null}
-                    </div>
 
-                    {FINANCIAL_MODULES_ENABLED ? (
-                    <aside className="lg:sticky lg:top-6">
+                        {FINANCIAL_MODULES_ENABLED ? (
                         <DashboardPageCard>
                             <SectionIntro
                                 title="Financial summary"
-                                description="Margin from linked costings and sellings."
+                                description="Margin from linked costings and customer charges."
                             />
-                            <div className="space-y-0">
-                                <div className="flex items-center justify-between gap-3 border-b border-[rgba(214,227,255,0.35)] py-3">
-                                    <Label className="text-muted-foreground">
-                                        Total vendor cost
-                                    </Label>
-                                    <p className="font-semibold tabular-nums text-[var(--mli-on-error-container)]">
-                                        − {formatIdr(totalVendorCost)}
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between gap-3 border-b border-[rgba(214,227,255,0.35)] py-3">
-                                    <Label className="text-muted-foreground">
-                                        Customer charge
-                                    </Label>
-                                    <p className="font-semibold tabular-nums">
-                                        {formatIdr(totalCustomerCharge)}
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between gap-3 border-b border-[rgba(214,227,255,0.35)] py-3">
-                                    <Label className="font-semibold text-muted-foreground">
-                                        Gross profit
-                                    </Label>
-                                    <p
-                                        className={cn(
-                                            "font-semibold tabular-nums",
-                                            grossProfit >= 0
-                                                ? "text-secondary-foreground"
-                                                : "text-[var(--mli-on-error-container)]"
-                                        )}
-                                    >
-                                        {formatIdr(grossProfit)}
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between gap-3 py-3">
-                                    <Label className="text-muted-foreground">Margin</Label>
-                                    <p className="font-semibold tabular-nums">
-                                        {margin === null ? (
-                                            <WarningChip>Unavailable</WarningChip>
-                                        ) : (
-                                            `${margin.toFixed(2)}%`
-                                        )}
-                                    </p>
-                                </div>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                {COSTING_MODULE_ENABLED ? (
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                            Vendor payable
+                                        </p>
+                                        <p className="text-base font-semibold tabular-nums text-[var(--mli-on-error-container)]">
+                                            − {formatIdr(totalVendorCost)}
+                                        </p>
+                                    </div>
+                                ) : null}
+                                {COSTING_MODULE_ENABLED || SELLING_MODULE_ENABLED ? (
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                            Customer charge
+                                        </p>
+                                        <p className="text-base font-semibold tabular-nums">
+                                            {formatIdr(totalCustomerCharge)}
+                                        </p>
+                                    </div>
+                                ) : null}
+                                {COSTING_MODULE_ENABLED ? (
+                                    <>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                                Gross profit
+                                            </p>
+                                            <p
+                                                className={cn(
+                                                    "text-base font-semibold tabular-nums",
+                                                    grossProfit >= 0
+                                                        ? "text-secondary-foreground"
+                                                        : "text-[var(--mli-on-error-container)]"
+                                                )}
+                                            >
+                                                {formatIdr(grossProfit)}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+                                                Margin
+                                            </p>
+                                            <p className="text-base font-semibold tabular-nums">
+                                                {margin === null ? (
+                                                    <WarningChip>Unavailable</WarningChip>
+                                                ) : (
+                                                    `${margin.toFixed(2)}%`
+                                                )}
+                                            </p>
+                                        </div>
+                                    </>
+                                ) : null}
                             </div>
                         </DashboardPageCard>
-                    </aside>
-                    ) : null}
+                        ) : null}
                 </div>
             )}
         </DashboardPage>

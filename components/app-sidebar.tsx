@@ -31,7 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { authClient } from "@/lib/auth-client"
 import { usePermissions } from "@/hooks/use-permissions"
-import { FINANCIAL_MODULES_ENABLED, isFinancialModule } from "@/lib/feature-flags"
+import { isModuleEnabled } from "@/lib/feature-flags"
 import { canManageRoles } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
@@ -90,7 +90,7 @@ const data = {
       module: "COSTING" as const,
     },
     {
-      name: "Selling",
+      name: "Invoices",
       url: "/dashboard/sellings",
       icon: IconReceipt,
       module: "SELLING" as const,
@@ -197,7 +197,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     .filter((item) => can(item.module, "view"))
     .map(({ module: _m, ...item }) => item)
   const transactionalItems = data.transactionalData
-    .filter((item) => FINANCIAL_MODULES_ENABLED || !isFinancialModule(item.module))
+    .filter((item) => isModuleEnabled(item.module))
     .filter((item) => can(item.module, "view"))
     .map(({ module: _m, ...item }) => item)
   const adminPanelItems = data.adminPanel

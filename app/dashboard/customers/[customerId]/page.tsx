@@ -30,9 +30,13 @@ import {
     glassTabCount,
     glassTabsTrigger,
 } from "@/lib/design"
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import {
+    COSTING_MODULE_ENABLED,
+    FINANCIAL_MODULES_ENABLED,
+    SELLING_MODULE_ENABLED,
+} from "@/lib/feature-flags"
 import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
-import { amountCalculation, cn, localDate, sellingNetAmount } from "@/lib/utils"
+import { cn, costingInvoiceTotals, costingSellingLineNet, localDate } from "@/lib/utils"
 import type { CustomerShipment } from "@/lib/types/entity-details"
 import { Costing } from "@/app/dashboard/costings/columns"
 import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
@@ -162,22 +166,15 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
         status: shipment.status,
         costingTotal: (shipment.costings ?? []).reduce(
             (sum, costing) =>
-                sum +
-                amountCalculation(
-                    costing.price,
-                    costing.currency,
-                    costing.vatPercentage,
-                    costing.pph23Percentage
-                ),
+                sum + costingInvoiceTotals(costing.costingBreakdowns ?? []).net,
             0
         ),
-        sellingTotal: (shipment.sellings ?? []).reduce(
-            (sum, selling) =>
+        sellingTotal: (shipment.costings ?? []).reduce(
+            (sum, costing) =>
                 sum +
-                sellingNetAmount(
-                    Number(selling.amount) || 0,
-                    Number(selling.vatPercentage) || 0,
-                    Number(selling.pph23Percentage) || 0
+                (costing.costingBreakdowns ?? []).reduce(
+                    (lineSum, line) => lineSum + costingSellingLineNet(line),
+                    0
                 ),
             0
         ),
@@ -214,17 +211,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
 
     for (const shipment of shipments) {
         for (const costing of shipment.costings ?? []) {
-            const amount = amountCalculation(
-                costing.price,
-                costing.currency,
-                costing.vatPercentage,
-                costing.pph23Percentage
+            const amount = costingInvoiceTotals(
+                costing.costingBreakdowns ?? []
+            ).net
+            const sellingAmount = (costing.costingBreakdowns ?? []).reduce(
+                (sum, line) => sum + costingSellingLineNet(line),
+                0
             )
             customerCostings.push({
                 id: costing.id,
-                invoiceNumber: costing.vendorInvoiceNumber,
+                invoiceNumber: costing.vendorInvoiceNumber ?? "",
                 amount,
-                shipmentOrderNumber: costing.shipment?.orderNumber ?? shipment.orderNumber ?? "",
+                shipmentOrderNumber: shipment.orderNumber ?? "",
                 updatedAt: costing.updatedAt ?? "",
             })
 
@@ -233,30 +231,44 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 month.costingCount += 1
                 month.costingTotal += amount
                 month.netTotal -= amount
+                if (!SELLING_MODULE_ENABLED && sellingAmount !== 0) {
+                    month.sellingCount += 1
+                    month.sellingTotal += sellingAmount
+                    month.netTotal += sellingAmount
+                }
             }
         }
 
-        for (const selling of shipment.sellings ?? []) {
-            const amount = sellingNetAmount(
-                Number(selling.amount) || 0,
-                Number(selling.vatPercentage) || 0,
-                Number(selling.pph23Percentage) || 0
-            )
-            customerSellings.push({
-                id: selling.id,
-                sellingNumber: selling.sellingNumber,
-                description: selling.description,
-                amount,
-                shipmentOrderNumber: selling.shipment?.orderNumber ?? shipment.orderNumber ?? "",
-                status: selling.status,
-                updatedAt: selling.updatedAt ?? "",
-            })
+        if (SELLING_MODULE_ENABLED) {
+            for (const selling of shipment.sellings ?? []) {
+                if (selling.status === "DRAFT") continue
+                const amount = (selling.costingBreakdowns ?? []).reduce(
+                    (sum, line) => sum + costingSellingLineNet(line),
+                    0
+                )
+                const description =
+                    selling.remarks?.trim() || selling.sellingNumber
+                customerSellings.push({
+                    id: selling.id,
+                    sellingNumber: selling.sellingNumber,
+                    description,
+                    amount,
+                    shipmentOrderNumber: shipment.orderNumber ?? "",
+                    status: selling.status,
+                    updatedAt: selling.updatedAt ?? "",
+                })
 
-            const month = ensureMonth(selling.createdAt ?? selling.updatedAt ?? "")
-            if (month) {
-                month.sellingCount += 1
-                month.sellingTotal += amount
-                month.netTotal += amount
+                const month = ensureMonth(
+                    selling.invoiceDate ??
+                        selling.createdAt ??
+                        selling.updatedAt ??
+                        ""
+                )
+                if (month) {
+                    month.sellingCount += 1
+                    month.sellingTotal += amount
+                    month.netTotal += amount
+                }
             }
         }
     }
@@ -274,12 +286,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 if (!Number.isNaN(created.getTime()) && created.getFullYear() === year) {
                     return (
                         acc +
-                        amountCalculation(
-                            costing.price,
-                            costing.currency,
-                            costing.vatPercentage,
-                            costing.pph23Percentage
-                        )
+                        costingInvoiceTotals(
+                            costing.costingBreakdowns ?? []
+                        ).net
                     )
                 }
                 return acc
@@ -382,19 +391,19 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             value={shipments.length}
                             hint="All linked shipments"
                         />
-                        {FINANCIAL_MODULES_ENABLED ? (
-                            <>
-                                <MetricTile
-                                    label="YTD spend"
-                                    value={calculateYTDSpend()}
-                                    hint="Costings this year"
-                                />
-                                <MetricTile
-                                    label="Outstanding bills"
-                                    value={calculateOutstandingBills()}
-                                    hint="Unpaid customer charges"
-                                />
-                            </>
+                        {COSTING_MODULE_ENABLED ? (
+                            <MetricTile
+                                label="YTD spend"
+                                value={calculateYTDSpend()}
+                                hint="Costings this year"
+                            />
+                        ) : null}
+                        {SELLING_MODULE_ENABLED ? (
+                            <MetricTile
+                                label="Outstanding bills"
+                                value={calculateOutstandingBills()}
+                                hint="Unpaid customer charges"
+                            />
                         ) : null}
                     </div>
                 </div>
@@ -414,21 +423,23 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             Shipments
                             <span className={glassTabCount}>{shipments.length}</span>
                         </TabsTrigger>
+                        {SELLING_MODULE_ENABLED ? (
+                            <TabsTrigger value="sellings" className={glassTabsTrigger}>
+                                Sellings
+                                <span className={glassTabCount}>{sellingsTotal}</span>
+                            </TabsTrigger>
+                        ) : null}
+                        {COSTING_MODULE_ENABLED ? (
+                            <TabsTrigger value="costings" className={glassTabsTrigger}>
+                                Costings
+                                <span className={glassTabCount}>{costingsTotal}</span>
+                            </TabsTrigger>
+                        ) : null}
                         {FINANCIAL_MODULES_ENABLED ? (
-                            <>
-                                <TabsTrigger value="sellings" className={glassTabsTrigger}>
-                                    Sellings
-                                    <span className={glassTabCount}>{sellingsTotal}</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="costings" className={glassTabsTrigger}>
-                                    Costings
-                                    <span className={glassTabCount}>{costingsTotal}</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="summary" className={glassTabsTrigger}>
-                                    Summary
-                                    <span className={glassTabCount}>{monthlySummary.length}</span>
-                                </TabsTrigger>
-                            </>
+                            <TabsTrigger value="summary" className={glassTabsTrigger}>
+                                Summary
+                                <span className={glassTabCount}>{monthlySummary.length}</span>
+                            </TabsTrigger>
                         ) : null}
                     </TabsList>
                 </div>
@@ -487,8 +498,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                     </DashboardPageCard>
                 </TabsContent>
 
-                {FINANCIAL_MODULES_ENABLED ? (
-                <>
+                {SELLING_MODULE_ENABLED ? (
                 <TabsContent value="sellings" className="mt-6">
                     <DashboardPageCard>
                         <SectionIntro
@@ -506,7 +516,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         )}
                     </DashboardPageCard>
                 </TabsContent>
+                ) : null}
 
+                {COSTING_MODULE_ENABLED ? (
                 <TabsContent value="costings" className="mt-6">
                     <DashboardPageCard>
                         <SectionIntro
@@ -527,7 +539,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         )}
                     </DashboardPageCard>
                 </TabsContent>
+                ) : null}
 
+                {FINANCIAL_MODULES_ENABLED ? (
                 <TabsContent value="summary" className="mt-6">
                     <DashboardPageCard>
                         <SectionIntro
@@ -545,7 +559,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                         )}
                     </DashboardPageCard>
                 </TabsContent>
-                </>
                 ) : null}
             </Tabs>
         </DashboardPage>

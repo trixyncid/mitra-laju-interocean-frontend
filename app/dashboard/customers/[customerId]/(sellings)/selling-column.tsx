@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Info } from "lucide-react"
 import Link from "next/link"
 import { localDate } from "@/lib/utils"
-import { PaymentStatusChip } from "@/components/ui/status-chip"
+import { SellingStatusChip } from "@/components/ui/status-chip"
 import { secondaryText } from "@/lib/design"
 import {
   dateSort,
@@ -71,7 +71,7 @@ export const columns: ColumnDef<CustomerSelling>[] = [
     header: ({ column }) => sortHeader(column, "Status"),
     ...textSort,
     cell: ({ row }) => (
-      <PaymentStatusChip paid={row.original.status === "PAID"} />
+      <SellingStatusChip status={row.original.status} />
     ),
   },
   {

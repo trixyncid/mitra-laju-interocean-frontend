@@ -14,8 +14,8 @@ import {
 } from "@/hooks/use-roles"
 import type { Role, RolePermission } from "@/services/roles.service"
 import {
-  FINANCIAL_MODULES_ENABLED,
   isFinancialModule,
+  isModuleEnabled,
 } from "@/lib/feature-flags"
 import type { AppModule, ShipmentType } from "@/lib/permissions"
 import { toast } from "sonner"
@@ -55,7 +55,7 @@ export default function RoleForm({
     () =>
       (catalog ?? [])
         .map((m) => m.key)
-        .filter((key) => FINANCIAL_MODULES_ENABLED || !isFinancialModule(key)),
+        .filter((key) => !isFinancialModule(key) || isModuleEnabled(key)),
     [catalog]
   )
   const moduleLabels = useMemo(() => {
@@ -80,7 +80,8 @@ export default function RoleForm({
         "VESSEL",
         "CONTAINER",
         "SHIPMENT",
-        ...(FINANCIAL_MODULES_ENABLED ? (["COSTING", "SELLING"] as const) : []),
+        ...(isModuleEnabled("COSTING") ? (["COSTING"] as const) : []),
+        ...(isModuleEnabled("SELLING") ? (["SELLING"] as const) : []),
         "USER",
         "ROLE",
       ],

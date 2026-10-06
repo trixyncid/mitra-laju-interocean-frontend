@@ -21,7 +21,11 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { glassPanelInteractive } from "@/lib/design"
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import {
+  COSTING_MODULE_ENABLED,
+  FINANCIAL_MODULES_ENABLED,
+  SELLING_MODULE_ENABLED,
+} from "@/lib/feature-flags"
 import { cn } from "@/lib/utils"
 
 function parseAmount(value: string | number) {
@@ -109,7 +113,7 @@ export function DashboardKpiCards({ data }: { data: DashboardData }) {
     },
     {
       label: "Total costing",
-      description: "Sum of net vendor costing amounts in period",
+      description: "Sum of vendor payable amounts in period",
       ...formatIdrKpi(data.totalNetCosting),
       icon: IconReceipt,
       accent: "text-[var(--chart-2)]",
@@ -131,8 +135,14 @@ export function DashboardKpiCards({ data }: { data: DashboardData }) {
     },
   ]
 
+  const enabledFinanceCards = [
+    ...(SELLING_MODULE_ENABLED ? [financeCards[0]] : []),
+    ...(COSTING_MODULE_ENABLED ? [financeCards[1]] : []),
+    ...(FINANCIAL_MODULES_ENABLED ? [financeCards[2]] : []),
+  ]
+
   const cards = FINANCIAL_MODULES_ENABLED
-    ? [opsCards[0], ...financeCards]
+    ? [opsCards[0], ...enabledFinanceCards]
     : opsCards
 
   return (

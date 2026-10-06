@@ -60,8 +60,52 @@ export function PaymentStatusChip({
   )
 }
 
+export function SellingStatusChip({
+  status,
+  className,
+}: {
+  status: string
+  className?: string
+}) {
+  const normalized = (status ?? "").toUpperCase()
+  if (normalized === "DRAFT") {
+    return (
+      <span className={cn(chipDraft(), className)}>
+        <Dot className="-ml-1 size-4 text-[var(--mli-on-draft-container)]" />
+        Draft
+      </span>
+    )
+  }
+  return (
+    <PaymentStatusChip paid={normalized === "PAID"} className={className} />
+  )
+}
+
 export function UnlinkedChip({ className }: { className?: string }) {
   return <span className={chipInactive(className)}>Unlinked</span>
+}
+
+export function VendorInvoiceTypeChip({
+  type,
+  className,
+}: {
+  type?: string | null
+  className?: string
+}) {
+  const isReimbursement = (type ?? "INVOICE").toUpperCase() === "REIMBURSEMENT"
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit max-w-full items-center whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-semibold leading-4 tracking-normal",
+        isReimbursement
+          ? "bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)]"
+          : "bg-secondary text-primary",
+        className
+      )}
+    >
+      {isReimbursement ? "Reimbursement" : "Invoice"}
+    </span>
+  )
 }
 
 export function ShipmentLifecycleChip({

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/date-range-picker"
 import { Input } from "@/components/ui/input"
 import { StatusFilter } from "@/components/ui/status-filter"
+import { VendorFilter } from "@/components/ui/vendor-filter"
+import { SingleDateFilter } from "@/components/ui/single-date-filter"
 import {
   hasDateRange,
   type TableFilterConfig,
@@ -22,6 +24,10 @@ export type AppliedTableFilters = {
   status: string
   lifecycleStatus?: string
   shipmentType?: string
+  vendorId?: string
+  vendorLabel?: string
+  date?: string
+  paymentDate?: string
   dateRange: TableDateRange
 }
 
@@ -55,13 +61,18 @@ export function DataTableToolbar<TData>({
     applied.status !== "all" ||
     (applied.lifecycleStatus !== undefined && applied.lifecycleStatus !== "all") ||
     (applied.shipmentType !== undefined && applied.shipmentType !== "all") ||
+    Boolean(applied.vendorId) ||
+    Boolean(applied.date) ||
+    Boolean(applied.paymentDate) ||
     hasDateRange(applied.dateRange)
 
   const hasFilterControls = Boolean(
     filters?.status ||
       filters?.lifecycleStatus ||
       filters?.shipmentType ||
+      filters?.vendor ||
       filters?.date ||
+      filters?.paymentDate ||
       extra
   )
 
@@ -80,6 +91,10 @@ export function DataTableToolbar<TData>({
       status: "all",
       lifecycleStatus: "all",
       shipmentType: "all",
+      vendorId: undefined,
+      vendorLabel: undefined,
+      date: undefined,
+      paymentDate: undefined,
       dateRange: {},
     })
   }
@@ -157,12 +172,39 @@ export function DataTableToolbar<TData>({
             />
           ) : null}
 
+          {filters?.vendor ? (
+            <VendorFilter
+              label={filters.vendor.label ?? "Vendor"}
+              value={applied.vendorId}
+              valueLabel={applied.vendorLabel}
+              onChange={({ vendorId, vendorLabel }) =>
+                onApply({ ...applied, vendorId, vendorLabel })
+              }
+            />
+          ) : null}
+
           {filters?.date ? (
-            <DateRangePicker
-              layout="toolbar"
-              label={filters.date.label}
-              value={applied.dateRange}
-              onChange={(dateRange) => onApply({ ...applied, dateRange })}
+            filters.date.mode === "single" ? (
+              <SingleDateFilter
+                label={filters.date.label}
+                value={applied.date}
+                onChange={(date) => onApply({ ...applied, date })}
+              />
+            ) : (
+              <DateRangePicker
+                layout="toolbar"
+                label={filters.date.label}
+                value={applied.dateRange}
+                onChange={(dateRange) => onApply({ ...applied, dateRange })}
+              />
+            )
+          ) : null}
+
+          {filters?.paymentDate ? (
+            <SingleDateFilter
+              label={filters.paymentDate.label ?? "Payment date"}
+              value={applied.paymentDate}
+              onChange={(paymentDate) => onApply({ ...applied, paymentDate })}
             />
           ) : null}
 

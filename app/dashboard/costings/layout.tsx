@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation"
 
-import { FINANCIAL_MODULES_ENABLED } from "@/lib/feature-flags"
+import { COSTING_MODULE_ENABLED } from "@/lib/feature-flags"
 
 export default function CostingsLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  if (!FINANCIAL_MODULES_ENABLED) {
+  if (!COSTING_MODULE_ENABLED) {
     redirect("/dashboard/shipments")
   }
 

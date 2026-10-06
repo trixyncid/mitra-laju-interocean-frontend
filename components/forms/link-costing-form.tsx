@@ -1,174 +1,65 @@
 "use client"
 
-import { useForm } from "@tanstack/react-form"
+import { useState } from "react"
+import { IconTrash } from "@tabler/icons-react"
+
 import { Button } from "../ui/button"
 import { DeleteConfirmButton } from "../ui/delete-confirm-button"
-import { IconLink, IconLinkOff, IconTrash } from "@tabler/icons-react"
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "../ui/dialog"
-import { useShipmentSearch } from "@/hooks/use-entity-searches"
-import { useUpdateCosting, useDeleteCosting } from "@/hooks/use-costings"
-import { useState } from "react"
-import { Shipment } from "@/app/dashboard/shipments/columns"
-import { usePermissions } from "@/hooks/use-permissions"
-import { shipmentSelectionSchema } from "@/lib/schemas/link"
-import { zodOnChange } from "@/lib/zod-form"
-import { SearchableCombobox } from "@/components/searchable-combobox"
-import { fieldError } from "@/lib/form-field"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog"
+import { useDeleteCosting } from "@/hooks/use-costings"
 
-export default function LinkCostingForm({
-    id,
-    shipmentId,
-}: {
-    id: string
-    shipmentId: string | undefined
-}) {
-    const [open, setOpen] = useState(false)
-    const [deleteOpen, setDeleteOpen] = useState(false)
-    const [shipmentSearch, setShipmentSearch] = useState("")
-    const { canReadShipmentsForCosting } = usePermissions()
+export default function LinkCostingForm({ id }: { id: string }) {
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const deleteCosting = useDeleteCosting()
 
-    const { data: shipmentsPage, isLoading, isFetching, isError: errorShipments } =
-        useShipmentSearch(
-            shipmentSearch,
-            open && canReadShipmentsForCosting(),
-            "all"
-        )
-
-    const deleteCosting = useDeleteCosting()
-    const updateCosting = useUpdateCosting()
-
-    const shipmentItems =
-        shipmentsPage?.items.map((s: Shipment) => ({
-            value: s.id ?? "",
-            label: s.orderNumber,
-        })) ?? []
-
-    const form = useForm({
-        defaultValues: {
-            shipmentId: shipmentId ?? "",
-        },
-        onSubmit: async ({ value }) => {
-            updateCosting.mutate({
-                id: id,
-                costing: {
-                    shipmentId: value.shipmentId,
-                }
-            }, {
+  return (
+    <Dialog
+      open={deleteOpen}
+      onOpenChange={(next) => {
+        if (deleteCosting.isPending) return
+        setDeleteOpen(next)
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Delete costing">
+          <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete costing</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this costing? This action cannot be
+            undone. To assign lines to shipments, open the costing detail page.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DeleteConfirmButton
+            isPending={deleteCosting.isPending}
+            onClick={() => {
+              deleteCosting.mutate(id, {
                 onSuccess: () => {
-                    setOpen(false)
-                    form.reset()
-                }
-            })
-        }
-    })
-
-    return (
-        <div className="flex items-center gap-x-2">
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="icon-sm" aria-label="Link costing">
-                        <IconLink />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent
-                    onInteractOutside={(e) => {
-                        const target = e.target as Element
-                        if (target.closest('[data-slot="combobox-content"]')) {
-                            e.preventDefault()
-                        }
-                    }}
-                >
-                    <DialogHeader>
-                        <DialogTitle>Link Costing</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        form.handleSubmit()
-                    }}>
-                        <div>
-                            <form.Field
-                                name="shipmentId"
-                                validators={{ onChange: zodOnChange(shipmentSelectionSchema) }}
-                            >
-                                {(field) => (
-                                    <div className="my-5">
-                                        <SearchableCombobox
-                                            id={field.name}
-                                            label="Shipment Order Number"
-                                            value={field.state.value}
-                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
-                                            items={shipmentItems}
-                                            error={fieldError(field.state.meta.errors)}
-                                            required
-                                            isLoading={isLoading}
-                                            isSearching={isFetching}
-                                            searchError={Boolean(errorShipments)}
-                                            onSearchTermChange={setShipmentSearch}
-                                            placeholder="Search shipment order number..."
-                                            emptyMessage="No shipments found."
-                                        />
-                                    </div>
-                                )}
-                            </form.Field>
-                        </div>
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                disabled={updateCosting.isPending}
-                                onClick={() => {
-                                    updateCosting.mutate({
-                                        id: id,
-                                        costing: { shipmentId: null }
-                                    }, {
-                                        onSuccess: () => {
-                                            setOpen(false)
-                                            form.reset()
-                                        }
-                                    })
-                                }}
-                            >
-                                <IconLinkOff />Unlink
-                            </Button>
-                            <Button type="submit" disabled={updateCosting.isPending}>
-                                {updateCosting.isPending ? "Linking..." : "Link Costing"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={deleteOpen} onOpenChange={(next) => { if (deleteCosting.isPending) return; setDeleteOpen(next) }}>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon-sm" aria-label="Delete costing">
-                        <IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Costing</DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription>
-                        Are you sure you want to delete this costing? This action cannot be undone.
-                    </DialogDescription>
-                    <DialogFooter>
-                        <DeleteConfirmButton
-                            isPending={deleteCosting.isPending}
-                            onClick={() => {
-                                deleteCosting.mutate(id, {
-                                    onSuccess: () => {
-                                        setDeleteOpen(false)
-                                    }
-                                })
-                            }}
-                        />
-                        <DialogClose asChild>
-                            <Button variant="secondary" disabled={deleteCosting.isPending}>Cancel</Button>
-                        </DialogClose>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    )
+                  setDeleteOpen(false)
+                },
+              })
+            }}
+          />
+          <DialogClose asChild>
+            <Button variant="secondary" disabled={deleteCosting.isPending}>
+              Cancel
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }

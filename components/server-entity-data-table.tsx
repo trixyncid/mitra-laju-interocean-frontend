@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import {
   type ColumnDef,
   flexRender,
@@ -45,6 +45,7 @@ type ServerEntityDataTableProps<TData, TValue> = {
   filters?: TableFilterConfig<TData>
   applied: AppliedTableFilters
   onApply: (next: AppliedTableFilters) => void
+  extra?: ReactNode
 }
 
 export function ServerEntityDataTable<TData, TValue>({
@@ -60,6 +61,7 @@ export function ServerEntityDataTable<TData, TValue>({
   filters,
   applied,
   onApply,
+  extra,
 }: ServerEntityDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const pagination = useMemo(
@@ -98,6 +100,7 @@ export function ServerEntityDataTable<TData, TValue>({
         filters={filters}
         applied={applied}
         onApply={onApply}
+        extra={extra}
       />
 
       <div className={tableShell}>

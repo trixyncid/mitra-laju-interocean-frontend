@@ -24,9 +24,19 @@ export type TableFilterConfig<TData> = {
     options: FilterOption[]
     getValue: (row: TData) => unknown
   }
+  vendor?: {
+    id: string
+    label?: string
+  }
   date?: {
     id: string
     label: string
+    mode?: "range" | "single"
+    getValue: (row: TData) => string | null | undefined
+  }
+  paymentDate?: {
+    id: string
+    label?: string
     getValue: (row: TData) => string | null | undefined
   }
 }
@@ -56,6 +66,13 @@ export const PAYMENT_STATUS_OPTIONS: FilterOption[] = [
   { value: "all", label: "All" },
   { value: "PAID", label: "Paid" },
   { value: "UNPAID", label: "Unpaid" },
+]
+
+export const SELLING_STATUS_OPTIONS: FilterOption[] = [
+  { value: "all", label: "All" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "UNPAID", label: "Unpaid" },
+  { value: "PAID", label: "Paid" },
 ]
 
 export function matchesStatusFilter(value: unknown, filter: string): boolean {

@@ -50,11 +50,15 @@ type SearchableComboboxProps = {
 
 function ensureSelectedOption(
   items: SearchableComboboxOption[],
-  value: string
+  value: string,
+  stickySelected: SearchableComboboxOption | null
 ): SearchableComboboxOption[] {
-  if (!value) return items
+  if (!value || value === "-") return items
   if (items.some((item) => item.value === value)) return items
-  return [...items, { value, label: value }]
+  if (stickySelected?.value === value && stickySelected.label !== value) {
+    return [stickySelected, ...items]
+  }
+  return [...items, { value, label: stickySelected?.label ?? value }]
 }
 
 function filterOptions(
@@ -90,11 +94,25 @@ export function SearchableCombobox({
   const anchor = useComboboxAnchor()
   const [open, setOpen] = useState(false)
   const [inputValue, setInputValue] = useState("")
+  const [stickySelected, setStickySelected] =
+    useState<SearchableComboboxOption | null>(null)
   const asyncSearch = Boolean(onSearchTermChange)
 
+  useEffect(() => {
+    if (!value || value === "-") {
+      setStickySelected(null)
+      return
+    }
+
+    const fromItems = items.find((item) => item.value === value)
+    if (fromItems) {
+      setStickySelected(fromItems)
+    }
+  }, [items, value])
+
   const options = useMemo(
-    () => ensureSelectedOption(items, value),
-    [items, value]
+    () => ensureSelectedOption(items, value, stickySelected),
+    [items, value, stickySelected]
   )
 
   const selectedItem = useMemo(
@@ -146,6 +164,11 @@ export function SearchableCombobox({
           }}
           onValueChange={(item) => {
             const nextValue = item?.value ?? ""
+            if (item?.value) {
+              setStickySelected(item)
+            } else {
+              setStickySelected(null)
+            }
             onValueChange(nextValue)
             setInputValue(item?.label ?? "")
             onSearchTermChange?.("")

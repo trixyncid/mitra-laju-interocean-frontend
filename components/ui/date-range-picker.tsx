@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/popover"
 import { parseLocalDate, toIsoDateOnly } from "@/lib/date-input"
 import { glassControl, glassMenu } from "@/lib/design"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
 export type TableDateRange = {
@@ -35,7 +36,9 @@ type DateRangePickerProps = {
   onChange: (next: TableDateRange) => void
   className?: string
   /** Compact glass chip for page headers; toolbar sits inline with search. */
-  layout?: "stacked" | "inline" | "toolbar"
+  layout?: "stacked" | "inline" | "toolbar" | "embedded"
+  /** When false, hides the "All dates" preset (useful for required ranges). */
+  showAllOption?: boolean
 }
 
 type DatePreset = {
@@ -117,11 +120,18 @@ function DateRangePanel({
   onChange,
   onPresetSelect,
   open = true,
+  showAllOption = true,
+  autoApplyComplete = false,
+  numberOfMonths = 2,
 }: {
   value: TableDateRange
   onChange: (next: TableDateRange) => void
   onPresetSelect?: () => void
   open?: boolean
+  showAllOption?: boolean
+  /** Commit as soon as both ends of the range are chosen (skip Apply). */
+  autoApplyComplete?: boolean
+  numberOfMonths?: number
 }) {
   const presets = useMemo(() => getDatePresets(), [])
   const [draft, setDraft] = useState<DateRange | undefined>(() =>
@@ -176,29 +186,40 @@ function DateRangePanel({
               </button>
             )
           })}
-          <button
-            type="button"
-            className={cn(
-              "h-8 cursor-pointer rounded-md px-2.5 text-left text-sm transition-colors",
-              !value.from && !value.to
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-[rgba(232,238,246,0.9)] hover:text-foreground"
-            )}
-            onClick={() => applyRange({}, true)}
-          >
-            All dates
-          </button>
+          {showAllOption ? (
+            <button
+              type="button"
+              className={cn(
+                "h-8 cursor-pointer rounded-md px-2.5 text-left text-sm transition-colors",
+                !value.from && !value.to
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-[rgba(232,238,246,0.9)] hover:text-foreground"
+              )}
+              onClick={() => applyRange({}, true)}
+            >
+              All dates
+            </button>
+          ) : null}
         </div>
         <Calendar
           mode="range"
           min={1}
-          numberOfMonths={2}
+          numberOfMonths={numberOfMonths}
           month={month}
           onMonthChange={setMonth}
           selected={draft}
           onSelect={(range) => {
             setDraft(range)
             if (range?.from) setMonth(range.from)
+            if (autoApplyComplete && range?.from && range?.to) {
+              applyRange(
+                {
+                  from: toIsoDateOnly(range.from),
+                  to: toIsoDateOnly(range.to),
+                },
+                false
+              )
+            }
           }}
         />
       </div>
@@ -211,29 +232,34 @@ function DateRangePanel({
             <button
               type="button"
               className="cursor-pointer text-xs font-medium text-[var(--mli-primary-container)] hover:underline"
-              onClick={() => setDraft(undefined)}
+              onClick={() => {
+                setDraft(undefined)
+                if (autoApplyComplete) onChange({})
+              }}
             >
               Clear
             </button>
           ) : null}
-          <Button
-            type="button"
-            size="sm"
-            className="h-8 cursor-pointer px-3"
-            disabled={!draft?.from || !draft?.to}
-            onClick={() => {
-              if (!draft?.from || !draft.to) return
-              applyRange(
-                {
-                  from: toIsoDateOnly(draft.from),
-                  to: toIsoDateOnly(draft.to),
-                },
-                true
-              )
-            }}
-          >
-            Apply
-          </Button>
+          {autoApplyComplete ? null : (
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 cursor-pointer px-3"
+              disabled={!draft?.from || !draft?.to}
+              onClick={() => {
+                if (!draft?.from || !draft.to) return
+                applyRange(
+                  {
+                    from: toIsoDateOnly(draft.from),
+                    to: toIsoDateOnly(draft.to),
+                  },
+                  true
+                )
+              }}
+            >
+              Apply
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -246,10 +272,31 @@ export function DateRangePicker({
   onChange,
   className,
   layout = "stacked",
+  showAllOption = true,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false)
+  const isMobile = useIsMobile()
   const hasRange = Boolean(value.from || value.to)
   const compact = layout === "inline"
+
+  if (layout === "embedded") {
+    return (
+      <div className={cn("flex flex-col gap-2", className)}>
+        <Label className="text-xs font-medium text-muted-foreground">
+          {label}
+        </Label>
+        <div className="overflow-x-auto rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(247,249,251,0.72)]">
+          <DateRangePanel
+            value={value}
+            onChange={onChange}
+            showAllOption={showAllOption}
+            autoApplyComplete
+            numberOfMonths={isMobile ? 1 : 2}
+          />
+        </div>
+      </div>
+    )
+  }
 
   const trigger = (
     <div
