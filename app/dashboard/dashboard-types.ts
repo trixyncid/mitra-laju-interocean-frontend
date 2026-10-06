@@ -82,7 +82,7 @@ export interface DashboardQueryParams {
   endDate?: string
 }
 
-export type VoyageStatus = "draft" | "backup" | "ongoing"
+export type VoyageStatus = "draft" | "backup" | "ongoing" | "finished"
 
 export interface DashboardVoyageContainer {
   containerNumber: string | null
