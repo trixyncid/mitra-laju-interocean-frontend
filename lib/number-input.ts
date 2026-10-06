@@ -19,6 +19,37 @@ export function parseLocaleNumber(input: string): number | "" {
   return Number.isFinite(num) ? num : ""
 }
 
+/**
+ * Percentages are entered without thousands separators, so "." is a decimal
+ * mark — the same as ",".
+ */
+export function normalizeUngroupedDecimal(raw: string) {
+  const sanitized = sanitizeNumberInput(raw)
+  if (!sanitized.includes(".")) return sanitized
+  if (sanitized.includes(",")) return sanitized.replace(/\./g, "")
+
+  const dotIndex = sanitized.indexOf(".")
+  return (
+    sanitized.slice(0, dotIndex) +
+    "," +
+    sanitized.slice(dotIndex + 1).replace(/\./g, "")
+  )
+}
+
+/** Values saved from the field are plain JS numbers (`"1.1"`), not `id-ID` text. */
+function parseStoredNumber(value: number | string): number | "" {
+  if (typeof value === "number") return Number.isFinite(value) ? value : ""
+
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    const num = Number(trimmed)
+    return Number.isFinite(num) ? num : ""
+  }
+
+  return parseLocaleNumber(trimmed)
+}
+
 export function formatLocaleNumber(
   value: number | string | "",
   options?: {
@@ -94,8 +125,7 @@ export function formatNumberFieldDisplay(
 ) {
   if (value === "" || value === null || value === undefined) return ""
 
-  const num =
-    typeof value === "number" ? value : parseLocaleNumber(String(value))
+  const num = parseStoredNumber(value)
 
   if (num === "") return sanitizeNumberInput(String(value))
 

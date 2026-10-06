@@ -1,9 +1,8 @@
 /**
- * Costing and invoices (selling) can be enabled independently.
- * Both are hidden for now.
+ * Costing and selling can be enabled independently.
  */
-export const COSTING_MODULE_ENABLED = false
-export const SELLING_MODULE_ENABLED = false
+export const COSTING_MODULE_ENABLED = true
+export const SELLING_MODULE_ENABLED = true
 
 /** True when either financial module is visible. */
 export const FINANCIAL_MODULES_ENABLED =

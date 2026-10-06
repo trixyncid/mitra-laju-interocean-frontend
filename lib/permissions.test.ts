@@ -113,12 +113,12 @@ describe("dynamic permissions", () => {
     )
   })
 
-  test("financial modules blocked when flag is off", () => {
+  test("financial modules are open when the flags are on", () => {
     expect(
       canAccessRouteWithPermissions(viewerPerms, "/dashboard/costings", "viewer")
-    ).toBe(false)
+    ).toBe(true)
     expect(
       canAccessRouteWithPermissions(viewerPerms, "/dashboard/sellings", "viewer")
-    ).toBe(false)
+    ).toBe(true)
   })
 })

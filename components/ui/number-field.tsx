@@ -7,6 +7,7 @@ import {
   formatNumberFieldDisplay,
   formatNumberInputLive,
   isValidNumberInput,
+  normalizeUngroupedDecimal,
   parseLocaleNumber,
   sanitizeNumberInput,
 } from "@/lib/number-input"
@@ -61,12 +62,14 @@ export function NumberField({
       description={description}
       error={error}
       onChange={(event) => {
-        const raw = sanitizeNumberInput(event.target.value)
+        const sanitized = sanitizeNumberInput(event.target.value)
+        const raw = useGrouping ? sanitized : normalizeUngroupedDecimal(sanitized)
         if (!isValidNumberInput(raw)) return
 
-        const nextDisplay = useGrouping
-          ? formatNumberInputLive(raw, { useGrouping, maximumFractionDigits })
-          : raw
+        const nextDisplay = formatNumberInputLive(raw, {
+          useGrouping,
+          maximumFractionDigits,
+        })
 
         setDisplayValue(nextDisplay)
         const parsed = parseLocaleNumber(raw)
