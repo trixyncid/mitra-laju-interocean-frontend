@@ -64,6 +64,12 @@ const VOYAGE_STATUS_OPTIONS: {
     description: "Shipments marked ongoing and linked to active voyage operations.",
     empty: "No ongoing vessel voyages right now.",
   },
+  {
+    value: "finished",
+    label: "Finished",
+    description: "Shipments marked finished and linked to a vessel voyage.",
+    empty: "No finished vessel voyages found.",
+  },
 ]
 
 function formatDateTime(value: string | null) {
@@ -204,7 +210,12 @@ export function DashboardShipmentsByVoyage() {
           type="single"
           value={voyageStatus}
           onValueChange={(value) => {
-            if (value === "draft" || value === "backup" || value === "ongoing") {
+            if (
+              value === "draft" ||
+              value === "backup" ||
+              value === "ongoing" ||
+              value === "finished"
+            ) {
               setVoyageStatus(value)
             }
           }}
