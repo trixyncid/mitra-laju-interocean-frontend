@@ -75,6 +75,12 @@ const VOYAGE_STATUS_OPTIONS: {
     description: "Active voyage operations currently in progress.",
     empty: "No ongoing vessel voyages right now.",
   },
+  {
+    value: "finished",
+    label: "Finished",
+    description: "Shipments marked finished and linked to a vessel voyage.",
+    empty: "No finished vessel voyages found.",
+  },
 ]
 
 const TYPE_CHIP_IDLE =
@@ -369,7 +375,12 @@ export function DashboardShipmentsByVoyage() {
         <Tabs
           value={voyageStatus}
           onValueChange={(value) => {
-            if (value === "draft" || value === "backup" || value === "ongoing") {
+            if (
+              value === "draft" ||
+              value === "backup" ||
+              value === "ongoing" ||
+              value === "finished"
+            ) {
               setVoyageStatus(value)
             }
           }}
