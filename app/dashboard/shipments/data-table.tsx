@@ -9,15 +9,14 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table"
-import { IconFileSpreadsheet } from "@tabler/icons-react"
-import { toast } from "sonner"
 import type { Shipment } from "@/app/dashboard/shipments/columns"
 import { DataTablePagination } from "@/components/data-table-pagination"
 import {
   AppliedTableFilters,
   DataTableToolbar,
 } from "@/components/data-table-toolbar"
-import { Button } from "@/components/ui/button"
+import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
+import { ShipmentExportButton } from "@/components/shipments/shipment-export-button"
 import {
   Table,
   TableBody,
@@ -27,13 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  SHIPMENT_LIFECYCLE_OPTIONS,
-  SHIPMENT_TYPE_FILTER_OPTIONS,
-} from "@/lib/data-table-filters"
-import { glassControl, tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
+import { glassControl, stickyActionCell, stickyActionHeaderCell, tableCellClass, tableHeaderCell, tableHeaderRow, tableRowClass, tableShell } from "@/lib/design"
 import { cn } from "@/lib/utils"
-import { shipmentsService } from "@/services/shipments.service"
+import { isActionColumn } from "@/lib/data-table"
 
 interface DataTableProps {
   columns: ColumnDef<Shipment>[]
@@ -70,7 +65,6 @@ export function DataTable({
 }: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [showModifiedBy, setShowModifiedBy] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
   const pagination = useMemo(
     () => ({ pageIndex: Math.max(page - 1, 0), pageSize }),
     [page, pageSize]
@@ -105,59 +99,10 @@ export function DataTable({
     },
   })
 
-  async function handleExportExcel() {
-    if (isExporting) return
-    if (totalRows === 0) {
-      toast.error("No shipments to export for the current filters.")
-      return
-    }
-
-    setIsExporting(true)
-    try {
-      const { rowCount } = await shipmentsService.exportExcel({
-        search: applied.search || undefined,
-        lifecycleStatus: (applied.lifecycleStatus ?? "all") as
-          | "all"
-          | "DRAFT"
-          | "BACKUP"
-          | "ONGOING"
-          | "FINISHED",
-        shipmentType: (applied.shipmentType ?? "all") as
-          | "all"
-          | "EXPORT"
-          | "IMPORT"
-          | "DOMESTIC",
-      })
-
-      const exportedCount = rowCount ?? totalRows
-      toast.success(`Exported ${exportedCount} shipments.`)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to export shipments."
-      )
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
   return (
     <div>
       <DataTableToolbar
-        searchPlaceholder="Search by order number and customer code..."
-        filters={{
-          lifecycleStatus: {
-            id: "lifecycleStatus",
-            label: "Status",
-            options: SHIPMENT_LIFECYCLE_OPTIONS,
-            getValue: () => undefined,
-          },
-          shipmentType: {
-            id: "shipmentType",
-            label: "Shipment Type",
-            options: SHIPMENT_TYPE_FILTER_OPTIONS,
-            getValue: () => undefined,
-          },
-        }}
+        searchPlaceholder="Search customer, vessel, booking or BL..."
         applied={applied}
         onApply={onApply}
         extra={
@@ -165,7 +110,7 @@ export function DataTable({
             <label
               className={cn(
                 glassControl,
-                "flex h-11 cursor-pointer items-center gap-2 border px-3 text-sm whitespace-nowrap"
+                "flex h-10 cursor-pointer items-center gap-2 border px-3 text-sm whitespace-nowrap"
               )}
             >
               <Checkbox
@@ -175,23 +120,12 @@ export function DataTable({
               />
               Modified
             </label>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11"
-              disabled={isExporting}
-              onClick={() => void handleExportExcel()}
-            >
-              <IconFileSpreadsheet className="size-4" />
-              {isExporting
-                ? "Exporting..."
-                : totalRows > 0
-                  ? `Export Excel (${totalRows})`
-                  : "Export Excel"}
-            </Button>
+            <ShipmentExportButton applied={applied} totalRows={totalRows} />
           </div>
         }
       />
+
+      <ActiveColumnFilters />
 
       <div className={tableShell}>
         <Table className="min-w-max">
@@ -199,7 +133,13 @@ export function DataTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className={tableHeaderRow}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className={tableHeaderCell}>
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      tableHeaderCell,
+                      isActionColumn(header.column.id) && stickyActionHeaderCell
+                    )}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -220,6 +160,7 @@ export function DataTable({
                       key={cell.id}
                       className={cn(
                         tableCellClass,
+                        isActionColumn(cell.column.id) && stickyActionCell,
                         (
                           cell.column.columnDef.meta as
                             | { cellClassName?: string }

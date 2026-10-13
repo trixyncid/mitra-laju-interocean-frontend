@@ -1,4 +1,5 @@
 "use client"
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CustomerCombobox } from "@/components/customer-combobox";
@@ -28,18 +29,19 @@ export type Shipper = {
 
 export default function ShipmentForm({
     id,
-    orderNumber,
     customerCodeId,
     customerShipperId,
     status,
-    isActive
+    isActive,
+    trigger,
 }: {
     id: string | undefined,
-    orderNumber: string | undefined,
     customerCodeId: string | undefined,
     customerShipperId: string | undefined
     status: ShipmentStatus | undefined
     isActive: boolean | undefined
+    /** Replaces the default pencil button, e.g. a compact one in table rows. */
+    trigger?: ReactNode
 }) {
     const updateShipment = useUpdateShipment()
 
@@ -81,7 +83,7 @@ export default function ShipmentForm({
         <div>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="outline" size="icon"><Pencil /></Button>
+                    {trigger ?? <Button variant="outline" size="icon"><Pencil /></Button>}
                 </DialogTrigger>
                 <DialogContent
                     onInteractOutside={(e) => {
@@ -102,12 +104,6 @@ export default function ShipmentForm({
                         }
                     }>
                         <div>
-                            {orderNumber ? (
-                                <div className="my-3">
-                                    <FormLabel className="my-2">Order Number</FormLabel>
-                                    <p className="text-sm font-medium">{orderNumber}</p>
-                                </div>
-                            ) : null}
                             <form.Field name="status">
                                 {(field) => (
                                     <div className="my-3">

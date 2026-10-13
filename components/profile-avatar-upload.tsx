@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { getCroppedImageBlob } from "@/lib/crop-image"
-import { getInitialContactName } from "@/lib/utils"
+import { cn, getInitialContactName } from "@/lib/utils"
 import { useRemoveAvatar, useUploadAvatar } from "@/hooks/use-profile"
 import { useUserAvatarUrl } from "@/hooks/use-user-avatar"
 
@@ -29,6 +29,8 @@ type ProfileAvatarUploadProps = {
   name: string
   hasAvatar: boolean
   avatarVersion?: string
+  /** "hero": just the photo with small camera and remove buttons on it, for page headers. */
+  layout?: "stack" | "hero"
 }
 
 export function ProfileAvatarUpload({
@@ -36,6 +38,7 @@ export function ProfileAvatarUpload({
   name,
   hasAvatar,
   avatarVersion,
+  layout = "stack",
 }: ProfileAvatarUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadAvatar = useUploadAvatar()
@@ -109,9 +112,14 @@ export function ProfileAvatarUpload({
 
   return (
     <>
-      <div className="flex flex-col items-center gap-4">
+      <div className={cn("flex flex-col items-center gap-4", layout === "hero" && "gap-0")}>
         <div className="relative">
-          <Avatar className="size-28 rounded-full border-4 border-background shadow-ambient ring-1 ring-border">
+          <Avatar
+            className={cn(
+              "size-28 rounded-full border-4 border-background shadow-ambient ring-1 ring-border",
+              layout === "hero" && "size-24 border-card sm:size-28"
+            )}
+          >
             <AvatarImage
               key={avatarUrl ?? "no-avatar"}
               src={avatarUrl}
@@ -126,11 +134,24 @@ export function ProfileAvatarUpload({
             type="button"
             disabled={isBusy}
             onClick={() => fileInputRef.current?.click()}
-            className="absolute -bottom-1 -right-1 flex size-10 items-center justify-center rounded-md border-2 border-background bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+            className="absolute -bottom-1 -right-1 flex size-10 cursor-pointer items-center justify-center rounded-full border-2 border-card bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
             aria-label="Change profile photo"
+            title="Change photo"
           >
             <IconCamera className="size-4" />
           </button>
+          {layout === "hero" && hasAvatar ? (
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={handleRemove}
+              className="absolute -top-1 -right-1 flex size-8 cursor-pointer items-center justify-center rounded-full border-2 border-card bg-card text-[var(--mli-on-error-container)] shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+              aria-label="Remove profile photo"
+              title="Remove photo"
+            >
+              <IconTrash className="size-3.5" />
+            </button>
+          ) : null}
         </div>
 
         <input
@@ -141,7 +162,7 @@ export function ProfileAvatarUpload({
           onChange={handleFileChange}
         />
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className={cn("flex flex-wrap items-center justify-center gap-2", layout === "hero" && "hidden")}>
           <Button
             type="button"
             variant="outline"

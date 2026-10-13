@@ -1,83 +1,41 @@
 "use client"
 
-import { use } from "react"
-import Link from "next/link"
+import { use, useState } from "react"
 import {
-    IconArrowLeft,
-    IconBuildingFactory2,
+    IconAddressBook,
+    IconCalendarPlus,
     IconCash,
-    IconChartBar,
-    IconReceipt,
+    IconClock,
+    IconFileCertificate,
+    IconMapPin,
+    IconPencil,
+    IconRoute,
     IconShip,
+    IconUsersGroup,
 } from "@tabler/icons-react"
-import { Dot } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { StatusChip } from "@/components/ui/status-chip"
-import { CustomerMetadataCard } from "@/components/customer-metadata-card"
+import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { CustomerNetworkPanel } from "@/components/customer-network-panel"
 import CustomerForm from "@/components/forms/customer-form"
 import ErrorPage from "@/components/error-page"
 import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-detail-loading"
 import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
 import { MasterDataWriteGate } from "@/components/write-gates"
+import { HeroFact, HeroStat, MixBar, ProfileHero } from "@/components/directory/profile-hero"
+import { RecordFacts } from "@/components/directory/record-facts"
+import { ShipmentRouteCards } from "@/components/directory/shipment-route-cards"
+import { updatedByName } from "@/components/directory/primitives"
 import { useCustomerById } from "@/hooks/use-customers"
-import {
-    glassInset,
-    glassPanel,
-    glassShine,
-    glassTabCount,
-    glassTabsTrigger,
-} from "@/lib/design"
-import {
-    COSTING_MODULE_ENABLED,
-    FINANCIAL_MODULES_ENABLED,
-    SELLING_MODULE_ENABLED,
-} from "@/lib/feature-flags"
-import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
-import { cn, costingInvoiceTotals, costingSellingLineNet, localDate } from "@/lib/utils"
-import type { CustomerShipment } from "@/lib/types/entity-details"
-import { Costing } from "@/app/dashboard/costings/columns"
-import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
-import type { LinkedShipment } from "./(shipments)/shipment-columns"
-import CostingHistoryPage from "./(costings)/costing-history-page"
-import { Costing as CustomerCosting } from "./(costings)/costing-column"
+import { glassInset, glassTabCount, glassTabsTrigger } from "@/lib/design"
+import { LEGACY_INVOICE_SCREENS_ENABLED } from "@/lib/feature-flags"
+import { cn, localDate } from "@/lib/utils"
+import { shipmentReference } from "@/lib/shipment-reference"
 import SellingHistoryPage from "./(sellings)/selling-history-page"
 import type { CustomerSelling } from "./(sellings)/selling-column"
-import MonthlySummary, {
-    type MonthlySummaryRow,
-} from "./(summary)/monthly-summary"
 
-function MetricTile({
-    label,
-    value,
-    hint,
-}: {
-    label: string
-    value: string | number
-    hint?: string
-}) {
-    return (
-        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
-            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                {label}
-            </p>
-            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums break-words sm:text-2xl">
-                {value}
-            </p>
-            {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
-        </div>
-    )
-}
-
-function SectionIntro({
-    title,
-    description,
-}: {
-    title: string
-    description: string
-}) {
+function SectionIntro({ title, description }: { title: string; description: string }) {
     return (
         <div className="mb-6 space-y-1">
             <h2 className="text-headline-md font-semibold tracking-tight">{title}</h2>
@@ -97,7 +55,7 @@ function EmptyState({
 }) {
     return (
         <div className={cn(glassInset, "flex flex-col items-center justify-center gap-3 px-6 py-14 text-center")}>
-            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+            <div className="flex size-12 items-center justify-center rounded-full bg-card text-primary shadow-elev-1">
                 <Icon className="size-6" />
             </div>
             <div className="space-y-1">
@@ -108,32 +66,23 @@ function EmptyState({
     )
 }
 
-function CountPill({ children }: { children: React.ReactNode }) {
-    return (
-        <span className="inline-flex items-center rounded-md bg-[rgba(214,227,255,0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
-            {children}
-        </span>
-    )
-}
-
 export default function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
     const { customerId } = use(params)
     const { data, isLoading, error } = useCustomerById(customerId)
+    const [tab, setTab] = useState("details")
 
     if (error) {
         return (
             <ErrorPage
-                title="Customer Detail Not Found"
-                message="Customer detail not found. Please check the customer ID and try again."
+                title="Customer not found"
+                message="We could not find this customer. Check the link and try again."
             />
         )
     }
     if (isLoading) return <CustomerVendorDetailLoading />
-    if (!data) return <ErrorPage title="Customer not found" message="Unable to load this customer." />
+    if (!data) return <ErrorPage title="Customer not found" message="We could not load this customer." />
 
-    const updatedByName =
-        typeof data.updatedBy === "string" ? data.updatedBy : data.updatedBy?.name
-
+    const updatedBy = updatedByName(data.updatedBy)
     const customerShippers = Array.isArray(data.customerShippers) ? data.customerShippers : []
     const shipments = Array.isArray(data.shipments) ? data.shipments : []
 
@@ -142,7 +91,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
             total + (Array.isArray(shipper.customerLocations) ? shipper.customerLocations.length : 0),
         0
     )
-
     const totalCustomerContacts = customerShippers.reduce(
         (total, shipper) =>
             total +
@@ -155,263 +103,96 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
         0
     )
 
-    const customerShipments: LinkedShipment[] = shipments.map((shipment: CustomerShipment) => ({
-        id: shipment.id,
-        orderNumber: shipment.orderNumber,
-        customerCode: `${shipment.customerCode?.customerName ?? ""} (${shipment.customerCode?.customerCode ?? ""})`,
-        customerShipper: shipment.customerShipper?.name ?? "",
-        departurePort: shipment.shipmentOperational?.portDeparture?.portName ?? "",
-        arrivalPort: shipment.shipmentOperational?.portDestination?.portName ?? "",
-        eta: shipment.shipmentOperational?.eta?.split("T")[0] ?? "",
-        status: shipment.status,
-        costingTotal: (shipment.costings ?? []).reduce(
-            (sum, costing) =>
-                sum + costingInvoiceTotals(costing.costingBreakdowns ?? []).net,
-            0
-        ),
-        sellingTotal: (shipment.costings ?? []).reduce(
-            (sum, costing) =>
-                sum +
-                (costing.costingBreakdowns ?? []).reduce(
-                    (lineSum, line) => lineSum + costingSellingLineNet(line),
-                    0
-                ),
-            0
-        ),
-    }))
-
-    const customerCostings: CustomerCosting[] = []
-    const customerSellings: CustomerSelling[] = []
-    const monthlyMap = new Map<string, MonthlySummaryRow>()
-
-    const monthLabel = (year: number, month: number) =>
-        new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(
-            new Date(year, month, 1)
-        )
-
-    const ensureMonth = (dateStr: string) => {
-        const date = new Date(dateStr)
-        if (Number.isNaN(date.getTime())) return null
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-        let row = monthlyMap.get(key)
-        if (!row) {
-            row = {
-                key,
-                label: monthLabel(date.getFullYear(), date.getMonth()),
-                sellingCount: 0,
-                sellingTotal: 0,
-                costingCount: 0,
-                costingTotal: 0,
-                netTotal: 0,
-            }
-            monthlyMap.set(key, row)
-        }
-        return row
-    }
-
-    for (const shipment of shipments) {
-        for (const costing of shipment.costings ?? []) {
-            const amount = costingInvoiceTotals(
-                costing.costingBreakdowns ?? []
-            ).net
-            const sellingAmount = (costing.costingBreakdowns ?? []).reduce(
-                (sum, line) => sum + costingSellingLineNet(line),
-                0
-            )
-            customerCostings.push({
-                id: costing.id,
-                invoiceNumber: costing.vendorInvoiceNumber ?? "",
-                amount,
-                shipmentOrderNumber: shipment.orderNumber ?? "",
-                updatedAt: costing.updatedAt ?? "",
-            })
-
-            const month = ensureMonth(costing.createdAt ?? costing.updatedAt ?? "")
-            if (month) {
-                month.costingCount += 1
-                month.costingTotal += amount
-                month.netTotal -= amount
-                if (!SELLING_MODULE_ENABLED && sellingAmount !== 0) {
-                    month.sellingCount += 1
-                    month.sellingTotal += sellingAmount
-                    month.netTotal += sellingAmount
-                }
-            }
-        }
-
-        if (SELLING_MODULE_ENABLED) {
-            for (const selling of shipment.sellings ?? []) {
-                if (selling.status === "DRAFT") continue
-                const amount = (selling.costingBreakdowns ?? []).reduce(
-                    (sum, line) => sum + costingSellingLineNet(line),
-                    0
-                )
-                const description =
-                    selling.remarks?.trim() || selling.sellingNumber
-                customerSellings.push({
-                    id: selling.id,
-                    sellingNumber: selling.sellingNumber,
-                    description,
-                    amount,
-                    shipmentOrderNumber: shipment.orderNumber ?? "",
-                    status: selling.status,
-                    updatedAt: selling.updatedAt ?? "",
-                })
-
-                const month = ensureMonth(
-                    selling.invoiceDate ??
-                        selling.createdAt ??
-                        selling.updatedAt ??
-                        ""
-                )
-                if (month) {
-                    month.sellingCount += 1
-                    month.sellingTotal += amount
-                    month.netTotal += amount
-                }
-            }
-        }
-    }
-
-    const monthlySummary = Array.from(monthlyMap.values()).sort((a, b) =>
-        b.key.localeCompare(a.key)
+    const customerSellings: CustomerSelling[] = shipments.flatMap((shipment) =>
+        (shipment.sellings ?? []).map((selling) => ({
+            id: selling.id,
+            sellingNumber: selling.sellingNumber,
+            description: selling.remarks?.trim() || selling.sellingNumber,
+            shipmentReference: shipmentReference(shipment),
+            status: selling.status,
+            updatedAt: selling.updatedAt ?? "",
+        }))
     )
-
-    const calculateYTDSpend = () => {
-        const year = new Date().getFullYear()
-        let total = 0
-        for (const shipment of shipments) {
-            total += (shipment.costings ?? []).reduce((acc: number, costing: Costing) => {
-                const created = new Date(costing.createdAt ?? costing.updatedAt ?? "")
-                if (!Number.isNaN(created.getTime()) && created.getFullYear() === year) {
-                    return (
-                        acc +
-                        costingInvoiceTotals(
-                            costing.costingBreakdowns ?? []
-                        ).net
-                    )
-                }
-                return acc
-            }, 0)
-        }
-        return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
-    }
-
-    const calculateOutstandingBills = () => {
-        let total = 0
-        for (const selling of customerSellings) {
-            if (selling.status !== "PAID") {
-                total += selling.amount
-            }
-        }
-        return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
-    }
-
-    const activeShipmentsCount = shipments.filter(
-        (shipment: CustomerShipment) => shipment.status === "ONGOING"
-    ).length
-    const costingsTotal = customerCostings.length
     const sellingsTotal = customerSellings.length
+
+    const statusCount = (status: string) => shipments.filter((s) => s.status === status).length
+    const ongoing = statusCount("ONGOING")
+
+    const openEditor = () => {
+        setTab("details")
+        window.setTimeout(
+            () => document.getElementById("customer-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+            50
+        )
+    }
 
     return (
         <DashboardPage atmosphere>
-            <div className="mb-6">
-                <Button asChild variant="ghost" className="text-muted-foreground">
-                    <Link href="/dashboard/customers">
-                        <IconArrowLeft className="size-5" />
-                        Back to customers
-                    </Link>
-                </Button>
-            </div>
-
-            <section className={cn(glassPanel, "relative overflow-hidden")}>
-                <div aria-hidden className={glassShine} />
-
-                <div className="relative space-y-8 p-6 lg:p-8">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-                            <div
-                                className={cn(
-                                    glassInset,
-                                    "flex size-14 shrink-0 items-center justify-center sm:size-16"
-                                )}
-                            >
-                                <IconBuildingFactory2 className="size-8 text-[var(--mli-primary-container)] sm:size-9" />
-                            </div>
-
-                            <div className="min-w-0 space-y-3">
-                                <div className="space-y-2">
-                                    <div className="flex flex-wrap items-center gap-2.5">
-                                        <h1 className="text-headline-lg tracking-tight">
-                                            {data.customerName}
-                                        </h1>
-                                        <StatusChip active={Boolean(data?.isActive)} />
-                                        <ShipmentTypeTags types={data.shipmentTypes} />
-                                    </div>
-                                    <p className="font-mono text-sm font-medium tracking-wide text-[var(--mli-primary-container)]">
-                                        {data.customerCode}
-                                    </p>
-                                </div>
-
-                                <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
-                                    <span>
-                                        Updated {localDate(data.updatedAt)}
-                                        {updatedByName ? ` by ${updatedByName}` : ""}
-                                    </span>
-                                    <Dot className="hidden size-4 sm:inline" />
-                                    <span>Registered {localDate(data.createdAt)}</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 lg:justify-end">
-                            <CountPill>
-                                {customerShippers.length} shipper
-                                {customerShippers.length === 1 ? "" : "s"}
-                            </CountPill>
-                            <CountPill>
-                                {totalCustomerLocations} location
-                                {totalCustomerLocations === 1 ? "" : "s"}
-                            </CountPill>
-                            <CountPill>
-                                {totalCustomerContacts} contact
-                                {totalCustomerContacts === 1 ? "" : "s"}
-                            </CountPill>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <MetricTile
-                            label="Active shipments"
-                            value={activeShipmentsCount}
-                            hint="Currently in progress"
+            <ProfileHero
+                tone="client"
+                backHref="/dashboard/customers"
+                backLabel="All customers"
+                name={data.customerName}
+                code={data.customerCode}
+                badges={
+                    <>
+                        <StatusChip active={Boolean(data.isActive)} />
+                        <ShipmentTypeTags types={data.shipmentTypes} />
+                    </>
+                }
+                facts={
+                    <>
+                        <HeroFact icon={IconMapPin}>{data.address?.trim() || "No address yet"}</HeroFact>
+                        <HeroFact icon={IconFileCertificate}>
+                            {data.npwp ? `NPWP ${data.npwp}` : "No tax ID yet"}
+                        </HeroFact>
+                    </>
+                }
+                actions={
+                    <MasterDataWriteGate>
+                        <button
+                            type="button"
+                            onClick={openEditor}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-primary shadow-elev-1 transition-transform hover:-translate-y-0.5"
+                        >
+                            <IconPencil className="size-3.5" />
+                            Edit details
+                        </button>
+                    </MasterDataWriteGate>
+                }
+            >
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+                    <HeroStat
+                        label="Shipments"
+                        value={shipments.length}
+                        hint={`${ongoing} on the way now`}
+                        icon={IconShip}
+                        className="col-span-2"
+                    >
+                        <MixBar
+                            parts={[
+                                { key: "ONGOING", label: "Ongoing", value: ongoing, className: "bg-[var(--mli-positive)]" },
+                                { key: "DRAFT", label: "Draft", value: statusCount("DRAFT"), className: "bg-[var(--mli-on-draft-container)]/45" },
+                                { key: "BACKUP", label: "Backup", value: statusCount("BACKUP"), className: "bg-[#e3a13b]" },
+                                { key: "FINISHED", label: "Finished", value: statusCount("FINISHED"), className: "bg-primary" },
+                            ]}
                         />
-                        <MetricTile
-                            label="Total assignments"
-                            value={shipments.length}
-                            hint="All linked shipments"
-                        />
-                        {COSTING_MODULE_ENABLED ? (
-                            <MetricTile
-                                label="YTD spend"
-                                value={calculateYTDSpend()}
-                                hint="Costings this year"
-                            />
-                        ) : null}
-                        {SELLING_MODULE_ENABLED ? (
-                            <MetricTile
-                                label="Outstanding bills"
-                                value={calculateOutstandingBills()}
-                                hint="Unpaid customer charges"
-                            />
-                        ) : null}
-                    </div>
+                    </HeroStat>
+                    <HeroStat label="Shippers" value={customerShippers.length} hint="Who sends the goods" icon={IconRoute} />
+                    <HeroStat label="Places" value={totalCustomerLocations} hint="Pickup and drop-off" icon={IconMapPin} />
+                    <HeroStat
+                        label="Contacts"
+                        value={totalCustomerContacts}
+                        hint="People to call"
+                        icon={IconAddressBook}
+                        className="col-span-2 lg:col-span-1"
+                    />
                 </div>
-            </section>
+            </ProfileHero>
 
-            <Tabs defaultValue="details" className="mt-8 gap-0">
+            <Tabs value={tab} onValueChange={setTab} className="mt-8 gap-0">
                 <div className="overflow-x-auto pb-1">
-                    <TabsList className="h-auto min-w-max rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-1 backdrop-blur-xl">
+                    <TabsList className="h-auto min-w-max rounded-full border border-border bg-card p-1">
                         <TabsTrigger value="details" className={glassTabsTrigger}>
                             Profile
                         </TabsTrigger>
@@ -423,42 +204,25 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                             Shipments
                             <span className={glassTabCount}>{shipments.length}</span>
                         </TabsTrigger>
-                        {SELLING_MODULE_ENABLED ? (
+                        {LEGACY_INVOICE_SCREENS_ENABLED ? (
                             <TabsTrigger value="sellings" className={glassTabsTrigger}>
                                 Sellings
                                 <span className={glassTabCount}>{sellingsTotal}</span>
-                            </TabsTrigger>
-                        ) : null}
-                        {COSTING_MODULE_ENABLED ? (
-                            <TabsTrigger value="costings" className={glassTabsTrigger}>
-                                Costings
-                                <span className={glassTabCount}>{costingsTotal}</span>
-                            </TabsTrigger>
-                        ) : null}
-                        {FINANCIAL_MODULES_ENABLED ? (
-                            <TabsTrigger value="summary" className={glassTabsTrigger}>
-                                Summary
-                                <span className={glassTabCount}>{monthlySummary.length}</span>
                             </TabsTrigger>
                         ) : null}
                     </TabsList>
                 </div>
 
                 <TabsContent value="details" className="mt-6">
-                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
-                        <aside className="lg:sticky lg:top-6">
-                            <CustomerMetadataCard customer={data} />
-                        </aside>
-                        <DashboardPageCard>
+                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+                        <DashboardPageCard className="scroll-mt-24">
+                            <div id="customer-editor" className="scroll-mt-24" />
                             <MasterDataWriteGate
                                 fallback={
                                     <div className="space-y-2">
-                                        <h2 className="text-headline-md font-semibold">
-                                            Customer details
-                                        </h2>
+                                        <h2 className="text-headline-md font-semibold">Customer details</h2>
                                         <p className="text-sm text-muted-foreground">
-                                            You can view this customer profile, but you do not have
-                                            permission to edit it.
+                                            You can see this customer, but you cannot change it.
                                         </p>
                                     </div>
                                 }
@@ -466,6 +230,49 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                                 <CustomerForm mode="edit" customer={data} />
                             </MasterDataWriteGate>
                         </DashboardPageCard>
+                        <aside className="space-y-4 lg:sticky lg:top-24">
+                            <RecordFacts
+                                title="About this record"
+                                rows={[
+                                    { icon: IconCalendarPlus, label: "Added on", value: localDate(data.createdAt) },
+                                    {
+                                        icon: IconClock,
+                                        label: "Last change",
+                                        value: `${localDate(data.updatedAt)}${updatedBy ? ` by ${updatedBy}` : ""}`,
+                                    },
+                                    {
+                                        icon: IconFileCertificate,
+                                        label: "Tax ID (NPWP)",
+                                        value: data.npwp ? (
+                                            <span className="font-mono">{data.npwp}</span>
+                                        ) : (
+                                            <WarningChip>Not added yet</WarningChip>
+                                        ),
+                                    },
+                                    {
+                                        icon: IconMapPin,
+                                        label: "Address",
+                                        value: data.address?.trim() || "Not added yet",
+                                    },
+                                ]}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setTab("locations-and-contacts")}
+                                className="flex w-full cursor-pointer items-center gap-3 rounded-2xl brand-fill p-4 text-left text-primary-foreground transition-transform hover:-translate-y-0.5"
+                            >
+                                <span className="flex size-10 items-center justify-center rounded-full bg-white/15">
+                                    <IconUsersGroup className="size-5" />
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block text-sm font-semibold">See the network</span>
+                                    <span className="block text-xs text-primary-foreground/75">
+                                        {customerShippers.length} shippers · {totalCustomerLocations} places ·{" "}
+                                        {totalCustomerContacts} contacts
+                                    </span>
+                                </span>
+                            </button>
+                        </aside>
                     </div>
                 </TabsContent>
 
@@ -481,84 +288,35 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ custo
                 </TabsContent>
 
                 <TabsContent value="shipment-history" className="mt-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Shipment history"
-                            description="All shipments linked to this customer, including routes and ETAs."
+                    {shipments.length === 0 ? (
+                        <EmptyState
+                            icon={IconShip}
+                            title="No shipments yet"
+                            description="Shipments for this customer will show here."
                         />
-                        {shipments.length === 0 ? (
-                            <EmptyState
-                                icon={IconShip}
-                                title="No shipments yet"
-                                description="Shipments assigned to this customer will appear here."
-                            />
-                        ) : (
-                            <ShipmentHistoryPage customerShipments={customerShipments} />
-                        )}
-                    </DashboardPageCard>
+                    ) : (
+                        <ShipmentRouteCards shipments={shipments} />
+                    )}
                 </TabsContent>
 
-                {SELLING_MODULE_ENABLED ? (
-                <TabsContent value="sellings" className="mt-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Selling history"
-                            description="Customer charges and invoices tied to this customer’s shipments."
-                        />
-                        {sellingsTotal === 0 ? (
-                            <EmptyState
-                                icon={IconCash}
-                                title="No sellings yet"
-                                description="Sellings from linked shipments will show up in this list."
+                {LEGACY_INVOICE_SCREENS_ENABLED ? (
+                    <TabsContent value="sellings" className="mt-6">
+                        <DashboardPageCard>
+                            <SectionIntro
+                                title="Selling history"
+                                description="Charges and invoices for this customer's shipments."
                             />
-                        ) : (
-                            <SellingHistoryPage customerSellings={customerSellings} />
-                        )}
-                    </DashboardPageCard>
-                </TabsContent>
-                ) : null}
-
-                {COSTING_MODULE_ENABLED ? (
-                <TabsContent value="costings" className="mt-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Costing history"
-                            description="Vendor invoices and amounts tied to this customer’s shipments."
-                        />
-                        {costingsTotal === 0 ? (
-                            <EmptyState
-                                icon={IconReceipt}
-                                title="No costings yet"
-                                description="Costings from linked shipments will show up in this list."
-                            />
-                        ) : (
-                            <CostingHistoryPage
-                                customerName={data.customerName ?? ""}
-                                customerCostings={customerCostings}
-                            />
-                        )}
-                    </DashboardPageCard>
-                </TabsContent>
-                ) : null}
-
-                {FINANCIAL_MODULES_ENABLED ? (
-                <TabsContent value="summary" className="mt-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Monthly summary"
-                            description="Sellings and costings grouped by transaction month, with net margin per month."
-                        />
-                        {monthlySummary.length === 0 ? (
-                            <EmptyState
-                                icon={IconChartBar}
-                                title="No transactions yet"
-                                description="Monthly totals will appear once this customer has sellings or costings."
-                            />
-                        ) : (
-                            <MonthlySummary rows={monthlySummary} />
-                        )}
-                    </DashboardPageCard>
-                </TabsContent>
+                            {sellingsTotal === 0 ? (
+                                <EmptyState
+                                    icon={IconCash}
+                                    title="No sellings yet"
+                                    description="Sellings from linked shipments will show here."
+                                />
+                            ) : (
+                                <SellingHistoryPage customerSellings={customerSellings} />
+                            )}
+                        </DashboardPageCard>
+                    </TabsContent>
                 ) : null}
             </Tabs>
         </DashboardPage>

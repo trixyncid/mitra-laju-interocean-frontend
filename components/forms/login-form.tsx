@@ -110,7 +110,7 @@ export function LoginForm({
   }
 
   const inputClass = isGlass
-    ? "h-12 rounded-md border-[#c4c6cf] bg-white text-[#191c1e] shadow-none placeholder:text-[#74777f] focus-visible:border-[#325f9e] focus-visible:ring-[#325f9e]/20"
+    ? "h-11 rounded-full border-transparent bg-muted px-6 text-foreground shadow-none placeholder:text-muted-foreground hover:border-transparent focus-visible:border-input focus-visible:bg-card focus-visible:ring-ring/10"
     : undefined
 
   return (
@@ -205,9 +205,9 @@ export function LoginForm({
                   type="button"
                   onClick={togglePasswordVisibility}
                   className={cn(
-                    "inline-flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors",
+                    "inline-flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors",
                     isGlass
-                      ? "text-[#74777f] hover:bg-[#eef3f9] hover:text-[#191c1e]"
+                      ? "text-muted-foreground hover:bg-accent hover:text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                   aria-label={
@@ -231,7 +231,7 @@ export function LoginForm({
           className={cn(
             "hover:cursor-pointer",
             isGlass &&
-              "mt-1 h-12 w-full rounded-md bg-[#1b365d] text-[15px] font-semibold tracking-wide shadow-[0_8px_24px_rgba(27,54,93,0.2)] transition-[transform,background-color] duration-200 hover:bg-[#325f9e] active:scale-[0.98]"
+              "mt-2 h-11 w-full"
           )}
         >
           {isSubmitting ? (

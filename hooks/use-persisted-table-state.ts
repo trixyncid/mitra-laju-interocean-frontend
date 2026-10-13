@@ -36,6 +36,25 @@ function parseDateRange(value: unknown): AppliedTableFilters["dateRange"] {
   }
 }
 
+function parseColumns(value: unknown): AppliedTableFilters["columns"] {
+  if (!isRecord(value)) return undefined
+  const columns: NonNullable<AppliedTableFilters["columns"]> = {}
+  for (const [field, entries] of Object.entries(value)) {
+    if (!Array.isArray(entries)) continue
+    const valid = entries.filter(
+      (entry): entry is { value: string; label: string } =>
+        isRecord(entry) && typeof entry.value === "string" && typeof entry.label === "string"
+    )
+    if (valid.length) columns[field] = valid
+  }
+  return Object.keys(columns).length ? columns : undefined
+}
+
+function parseSort(value: unknown): AppliedTableFilters["sort"] {
+  if (!isRecord(value) || typeof value.by !== "string") return undefined
+  return value.dir === "asc" || value.dir === "desc" ? { by: value.by, dir: value.dir } : undefined
+}
+
 function parseApplied(value: unknown): AppliedTableFilters {
   if (!isRecord(value)) return EMPTY_TABLE_FILTERS
   return {
@@ -52,6 +71,8 @@ function parseApplied(value: unknown): AppliedTableFilters {
     paymentDate:
       typeof value.paymentDate === "string" ? value.paymentDate : undefined,
     dateRange: parseDateRange(value.dateRange),
+    columns: parseColumns(value.columns),
+    sort: parseSort(value.sort),
   }
 }
 

@@ -17,7 +17,7 @@ import { TextField } from "@/components/ui/text-field"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useCreateVessel } from "@/hooks/use-vessels"
 import { fieldError } from "@/lib/form-field"
-import { vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
+import { etaBeforeEtdError, vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
 import { zodOnChange } from "@/lib/zod-form"
 
 export function QuickAddVesselDialog({
@@ -37,6 +37,7 @@ export function QuickAddVesselDialog({
       vesselName: "",
       voyageNumber: "",
       etd: "",
+      eta: "",
       closingReefer: "",
     },
     onSubmit: async ({ value }) => {
@@ -45,6 +46,7 @@ export function QuickAddVesselDialog({
           vesselName: value.vesselName,
           voyageNumber: value.voyageNumber,
           etd: value.etd === "" ? null : value.etd,
+          eta: value.eta === "" ? null : value.eta,
           closingReefer: value.closingReefer === "" ? null : value.closingReefer,
           isActive: true,
         },
@@ -141,6 +143,26 @@ export function QuickAddVesselDialog({
                   onValueChange={(nextValue) => field.handleChange(nextValue)}
                   error={fieldError(field.state.meta.errors)}
                   placeholder="Pick ETD"
+                />
+              </div>
+            )}
+          </form.Field>
+          <form.Field
+            name="eta"
+            validators={{
+              onChangeListenTo: ["etd"],
+              onChange: ({ value, fieldApi }) => etaBeforeEtdError(fieldApi.form.getFieldValue("etd"), value),
+            }}
+          >
+            {(field) => (
+              <div className="my-3">
+                <DatePicker
+                  label="ETA"
+                  id={field.name}
+                  value={field.state.value}
+                  onValueChange={(nextValue) => field.handleChange(nextValue)}
+                  error={fieldError(field.state.meta.errors)}
+                  placeholder="Pick ETA"
                 />
               </div>
             )}

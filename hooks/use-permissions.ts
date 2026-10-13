@@ -4,10 +4,11 @@ import { useMyPermissions } from "@/hooks/use-my-permissions"
 import {
   allowedShipmentTypesFromRole,
   canAccessRouteWithPermissions,
+  canPickWithPermissions,
   canReadContainersWithPermissions,
   canReadResource,
-  canReadShipmentsForCostingWithPermissions,
-  canReadVendorsForCostingWithPermissions,
+  canReadShipmentsForVendorInvoiceWithPermissions,
+  canReadVendorsForVendorInvoiceWithPermissions,
   canWriteResource,
   canWriteShipmentTypeWithPermissions,
   can as canAction,
@@ -34,6 +35,10 @@ export function usePermissions() {
     permissions: perms,
     can: (module: AppModule, action: PermissionAction) =>
       canAction(perms, module, action, role),
+    /** May open the module's page and full records. */
+    canView: (module: AppModule) => canAction(perms, module, "view", role),
+    /** May choose the module's records in a form (page access or a picker grant). */
+    canPick: (module: AppModule) => canPickWithPermissions(perms, module, role),
     canRead: (resource: AppResource) => canReadResource(perms, resource, role),
     canWrite: (resource: AppResource) => canWriteResource(perms, resource, role),
     canWriteShipmentType: (shipmentType: ShipmentType | string | undefined) =>
@@ -41,10 +46,10 @@ export function usePermissions() {
     canAccessRoute: (pathname: string) =>
       canAccessRouteWithPermissions(perms, pathname, role),
     allowedShipmentTypes: allowedShipmentTypesFromRole(roleDetails, role),
-    canReadVendorsForCosting: () =>
-      canReadVendorsForCostingWithPermissions(perms, role),
-    canReadShipmentsForCosting: () =>
-      canReadShipmentsForCostingWithPermissions(perms, role),
+    canReadVendorsForVendorInvoice: () =>
+      canReadVendorsForVendorInvoiceWithPermissions(perms, role),
+    canReadShipmentsForVendorInvoice: () =>
+      canReadShipmentsForVendorInvoiceWithPermissions(perms, role),
     canReadContainers: () => canReadContainersWithPermissions(perms, role),
   }
 }

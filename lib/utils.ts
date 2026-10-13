@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
+import { format } from "date-fns"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -38,12 +39,12 @@ export const getInitialContactName = (contactNames: string) => {
 }
 
 /**
- * Function to calculate the net amount of a costing
- * @param price - The price of the costing
- * @param currency - The currency of the costing
- * @param vatPercentage - The VAT percentage of the costing
- * @param pph23Percentage - The PPH 23 percentage of the costing
- * @returns The net amount of the costing
+ * Function to calculate the net amount of a vendor invoice
+ * @param price - The price of the vendor invoice
+ * @param currency - The currency of the vendor invoice
+ * @param vatPercentage - The VAT percentage of the vendor invoice
+ * @param pph23Percentage - The PPH 23 percentage of the vendor invoice
+ * @returns The net amount of the vendor invoice
  */
 export const amountCalculation = (
   price: number | string,
@@ -60,7 +61,7 @@ export const amountCalculation = (
 }
 
 /** Line gross in IDR: unit price × FX rate × quantity. */
-export function costingLineGross(line: {
+export function vendorInvoiceLineGross(line: {
   price: number | string
   currencyPrice: number | string
   quantity?: number | string | null
@@ -71,7 +72,7 @@ export function costingLineGross(line: {
   return price * rate * qty
 }
 
-type CostingTaxLine = {
+type VendorInvoiceTaxLine = {
   price: number | string
   currencyPrice: number | string
   quantity?: number | string | null
@@ -80,35 +81,35 @@ type CostingTaxLine = {
 }
 
 /** Per-line VAT / PPN amount from gross. */
-export function costingLineVatAmount(line: CostingTaxLine) {
-  const gross = costingLineGross(line)
+export function vendorInvoiceLineVatAmount(line: VendorInvoiceTaxLine) {
+  const gross = vendorInvoiceLineGross(line)
   const vat = Number(line.vatPercentage) || 0
   return (gross * vat) / 100
 }
 
 /** Per-line PPH 23 amount withheld from gross. */
-export function costingLinePph23Amount(line: CostingTaxLine) {
-  const gross = costingLineGross(line)
+export function vendorInvoiceLinePph23Amount(line: VendorInvoiceTaxLine) {
+  const gross = vendorInvoiceLineGross(line)
   const pph = Number(line.pph23Percentage) || 0
   return (gross * pph) / 100
 }
 
 /** Line amount after adding PPN: gross + VAT. */
-export function costingLineUnitPlusPpn(line: CostingTaxLine) {
-  return costingLineGross(line) + costingLineVatAmount(line)
+export function vendorInvoiceLineUnitPlusPpn(line: VendorInvoiceTaxLine) {
+  return vendorInvoiceLineGross(line) + vendorInvoiceLineVatAmount(line)
 }
 
 /** Per-line invoice net: gross + VAT − PPH23. */
-export function costingInvoiceLineNet(line: CostingTaxLine) {
+export function vendorInvoiceInvoiceLineNet(line: VendorInvoiceTaxLine) {
   return (
-    costingLineGross(line) +
-    costingLineVatAmount(line) -
-    costingLinePph23Amount(line)
+    vendorInvoiceLineGross(line) +
+    vendorInvoiceLineVatAmount(line) -
+    vendorInvoiceLinePph23Amount(line)
   )
 }
 
 /** Invoice totals from active breakdown lines (per-line VAT added, PPH23 withheld). */
-export function costingInvoiceTotals(
+export function vendorInvoiceInvoiceTotals(
   lines: Array<{
     price: number | string
     currencyPrice: number | string
@@ -119,7 +120,7 @@ export function costingInvoiceTotals(
 ) {
   return lines.reduce(
     (acc, line) => {
-      const gross = costingLineGross(line)
+      const gross = vendorInvoiceLineGross(line)
       const vat = Number(line.vatPercentage) || 0
       const pph = Number(line.pph23Percentage) || 0
       const vatAmount = (gross * vat) / 100
@@ -136,42 +137,16 @@ export function costingInvoiceTotals(
 }
 
 /**
- * Vendor cost for a shipment-linked costing line (same invoice formula).
- */
-export function costingShipmentLineNet(line: {
-  price: number | string
-  currencyPrice: number | string
-  quantity?: number | string | null
-  vatPercentage?: number | string | null
-  pph23Percentage?: number | string | null
-}) {
-  return costingInvoiceLineNet(line)
-}
-
-/** Sum of shipment-linked costing line nets (per-line invoice VAT + PPH23). */
-export function costingShipmentNetTotal(
-  lines: Array<{
-    price: number | string
-    currencyPrice: number | string
-    quantity?: number | string | null
-    vatPercentage?: number | string | null
-    pph23Percentage?: number | string | null
-  }>
-) {
-  return lines.reduce((sum, line) => sum + costingShipmentLineNet(line), 0)
-}
-
-/**
  * Function to format a date string to a local date format
  * @param dateStr - The date string to format (ISO 8601 format)
  * @returns The formatted date string (DD MMM YYYY)
  */
-export const localDate = (dateStr: string) => {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  }).format(new Date(dateStr))
+export const localDate = (dateStr: string | null | undefined) => {
+  const date = dateStr ? new Date(dateStr) : null
+  // A missing or malformed date shows a dash instead of crashing the table.
+  if (!date || Number.isNaN(date.getTime())) return "—"
+  // date-fns, not Intl: some browsers write September as "Sept".
+  return format(date, "d MMM yyyy")
 }
 
 /**
@@ -183,18 +158,6 @@ export const sellingNetAmount = (
   pph23Percentage: number
 ) => {
   return amount + (amount * vatPercentage) / 100 - (amount * pph23Percentage) / 100
-}
-
-export function costingSellingLineNet(line: {
-  sellingAmount?: number | string | null
-  sellingVatPercentage?: number | string | null
-  sellingPph23Percentage?: number | string | null
-}) {
-  return sellingNetAmount(
-    Number(line.sellingAmount) || 0,
-    Number(line.sellingVatPercentage) || 0,
-    Number(line.sellingPph23Percentage) || 0
-  )
 }
 
 export function sellingInvoiceLineNet(line: {
@@ -217,36 +180,4 @@ export function sellingInvoiceNetTotal(
   }>
 ) {
   return lines.reduce((sum, line) => sum + sellingInvoiceLineNet(line), 0)
-}
-
-type InvoiceProfitLine = {
-  price?: number | string | null
-  currencyPrice?: number | string | null
-  quantity?: number | string | null
-  vatPercentage?: number | string | null
-  sellingAmount?: number | string | null
-  sellingPph23Percentage?: number | string | null
-}
-
-/**
- * Profit on one invoiced costing line:
- * (price × currency rate × quantity + VAT) − selling amount − selling PPH 23.
- * VAT is the vendor vatPercentage of the line gross. PPH 23 is
- * sellingPph23Percentage of the selling amount.
- */
-export function invoiceLineProfit(line: InvoiceProfitLine) {
-  const amountPlusVat = costingLineUnitPlusPpn({
-    price: line.price ?? 0,
-    currencyPrice: line.currencyPrice ?? 0,
-    quantity: line.quantity,
-    vatPercentage: line.vatPercentage,
-  })
-  const sellingAmount = Number(line.sellingAmount) || 0
-  const pphRate = Number(line.sellingPph23Percentage) || 0
-  const sellingPphAmount = (sellingAmount * pphRate) / 100
-  return amountPlusVat - sellingAmount - sellingPphAmount
-}
-
-export function invoiceProfit(lines: InvoiceProfitLine[]) {
-  return lines.reduce((sum, line) => sum + invoiceLineProfit(line), 0)
 }

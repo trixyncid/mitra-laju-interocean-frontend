@@ -203,7 +203,7 @@ export function SearchableCombobox({
             </ComboboxList>
             {onQuickAdd ? (
               <div
-                className="shrink-0 border-t border-[rgba(214,227,255,0.4)]"
+                className="shrink-0 border-t border-[rgba(var(--mli-tint-rgb),0.4)]"
                 onMouseDown={(event) => event.preventDefault()}
                 onPointerDown={(event) => event.preventDefault()}
               >

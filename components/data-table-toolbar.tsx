@@ -18,6 +18,7 @@ import {
 } from "@/lib/data-table-filters"
 import { glassControl, tableSearchInput } from "@/lib/design"
 import { cn } from "@/lib/utils"
+import type { ColumnSort, FilterEntry } from "@/components/column-filter/types"
 
 export type AppliedTableFilters = {
   search: string
@@ -29,6 +30,10 @@ export type AppliedTableFilters = {
   date?: string
   paymentDate?: string
   dateRange: TableDateRange
+  /** Excel-style column filters: ticked values per column. */
+  columns?: Record<string, FilterEntry[]>
+  /** Server sort chosen from a column's filter menu. */
+  sort?: ColumnSort
 }
 
 type DataTableToolbarProps<TData> = {
@@ -103,7 +108,7 @@ export function DataTableToolbar<TData>({
     <Button
       type="button"
       variant="outline"
-      size="lg"
+     
       className={cn(glassControl, "shrink-0 cursor-pointer")}
       onClick={clearAll}
     >
@@ -132,7 +137,7 @@ export function DataTableToolbar<TData>({
               aria-label="Search"
             />
           </div>
-          <Button type="submit" size="lg" className="shrink-0 cursor-pointer">
+          <Button type="submit" className="shrink-0 cursor-pointer">
             Search
           </Button>
           {!hasFilterControls ? clearButton : null}
@@ -211,7 +216,7 @@ export function DataTableToolbar<TData>({
           {extra ? (
             <>
               <div
-                className="mx-0.5 hidden h-6 w-px bg-[rgba(214,227,255,0.7)] sm:block"
+                className="mx-0.5 hidden h-6 w-px bg-[rgba(var(--mli-tint-rgb),0.7)] sm:block"
                 aria-hidden
               />
               {extra}

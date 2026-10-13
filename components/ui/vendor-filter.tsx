@@ -92,8 +92,8 @@ export function VendorFilter({
             <button
               type="button"
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-[rgba(232,238,246,0.9)]",
-                !isActive && "bg-[rgba(214,227,255,0.28)]"
+                "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-[rgba(var(--mli-panel-rgb),0.9)]",
+                !isActive && "bg-[rgba(var(--mli-tint-rgb),0.28)]"
               )}
               onClick={() => {
                 onChange({ vendorId: undefined, vendorLabel: undefined })
@@ -128,8 +128,8 @@ export function VendorFilter({
                     key={item.value}
                     type="button"
                     className={cn(
-                      "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-[rgba(232,238,246,0.9)]",
-                      selected && "bg-[rgba(214,227,255,0.28)]"
+                      "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-[rgba(var(--mli-panel-rgb),0.9)]",
+                      selected && "bg-[rgba(var(--mli-tint-rgb),0.28)]"
                     )}
                     onClick={() => {
                       onChange({

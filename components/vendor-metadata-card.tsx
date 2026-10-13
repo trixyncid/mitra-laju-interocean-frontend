@@ -87,7 +87,7 @@ export function VendorMetadataCard({ vendor }: { vendor: Vendor }) {
           <StatusChip active={vendor.isActive} />
         </MetadataRow>
 
-        <Separator className="bg-[rgba(214,227,255,0.35)]" />
+        <Separator className="bg-[rgba(var(--mli-tint-rgb),0.35)]" />
 
         {vendor.createdAt ? (
           <MetadataRow icon={IconCalendar} label="Created">

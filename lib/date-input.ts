@@ -18,11 +18,8 @@ export function toIsoDateOnly(date: Date) {
 export function formatCalendarDate(value?: string | null, empty = "-") {
   const parsed = parseLocalDate(value)
   if (!parsed) return empty
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(parsed)
+  // date-fns, not Intl: some browsers write September as "Sept".
+  return format(parsed, "d MMM yyyy")
 }
 
 export function formatSingleDateLabel(

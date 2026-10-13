@@ -5,7 +5,7 @@ import {
     type ShipmentListParams,
 } from "@/services/shipments.service";
 import { shipmentKeys } from "@/lib/query-keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Shipment } from "@/app/dashboard/shipments/columns";
 
@@ -13,6 +13,23 @@ export const useShipments = (params: ShipmentListParams, enabled = true) => {
     return useQuery({
         queryKey: shipmentKeys.list(params),
         queryFn: () => shipmentsService.getAll(params),
+        enabled,
+    });
+}
+
+/** Loads shipments batch by batch for continuous scrolling. */
+export const useInfiniteShipments = (
+    params: Omit<ShipmentListParams, "page">,
+    enabled = true
+) => {
+    return useInfiniteQuery({
+        queryKey: [...shipmentKeys.lists(), "infinite", params],
+        queryFn: ({ pageParam }) => shipmentsService.getAll({ ...params, page: pageParam }),
+        initialPageParam: 1,
+        getNextPageParam: (last) =>
+            last.pagination.page < last.pagination.totalPages
+                ? last.pagination.page + 1
+                : undefined,
         enabled,
     });
 }

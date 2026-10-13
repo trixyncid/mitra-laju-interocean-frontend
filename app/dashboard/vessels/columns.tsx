@@ -19,6 +19,7 @@ export type Vessel = {
     vesselName: string
     voyageNumber: string
     etd: string | null | undefined
+    eta?: string | null
     closingReefer: string | null | undefined
     isActive: boolean
     updatedBy?: string,
@@ -51,6 +52,18 @@ export const columns: ColumnDef<Vessel>[] = [
                 <TbdChip />
             ) : (
                 <span className={secondaryText}>{formatCalendarDate(row.original.etd)}</span>
+            )
+        }
+    },
+    {
+        accessorKey: "eta",
+        header: ({ column }) => sortHeader(column, "ETA"),
+        ...dateSort,
+        cell: ({ row }) => {
+            return row.original.eta === null || row.original.eta === undefined ? (
+                <TbdChip />
+            ) : (
+                <span className={secondaryText}>{formatCalendarDate(row.original.eta)}</span>
             )
         }
     },

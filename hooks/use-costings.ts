@@ -1,31 +1,38 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  costingService,
-  type CostingBreakdownInput,
-  type CostingBreakdownListParams,
-  type CostingListParams,
-  type CreateCostingInput,
-  type UpdateCostingInput,
-} from "@/services/costing.service"
-import { costingKeys, shipmentKeys } from "@/lib/query-keys"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-export const useCostings = (params: CostingListParams, enabled = true) => {
-  return useQuery({
-    queryKey: costingKeys.list(params),
-    queryFn: () => costingService.getAll(params),
+import { autoLinkedNote } from "@/lib/auto-linked"
+import { costingKeys, salesKeys, vendorInvoiceKeys } from "@/lib/query-keys"
+import type { CostingInput } from "@/lib/types/costing"
+import { costingService, type CostingListParams } from "@/services/costing.service"
+
+function invalidateCostings(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: costingKeys.all })
+  // Sales jobs show their costings and totals.
+  queryClient.invalidateQueries({ queryKey: salesKeys.all })
+  // Matching changes vendor invoice lines too.
+  queryClient.invalidateQueries({ queryKey: vendorInvoiceKeys.all })
+}
+
+/** Loads costing lines batch by batch; the first page carries the filtered totals. */
+export const useInfiniteCostings = (params: Omit<CostingListParams, "page">, enabled = true) => {
+  return useInfiniteQuery({
+    queryKey: [...costingKeys.lists(), "infinite", params],
+    queryFn: ({ pageParam }) => costingService.getAll({ ...params, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (last) =>
+      last.pagination.page < last.pagination.totalPages ? last.pagination.page + 1 : undefined,
     enabled,
   })
 }
 
-export const useCostingBreakdowns = (
-  params: CostingBreakdownListParams,
-  enabled = true
-) => {
+/** One page of costings, e.g. for pickers. */
+export const useCostingsQuery = (params: CostingListParams, enabled = true) => {
   return useQuery({
-    queryKey: costingKeys.breakdownList(params),
-    queryFn: () => costingService.getBreakdowns(params),
+    queryKey: [...costingKeys.lists(), "page", params],
+    queryFn: () => costingService.getAll(params),
     enabled,
+    staleTime: 30_000,
   })
 }
 
@@ -37,146 +44,69 @@ export const useCostingById = (id: string) => {
   })
 }
 
-function invalidateCosting(
-  queryClient: ReturnType<typeof useQueryClient>,
-  costingId?: string
-) {
-  queryClient.invalidateQueries({ queryKey: costingKeys.all })
-  if (costingId) {
-    queryClient.invalidateQueries({ queryKey: costingKeys.detail(costingId) })
-  }
-  queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
+export const useSalesOptions = (search: string, enabled = true) => {
+  return useQuery({
+    queryKey: [...costingKeys.all, "sales-options", search],
+    queryFn: () => costingService.salesOptions(search || undefined),
+    enabled,
+    staleTime: 60_000,
+  })
 }
 
 export const useCreateCosting = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: (costing: CreateCostingInput) => costingService.create(costing),
+    mutationFn: (costing: CostingInput) => costingService.create(costing),
     onSuccess: () => {
-      invalidateCosting(queryClient)
-      toast.success("Vendor invoice created")
+      invalidateCostings(queryClient)
+      toast.success("Costing line added")
     },
   })
 }
 
 export const useUpdateCosting = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, costing }: { id: string; costing: UpdateCostingInput }) =>
+    mutationFn: ({ id, costing }: { id: string; costing: CostingInput }) =>
       costingService.update(id, costing),
-    onSuccess: (_data, { id }) => {
-      invalidateCosting(queryClient, id)
-      toast.success("Costing updated")
+    onSuccess: (costing) => {
+      invalidateCostings(queryClient)
+      toast.success("Costing line updated", { description: autoLinkedNote(costing) })
     },
   })
 }
 
 export const useDeleteCosting = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: string) => costingService.delete(id),
     onSuccess: () => {
-      invalidateCosting(queryClient)
-      toast.success("Costing deleted")
+      invalidateCostings(queryClient)
+      toast.success("Costing line deleted")
     },
   })
 }
 
-export const useCreateCostingBreakdown = (costingId: string) => {
+export const useMatchCostingLines = (costingId: string) => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: (breakdown: CostingBreakdownInput) =>
-      costingService.createBreakdown(costingId, breakdown),
-    onSuccess: () => {
-      invalidateCosting(queryClient, costingId)
-      toast.success("Line item added")
+    mutationFn: (breakdownIds: string[]) => costingService.matchLines(costingId, breakdownIds),
+    onSuccess: (_data, breakdownIds) => {
+      invalidateCostings(queryClient)
+      toast.success(
+        breakdownIds.length === 1 ? "Vendor invoice line matched" : `${breakdownIds.length} vendor invoice lines matched`
+      )
     },
   })
 }
 
-export const useUpdateCostingBreakdown = (costingId: string) => {
+export const useUnmatchCostingLine = (costingId: string) => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({
-      breakdownId,
-      breakdown,
-    }: {
-      breakdownId: string
-      breakdown: Partial<CostingBreakdownInput>
-    }) => costingService.updateBreakdown(costingId, breakdownId, breakdown),
+    mutationFn: (breakdownId: string) => costingService.unmatchLine(costingId, breakdownId),
     onSuccess: () => {
-      invalidateCosting(queryClient, costingId)
-      toast.success("Line item updated")
-    },
-  })
-}
-
-export const useDeleteCostingBreakdown = (costingId: string) => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (breakdownId: string) =>
-      costingService.deleteBreakdown(costingId, breakdownId),
-    onSuccess: () => {
-      invalidateCosting(queryClient, costingId)
-      toast.success("Line item removed")
-    },
-  })
-}
-
-export const useCreateCostingAttachment = (costingId: string) => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      costingId,
-      costingAttachment,
-    }: {
-      costingId: string
-      costingAttachment: FormData
-    }) => costingService.createCostingAttachment(costingId, costingAttachment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: costingKeys.detail(costingId) })
-      toast.success("Document uploaded")
-    },
-  })
-}
-
-export const useUpdateCostingAttachment = (costingId: string) => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      costingId,
-      id,
-      costingAttachment,
-    }: {
-      costingId: string
-      id: string
-      costingAttachment: unknown
-    }) =>
-      costingService.updateCostingAttachment(costingId, id, costingAttachment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: costingKeys.detail(costingId) })
-      toast.success("Document updated")
-    },
-  })
-}
-
-export const useDeleteCostingAttachment = (costingId: string) => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ costingId, id }: { costingId: string; id: string }) =>
-      costingService.deleteCostingAttachment(costingId, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: costingKeys.detail(costingId) })
-      toast.success("Document deleted")
+      invalidateCostings(queryClient)
+      toast.success("Vendor invoice line unmatched")
     },
   })
 }

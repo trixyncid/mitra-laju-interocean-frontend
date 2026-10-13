@@ -1,5 +1,31 @@
 import { apiClient } from "@/lib/api-client"
-import type { Selling } from "@/app/dashboard/sellings/columns"
+/** Customer invoice (pre-Sales model); used only by the paused invoice screens. */
+export type Selling = {
+  id: string
+  sellingNumber: string
+  status: string
+  invoiceDate?: string | null
+  paymentDate?: string | null
+  remarks?: string | null
+  shipmentId: string
+  customerId: string
+  customer?: {
+    id: string
+    customerCode: string
+    customerName: string
+  } | null
+  shipment?: {
+    id: string
+    status?: string
+    shipmentOperational?: {
+      bookingNumber?: string | null
+      blNumber?: string | null
+    } | null
+  } | null
+  createdAt?: string
+  updatedAt?: string
+  updatedBy?: { name?: string } | string
+}
 import type { SellingDetail } from "@/lib/types/entity-details"
 
 export type SellingListParams = {
@@ -28,15 +54,6 @@ export type CreateSellingPayload = {
   month: number
   year: number
   remarks: string
-  lines: Array<{
-    costingBreakdownId: string
-  }>
-}
-
-export type AddSellingLinesPayload = {
-  lines: Array<{
-    costingBreakdownId: string
-  }>
 }
 
 export const sellingService = {
@@ -64,13 +81,6 @@ export const sellingService = {
       items: (response.data ?? []) as Selling[],
       pagination,
     }
-  },
-  exportVatExcel: async (): Promise<{ rowCount: number | null }> => {
-    const result = await apiClient.download(
-      "/sellings/export/vat",
-      "customer-invoice-vat.xlsx"
-    )
-    return { rowCount: result.rowCount }
   },
   getById: async (id: string): Promise<SellingDetail> => {
     return apiClient.get<SellingDetail>(`/sellings/${id}`)
@@ -103,11 +113,5 @@ export const sellingService = {
   },
   delete: async (id: string) => {
     return apiClient.delete(`/sellings/${id}`)
-  },
-  addLines: async (id: string, payload: AddSellingLinesPayload) => {
-    return apiClient.post(`/sellings/${id}/lines`, payload)
-  },
-  deleteLine: async (id: string, lineId: string) => {
-    return apiClient.delete(`/sellings/${id}/lines/${lineId}`)
   },
 }

@@ -33,6 +33,14 @@ export function ShipmentWriteGate({
   )
 }
 
+export function VendorInvoiceWriteGate({ children }: { children: ReactNode }) {
+  return (
+    <PermissionGate resource="vendor-invoices" write>
+      {children}
+    </PermissionGate>
+  )
+}
+
 export function CostingWriteGate({ children }: { children: ReactNode }) {
   return (
     <PermissionGate resource="costings" write>

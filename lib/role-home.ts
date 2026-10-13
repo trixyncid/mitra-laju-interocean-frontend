@@ -1,4 +1,4 @@
-import { COSTING_MODULE_ENABLED } from "@/lib/feature-flags"
+import { VENDOR_INVOICE_MODULE_ENABLED } from "@/lib/feature-flags"
 import {
   getEffectiveRole,
   getHomePathFromPermissions,
@@ -37,7 +37,7 @@ export function getRoleHomePath(roleOrUser: unknown): string {
   // Slug fallback only when permissions are unavailable (e.g. fetch failed).
   if (role === "admin" || role === "superadmin") return "/dashboard"
   if (role === "costing_admin") {
-    return COSTING_MODULE_ENABLED ? "/dashboard/costings" : "/dashboard/shipments"
+    return VENDOR_INVOICE_MODULE_ENABLED ? "/dashboard/vendor-invoices" : "/dashboard/shipments"
   }
   return "/dashboard/shipments"
 }

@@ -23,7 +23,7 @@ const adminRole: RoleDetails = {
 const viewerPerms: MyPermissions["permissions"] = {
   DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   SHIPMENT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  COSTING: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  VENDOR_INVOICE: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   SELLING: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
@@ -35,7 +35,7 @@ const viewerPerms: MyPermissions["permissions"] = {
 const domesticPerms: MyPermissions["permissions"] = {
   DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   SHIPMENT: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  COSTING: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  VENDOR_INVOICE: { canView: true, canCreate: true, canEdit: true, canDelete: true },
   CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
   PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
@@ -62,8 +62,8 @@ describe("dynamic permissions", () => {
   })
 
   test("viewer read-only", () => {
-    expect(canReadResource(viewerPerms, "costings", "viewer")).toBe(true)
-    expect(canWriteResource(viewerPerms, "costings", "viewer")).toBe(false)
+    expect(canReadResource(viewerPerms, "vendor-invoices", "viewer")).toBe(true)
+    expect(canWriteResource(viewerPerms, "vendor-invoices", "viewer")).toBe(false)
     expect(canWriteResource(viewerPerms, "shipments", "viewer")).toBe(false)
   })
 
@@ -115,7 +115,7 @@ describe("dynamic permissions", () => {
 
   test("financial modules are open when the flags are on", () => {
     expect(
-      canAccessRouteWithPermissions(viewerPerms, "/dashboard/costings", "viewer")
+      canAccessRouteWithPermissions(viewerPerms, "/dashboard/vendor-invoices", "viewer")
     ).toBe(true)
     expect(
       canAccessRouteWithPermissions(viewerPerms, "/dashboard/sellings", "viewer")

@@ -5,11 +5,8 @@ import { use } from "react"
 import ErrorPage from "@/components/error-page"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import RoleForm from "@/components/forms/role-form"
-import {
-  DashboardPage,
-  DashboardPageCard,
-  DashboardPageHeader,
-} from "@/components/layout/dashboard-page"
+import { RolePageHero } from "@/components/admin/role-page-hero"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
 import { useRequireSystemAdmin } from "@/hooks/use-require-system-admin"
 import { useRoleById } from "@/hooks/use-roles"
 
@@ -43,14 +40,7 @@ export default function EditRolePage({
 
   return (
     <DashboardPage atmosphere>
-      <DashboardPageHeader
-        title={`Edit ${role.name}`}
-        description={
-          role.isSystem
-            ? "System role — name and description only."
-            : "Update role details and permission matrix."
-        }
-      />
+      <RolePageHero role={role} />
       <DashboardPageCard>
         <RoleForm mode="edit" role={role} />
       </DashboardPageCard>

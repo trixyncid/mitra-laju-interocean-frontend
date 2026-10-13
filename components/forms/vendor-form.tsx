@@ -19,12 +19,23 @@ import { sameShipmentTypes } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
 import { toast } from "sonner"
 
+export type VendorFormValues = {
+  vendorCode: string
+  vendorName: string
+  npwp: string
+  shipmentTypes: NonNullable<Vendor["shipmentTypes"]>
+  isActive: boolean
+}
+
 export default function VendorForm({
   mode,
   vendor,
+  onValuesChange,
 }: {
   mode: "edit" | "create"
   vendor?: Vendor
+  /** Called as the user types, e.g. to drive a live preview. */
+  onValuesChange?: (values: VendorFormValues) => void
 }) {
   const router = useRouter()
   const createVendor = useCreateVendor()
@@ -38,6 +49,9 @@ export default function VendorForm({
       npwp: vendor?.npwp ?? "",
       shipmentTypes: vendor?.shipmentTypes ?? [],
       isActive: vendor?.isActive ?? true,
+    },
+    listeners: {
+      onChange: ({ formApi }) => onValuesChange?.(formApi.state.values),
     },
     onSubmit: async ({ value }) => {
       if (mode === "create") {
@@ -102,8 +116,8 @@ export default function VendorForm({
         </h2>
         <p className="text-sm text-muted-foreground">
           {mode === "create"
-            ? "Set up a new vendor with code, name, shipment type, and tax information."
-            : "Update vendor profile information and active status."}
+            ? "Fill in the boxes below. Boxes marked * must be filled."
+            : "Change the details and press Save changes."}
         </p>
       </div>
 

@@ -7,15 +7,12 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
       richColors
       closeButton
@@ -33,15 +30,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:border group-[.toaster]:shadow-[0_12px_40px_rgba(27,54,93,0.12)] group-[.toaster]:backdrop-blur-xl",
+            "group toast group-[.toaster]:border group-[.toaster]:shadow-[0_12px_40px_rgba(var(--mli-ink-rgb),0.12)] group-[.toaster]:backdrop-blur-xl",
           title: "group-[.toast]:text-sm group-[.toast]:font-semibold group-[.toast]:tracking-tight",
           description: "group-[.toast]:text-xs group-[.toast]:leading-5",
           actionButton:
             "group-[.toast]:rounded-md group-[.toast]:bg-[var(--mli-primary-container)] group-[.toast]:text-primary-foreground group-[.toast]:text-xs group-[.toast]:font-semibold",
           cancelButton:
-            "group-[.toast]:rounded-md group-[.toast]:bg-[rgba(247,249,251,0.85)] group-[.toast]:text-muted-foreground group-[.toast]:text-xs",
+            "group-[.toast]:rounded-md group-[.toast]:bg-[rgba(var(--mli-inset-rgb),0.85)] group-[.toast]:text-muted-foreground group-[.toast]:text-xs",
           closeButton:
-            "group-[.toast]:border-[rgba(214,227,255,0.55)] group-[.toast]:bg-[rgba(247,249,251,0.95)] group-[.toast]:text-muted-foreground",
+            "group-[.toast]:border-[rgba(var(--mli-tint-rgb),0.55)] group-[.toast]:bg-[rgba(var(--mli-inset-rgb),0.95)] group-[.toast]:text-muted-foreground",
         },
       }}
       style={

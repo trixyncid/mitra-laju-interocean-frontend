@@ -18,18 +18,11 @@ export interface DashboardCustomerByShipments {
   shipmentCount: number
 }
 
-export interface DashboardCustomerBySellingAmount {
-  customerId: string
-  customerName: string
-  customerCode: string
-  totalSellingAmount: string
-}
-
-export interface DashboardVendorByCosting {
+export interface DashboardVendorByVendorInvoice {
   vendorId: string
   vendorName: string
   vendorCode: string
-  costingCount: number
+  vendorInvoiceCount: number
 }
 
 export interface DashboardVendorByAmount {
@@ -69,12 +62,9 @@ export interface DashboardData {
   containerStats: DashboardContainerStats
   weeklyVolume: DashboardWeeklyVolume[]
   topCustomersByShipments: DashboardCustomerByShipments[]
-  topCustomersBySellingAmount: DashboardCustomerBySellingAmount[]
-  topVendorsByCostingCount: DashboardVendorByCosting[]
+  topVendorsByVendorInvoiceCount: DashboardVendorByVendorInvoice[]
   topVendorsByTotalAmount: DashboardVendorByAmount[]
-  totalNetSelling: string
-  totalNetCosting: string
-  netRevenue: string
+  totalNetVendorInvoice: string
 }
 
 export interface DashboardQueryParams {
@@ -93,7 +83,6 @@ export interface DashboardVoyageContainer {
 
 export interface DashboardVoyageShipment {
   id: string
-  orderNumber: string
   shipmentType: ShipmentType
   customerName: string
   customerCode: string
@@ -114,4 +103,82 @@ export interface DashboardVoyageGroup {
   voyageNumber: string
   etd: string | null
   shipments: DashboardVoyageShipment[]
+}
+
+/** Before-tax totals for the sales jobs created in a period. */
+export interface BusinessTotals {
+  jobs: number
+  revenue: string
+  cost: string
+  profit: string
+  /** Percent of revenue, null when there is no revenue. */
+  margin: number | null
+}
+
+export type BusinessJobHealth = "healthy" | "thin" | "loss" | "nothing"
+
+export interface BusinessAgingBucket {
+  key: string
+  label: string
+  invoices: number
+  amount: string
+}
+
+export interface BusinessData {
+  generatedAt: string
+  range: { start: string; end: string }
+  profit: {
+    current: BusinessTotals
+    previous: BusinessTotals
+    trend: {
+      granularity: "week" | "month"
+      points: { start: string; jobs: number; revenue: string; cost: string; profit: string }[]
+    }
+    health: {
+      counts: Record<BusinessJobHealth, number>
+      needsReview: {
+        id: string
+        salesNumber: string
+        customerName: string | null
+        health: BusinessJobHealth
+        profit: string
+        margin: number | null
+      }[]
+    }
+    customers: {
+      customerId: string
+      customerName: string
+      customerCode: string
+      jobs: number
+      revenue: string
+      profit: string
+      margin: number | null
+    }[]
+  } | null
+  receivables: {
+    outstanding: string
+    invoices: number
+    aging: BusinessAgingBucket[]
+    billed: string
+    billedInvoices: number
+    collected: string
+    collectedInvoices: number
+    averageDaysToCollect: number | null
+  } | null
+  payables: {
+    outstanding: string
+    invoices: number
+    aging: BusinessAgingBucket[]
+    paid: string
+    paidInvoices: number
+  } | null
+  attention: {
+    costsNotCharged: { count: number; amount: string } | null
+    readyToBill: { count: number; amount: string } | null
+    finishedNotInvoiced: number | null
+    unmatchedVendorLines: { lines: number; amount: string } | null
+    looseCostings: number | null
+    looseSellings: number | null
+    overdueArrivals: number | null
+  }
 }

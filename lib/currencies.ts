@@ -1,4 +1,4 @@
-export const COSTING_CURRENCIES = [
+export const VENDOR_INVOICE_CURRENCIES = [
   { code: "USD", label: "US Dollar (USD)" },
   { code: "EUR", label: "Euro (EUR)" },
   { code: "SGD", label: "Singapore Dollar (SGD)" },
@@ -10,9 +10,9 @@ export const COSTING_CURRENCIES = [
   { code: "HKD", label: "Hong Kong Dollar (HKD)" },
 ] as const
 
-export type CostingCurrencyCode = (typeof COSTING_CURRENCIES)[number]["code"]
+export type VendorInvoiceCurrencyCode = (typeof VENDOR_INVOICE_CURRENCIES)[number]["code"]
 
-export const DEFAULT_COSTING_CURRENCY_CODE: CostingCurrencyCode = "USD"
+export const DEFAULT_VENDOR_INVOICE_CURRENCY_CODE: VendorInvoiceCurrencyCode = "USD"
 
 export function isIdrCurrency(code: string) {
   return code === "IDR"

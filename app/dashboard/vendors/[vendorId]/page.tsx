@@ -1,20 +1,24 @@
 "use client"
 
-import { use } from "react"
-import Link from "next/link"
+import { use, useState } from "react"
 import {
-    IconArrowLeft,
+    IconAlertCircle,
+    IconBuildingWarehouse,
+    IconCalendarPlus,
     IconChartBar,
-    IconFerry,
+    IconCircleCheck,
+    IconClock,
+    IconFileCertificate,
+    IconPencil,
     IconReceipt,
-    IconShip,
 } from "@tabler/icons-react"
-import { Dot } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { StatusChip } from "@/components/ui/status-chip"
-import { VendorMetadataCard } from "@/components/vendor-metadata-card"
+import { StatusChip, WarningChip } from "@/components/ui/status-chip"
+import { RecordLink } from "@/components/record-link"
+import { HeroFact, HeroStat, ProfileHero } from "@/components/directory/profile-hero"
+import { RecordFacts } from "@/components/directory/record-facts"
+import { formatIdr, formatIdrCompact } from "@/components/dashboard/overview-card"
 import { VendorNetworkPanel } from "@/components/vendor-network-panel"
 import VendorForm from "@/components/forms/vendor-form"
 import ErrorPage from "@/components/error-page"
@@ -22,36 +26,13 @@ import CustomerVendorDetailLoading from "@/components/loading/customer-vendor-de
 import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
 import { MasterDataWriteGate } from "@/components/write-gates"
 import { useVendorById } from "@/hooks/use-vendors"
-import {
-    glassInset,
-    glassPanel,
-    glassShine,
-    glassTabCount,
-    glassTabsTrigger,
-} from "@/lib/design"
-import { COSTING_MODULE_ENABLED } from "@/lib/feature-flags"
+import { glassInset, glassTabCount, glassTabsTrigger } from "@/lib/design"
+import { VENDOR_INVOICE_MODULE_ENABLED } from "@/lib/feature-flags"
 import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
-import { cn, costingInvoiceTotals, localDate } from "@/lib/utils"
-import { Costing } from "../../costings/columns"
-import type { ShipmentStatus } from "@/lib/shipment-status"
+import { cn, vendorInvoiceInvoiceTotals, localDate } from "@/lib/utils"
+import { VendorInvoice } from "../../vendor-invoices/columns"
 
-type CostingWithShipment = Costing & {
-    shipment?: {
-        id?: string | null
-        orderNumber?: string | null
-        status?: ShipmentStatus
-        customerCode?: { customerCode?: string }
-        customerShipper?: { name?: string }
-        shipmentOperational?: {
-            eta?: string | null
-            portDeparture?: { portName?: string } | null
-            portDestination?: { portName?: string } | null
-        } | null
-    } | null
-}
-import ShipmentHistoryPage from "./(shipments)/shipment-history-page"
-import { LinkedShipment } from "./(shipments)/shipment-columns"
-import CostingHistoryPage from "./(costings)/costing-history-page"
+import VendorInvoiceHistoryPage from "./(vendor-invoices)/vendor-invoice-history-page"
 import MonthlySummary, {
     type VendorMonthlySummaryRow,
 } from "./(summary)/monthly-summary"
@@ -78,27 +59,6 @@ type VendorLocation = {
     updatedBy?: { name: string }
 }
 
-function MetricTile({
-    label,
-    value,
-    hint,
-}: {
-    label: string
-    value: string | number
-    hint?: string
-}) {
-    return (
-        <div className={cn(glassInset, "flex flex-col gap-2 px-5 py-4")}>
-            <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                {label}
-            </p>
-            <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums break-words sm:text-2xl">
-                {value}
-            </p>
-            {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
-        </div>
-    )
-}
 
 function SectionIntro({
     title,
@@ -126,7 +86,7 @@ function EmptyState({
 }) {
     return (
         <div className={cn(glassInset, "flex flex-col items-center justify-center gap-3 px-6 py-14 text-center")}>
-            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+            <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(var(--mli-tint-rgb),0.45)] text-[var(--mli-primary-container)]">
                 <Icon className="size-6" />
             </div>
             <div className="space-y-1">
@@ -137,33 +97,27 @@ function EmptyState({
     )
 }
 
-function CountPill({ children }: { children: React.ReactNode }) {
-    return (
-        <span className="inline-flex items-center rounded-md bg-[rgba(214,227,255,0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
-            {children}
-        </span>
-    )
-}
 
 export default function VendorDetailPage({ params }: { params: Promise<{ vendorId: string }> }) {
     const { vendorId } = use(params)
     const { data, isLoading, error } = useVendorById(vendorId)
+    const [tab, setTab] = useState("details")
 
     if (error) {
         return (
             <ErrorPage
-                title="Vendor Detail Not Found"
-                message="Vendor detail not found. Please check the vendor ID and try again."
+                title="Vendor not found"
+                message="We could not find this vendor. Check the link and try again."
             />
         )
     }
     if (isLoading) return <CustomerVendorDetailLoading />
-    if (!data) return <ErrorPage title="Vendor not found" message="Unable to load this vendor." />
+    if (!data) return <ErrorPage title="Vendor not found" message="We could not load this vendor." />
 
     const updatedByName =
         typeof data.updatedBy === "string" ? data.updatedBy : data.updatedBy?.name
-    const costings: CostingWithShipment[] = Array.isArray(data.costings)
-        ? data.costings
+    const vendorInvoices: VendorInvoice[] = Array.isArray(data.vendorInvoices)
+        ? data.vendorInvoices
         : []
     const vendorLocations: VendorLocation[] = Array.isArray(data.vendorLocations)
         ? data.vendorLocations
@@ -175,14 +129,13 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
         0
     )
 
-    const vendorCostings = costings.map((costing) => ({
-        id: costing.id,
-        invoiceNumber: costing.vendorInvoiceNumber ?? "",
-        amount: costingInvoiceTotals(
-            costing.costingBreakdowns ?? []
+    const vendorVendorInvoices = vendorInvoices.map((vendorInvoice) => ({
+        id: vendorInvoice.id,
+        invoiceNumber: vendorInvoice.vendorInvoiceNumber ?? "",
+        amount: vendorInvoiceInvoiceTotals(
+            vendorInvoice.vendorInvoiceBreakdowns ?? []
         ).net,
-        shipmentOrderNumber: costing.shipment?.orderNumber ?? "",
-        updatedAt: costing.updatedAt ?? "",
+        updatedAt: vendorInvoice.updatedAt ?? "",
     }))
 
     const monthlyMap = new Map<string, VendorMonthlySummaryRow>()
@@ -192,8 +145,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
             new Date(year, month, 1)
         )
 
-    for (const costing of costings) {
-        const date = new Date(costing.createdAt ?? costing.updatedAt ?? "")
+    for (const vendorInvoice of vendorInvoices) {
+        const date = new Date(vendorInvoice.createdAt ?? vendorInvoice.updatedAt ?? "")
         if (Number.isNaN(date.getTime())) continue
 
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
@@ -202,20 +155,20 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
             row = {
                 key,
                 label: monthLabel(date.getFullYear(), date.getMonth()),
-                costingCount: 0,
-                costingTotal: 0,
+                vendorInvoiceCount: 0,
+                vendorInvoiceTotal: 0,
                 paidTotal: 0,
                 unpaidTotal: 0,
             }
             monthlyMap.set(key, row)
         }
 
-        const amount = costingInvoiceTotals(
-            costing.costingBreakdowns ?? []
+        const amount = vendorInvoiceInvoiceTotals(
+            vendorInvoice.vendorInvoiceBreakdowns ?? []
         ).net
-        row.costingCount += 1
-        row.costingTotal += amount
-        if (costing.status === "PAID") {
+        row.vendorInvoiceCount += 1
+        row.vendorInvoiceTotal += amount
+        if (vendorInvoice.status === "PAID") {
             row.paidTotal += amount
         } else {
             row.unpaidTotal += amount
@@ -226,151 +179,134 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
         b.key.localeCompare(a.key)
     )
 
-    const vendorShipments: LinkedShipment[] = costings
-        .filter((costing) => costing.shipment != null)
-        .map((costing) => {
-            const shipment = costing.shipment!
-            return {
-                id: shipment.id ?? "",
-                eta: shipment.shipmentOperational?.eta ?? "",
-                orderNumber: shipment.orderNumber ?? "",
-                customerCode: shipment.customerCode?.customerCode ?? "",
-                customerShipper: shipment.customerShipper?.name ?? "",
-                departurePort: shipment.shipmentOperational?.portDeparture?.portName ?? "",
-                arrivalPort: shipment.shipmentOperational?.portDestination?.portName ?? "",
-                status: shipment.status ?? "ONGOING",
-            }
-        })
-        .filter(
-            (shipment, index, self) =>
-                self.findIndex((s) => s.id === shipment.id) === index
-        )
-
     const calculateYTDSpend = () => {
         const year = new Date().getFullYear()
         let total = 0
-        for (const costing of costings) {
-            const created = new Date(costing.createdAt ?? costing.updatedAt ?? "")
+        for (const vendorInvoice of vendorInvoices) {
+            const created = new Date(vendorInvoice.createdAt ?? vendorInvoice.updatedAt ?? "")
             if (!Number.isNaN(created.getTime()) && created.getFullYear() === year) {
-                total += costingInvoiceTotals(
-                    costing.costingBreakdowns ?? []
+                total += vendorInvoiceInvoiceTotals(
+                    vendorInvoice.vendorInvoiceBreakdowns ?? []
                 ).net
             }
         }
         return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
     }
 
-    const totalActiveShipments = () => {
-        return costings.filter((costing) => costing.shipment?.status === "ONGOING").length
-    }
 
-    const calculateOutstandingBills = () => {
-        let total = 0
-        for (const costing of costings) {
-            if (costing.status !== "PAID") {
-                total += costingInvoiceTotals(
-                    costing.costingBreakdowns ?? []
-                ).net
-            }
-        }
-        return total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })
+    const amountOf = (invoice: VendorInvoice) =>
+        vendorInvoiceInvoiceTotals(invoice.vendorInvoiceBreakdowns ?? []).net
+    const unpaidInvoices = vendorInvoices.filter((invoice) => invoice.status !== "PAID")
+    const paidInvoices = vendorInvoices.filter((invoice) => invoice.status === "PAID")
+    const unpaidAmount = unpaidInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0)
+    const paidAmount = paidInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0)
+    const invoiceDate = (invoice: VendorInvoice) =>
+        invoice.vendorInvoiceDate ?? invoice.createdAt ?? invoice.updatedAt ?? ""
+    const recentInvoices = [...vendorInvoices]
+        .sort((a, b) => invoiceDate(b).localeCompare(invoiceDate(a)))
+        .slice(0, 5)
+
+    const openEditor = () => {
+        setTab("details")
+        window.setTimeout(
+            () => document.getElementById("vendor-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+            50
+        )
     }
 
     return (
         <DashboardPage atmosphere>
-            <div className="mb-6">
-                <Button asChild variant="ghost" className="text-muted-foreground">
-                    <Link href="/dashboard/vendors">
-                        <IconArrowLeft className="size-5" />
-                        Back to vendors
-                    </Link>
-                </Button>
-            </div>
-
-            <section className={cn(glassPanel, "relative overflow-hidden")}>
-                <div aria-hidden className={glassShine} />
-
-                <div className="relative space-y-8 p-6 lg:p-8">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-                            <div
-                                className={cn(
-                                    glassInset,
-                                    "flex size-14 shrink-0 items-center justify-center sm:size-16"
-                                )}
-                            >
-                                <IconFerry className="size-8 text-[var(--mli-primary-container)] sm:size-9" />
+            <ProfileHero
+                tone="supplier"
+                backHref="/dashboard/vendors"
+                backLabel="All vendors"
+                name={data.vendorName}
+                code={data.vendorCode}
+                badges={
+                    <>
+                        <StatusChip active={Boolean(data?.isActive)} />
+                        <ShipmentTypeTags types={data.shipmentTypes} />
+                    </>
+                }
+                facts={
+                    <>
+                        <HeroFact icon={IconBuildingWarehouse}>
+                            {vendorLocations.length} office{vendorLocations.length === 1 ? "" : "s"} ·{" "}
+                            {totalVendorContacts} contact{totalVendorContacts === 1 ? "" : "s"}
+                        </HeroFact>
+                        <HeroFact icon={IconFileCertificate}>
+                            {data.npwp ? `NPWP ${data.npwp}` : "No tax ID yet"}
+                        </HeroFact>
+                    </>
+                }
+                actions={
+                    <MasterDataWriteGate>
+                        <button
+                            type="button"
+                            onClick={openEditor}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-[#14456f] shadow-elev-1 transition-transform hover:-translate-y-0.5"
+                        >
+                            <IconPencil className="size-3.5" />
+                            Edit details
+                        </button>
+                    </MasterDataWriteGate>
+                }
+                aside={
+                    VENDOR_INVOICE_MODULE_ENABLED ? (
+                        <div className="rounded-2xl bg-[linear-gradient(135deg,#0f2f57,#14456f)] p-4 text-white shadow-elev-2 ring-4 ring-card">
+                            <p className="text-xs text-white/70">We still owe this vendor</p>
+                            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+                                {formatIdr(unpaidAmount)}
+                            </p>
+                            <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-white/15">
+                                <span
+                                    className="h-full rounded-full bg-[#7dd3c0]"
+                                    style={{
+                                        width: `${paidAmount + unpaidAmount > 0 ? (paidAmount / (paidAmount + unpaidAmount)) * 100 : 0}%`,
+                                    }}
+                                />
                             </div>
-
-                            <div className="min-w-0 space-y-3">
-                                <div className="space-y-2">
-                                    <div className="flex flex-wrap items-center gap-2.5">
-                                        <h1 className="text-headline-lg tracking-tight">
-                                            {data.vendorName}
-                                        </h1>
-                                        <StatusChip active={Boolean(data?.isActive)} />
-                                        <ShipmentTypeTags types={data.shipmentTypes} />
-                                    </div>
-                                    <p className="font-mono text-sm font-medium tracking-wide text-[var(--mli-primary-container)]">
-                                        {data.vendorCode}
-                                    </p>
-                                </div>
-
-                                <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
-                                    <span>
-                                        Updated {localDate(data.updatedAt)}
-                                        {updatedByName ? ` by ${updatedByName}` : ""}
-                                    </span>
-                                    <Dot className="hidden size-4 sm:inline" />
-                                    <span>Registered {localDate(data.createdAt)}</span>
-                                </p>
-                            </div>
+                            <p className="mt-1.5 flex justify-between text-[11px] text-white/70">
+                                <span>Paid {formatIdrCompact(paidAmount)}</span>
+                                <span>Unpaid {formatIdrCompact(unpaidAmount)}</span>
+                            </p>
                         </div>
-
-                        <div className="flex flex-wrap gap-2 lg:justify-end">
-                            <CountPill>
-                                {vendorLocations.length} office
-                                {vendorLocations.length === 1 ? "" : "s"}
-                            </CountPill>
-                            <CountPill>
-                                {totalVendorContacts} contact
-                                {totalVendorContacts === 1 ? "" : "s"}
-                            </CountPill>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <MetricTile
-                            label="Active shipments"
-                            value={totalActiveShipments()}
-                            hint="Currently in progress"
+                    ) : null
+                }
+            >
+                {VENDOR_INVOICE_MODULE_ENABLED ? (
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <HeroStat
+                            label="Invoices"
+                            value={vendorInvoices.length}
+                            hint="From this vendor"
+                            icon={IconReceipt}
                         />
-                        {COSTING_MODULE_ENABLED ? (
-                            <>
-                                <MetricTile
-                                    label="Total assignments"
-                                    value={costings.length}
-                                    hint="All linked costings"
-                                />
-                                <MetricTile
-                                    label="YTD spend"
-                                    value={calculateYTDSpend()}
-                                    hint="Costings this year"
-                                />
-                                <MetricTile
-                                    label="Outstanding bills"
-                                    value={calculateOutstandingBills()}
-                                    hint="Unpaid vendor invoices"
-                                />
-                            </>
-                        ) : null}
+                        <HeroStat
+                            label="Not paid yet"
+                            value={unpaidInvoices.length}
+                            hint={formatIdr(unpaidAmount)}
+                            icon={IconAlertCircle}
+                        />
+                        <HeroStat
+                            label="Paid"
+                            value={paidInvoices.length}
+                            hint={formatIdr(paidAmount)}
+                            icon={IconCircleCheck}
+                        />
+                        <HeroStat
+                            label="Spent this year"
+                            value={calculateYTDSpend()}
+                            hint="All invoices this year"
+                            icon={IconChartBar}
+                        />
                     </div>
-                </div>
-            </section>
+                ) : null}
+            </ProfileHero>
 
-            <Tabs defaultValue="details" className="mt-8 gap-0">
+            <Tabs value={tab} onValueChange={setTab} className="mt-8 gap-0">
                 <div className="overflow-x-auto pb-1">
-                    <TabsList className="h-auto min-w-max rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-1 backdrop-blur-xl">
+                    <TabsList className="h-auto min-w-max rounded-full border border-border bg-card p-1">
                         <TabsTrigger value="details" className={glassTabsTrigger}>
                             Profile
                         </TabsTrigger>
@@ -378,15 +314,11 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                             Network
                             <span className={glassTabCount}>{vendorLocations.length}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="shipment-history" className={glassTabsTrigger}>
-                            Shipments
-                            <span className={glassTabCount}>{vendorShipments.length}</span>
-                        </TabsTrigger>
-                        {COSTING_MODULE_ENABLED ? (
+                        {VENDOR_INVOICE_MODULE_ENABLED ? (
                             <>
-                                <TabsTrigger value="costings" className={glassTabsTrigger}>
-                                    Costings
-                                    <span className={glassTabCount}>{costings.length}</span>
+                                <TabsTrigger value="vendor-invoices" className={glassTabsTrigger}>
+                                    Vendor invoices
+                                    <span className={glassTabCount}>{vendorInvoices.length}</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="summary" className={glassTabsTrigger}>
                                     Summary
@@ -398,20 +330,15 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                 </div>
 
                 <TabsContent value="details" className="mt-6">
-                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
-                        <aside className="lg:sticky lg:top-6">
-                            <VendorMetadataCard vendor={data} />
-                        </aside>
+                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                         <DashboardPageCard>
+                            <div id="vendor-editor" className="scroll-mt-24" />
                             <MasterDataWriteGate
                                 fallback={
                                     <div className="space-y-2">
-                                        <h2 className="text-headline-md font-semibold">
-                                            Vendor details
-                                        </h2>
+                                        <h2 className="text-headline-md font-semibold">Vendor details</h2>
                                         <p className="text-sm text-muted-foreground">
-                                            You can view this vendor profile, but you do not have
-                                            permission to edit it.
+                                            You can see this vendor, but you cannot change it.
                                         </p>
                                     </div>
                                 }
@@ -419,6 +346,79 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                                 <VendorForm mode="edit" vendor={data} />
                             </MasterDataWriteGate>
                         </DashboardPageCard>
+                        <aside className="space-y-4 lg:sticky lg:top-24">
+                            {VENDOR_INVOICE_MODULE_ENABLED ? (
+                                <div className="rounded-2xl surface p-5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h2 className="text-sm font-semibold text-foreground">Latest invoices</h2>
+                                        <button
+                                            type="button"
+                                            onClick={() => setTab("vendor-invoices")}
+                                            className="cursor-pointer text-xs font-medium text-primary hover:underline"
+                                        >
+                                            See all
+                                        </button>
+                                    </div>
+                                    {recentInvoices.length === 0 ? (
+                                        <p className="mt-4 text-sm text-muted-foreground">No invoices yet.</p>
+                                    ) : (
+                                        <ol className="relative mt-4 space-y-4 before:absolute before:top-2 before:bottom-2 before:left-[5px] before:w-px before:bg-border">
+                                            {recentInvoices.map((invoice) => {
+                                                const paid = invoice.status === "PAID"
+                                                return (
+                                                    <li key={invoice.id} className="relative pl-6">
+                                                        <span
+                                                            aria-hidden
+                                                            className={cn(
+                                                                "absolute top-1.5 left-0 size-[11px] rounded-full ring-4 ring-card",
+                                                                paid ? "bg-[var(--mli-positive)]" : "bg-[#e3a13b]"
+                                                            )}
+                                                        />
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <RecordLink
+                                                                    module="VENDOR_INVOICE"
+                                                                    href={`/dashboard/vendor-invoices?invoice=${invoice.id}`}
+                                                                    className="block truncate font-mono text-xs font-medium text-foreground hover:underline"
+                                                                >
+                                                                    {invoice.vendorInvoiceNumber}
+                                                                </RecordLink>
+                                                                <p className="text-[11px] text-muted-foreground">
+                                                                    {localDate(invoiceDate(invoice))} · {paid ? "Paid" : "Not paid yet"}
+                                                                </p>
+                                                            </div>
+                                                            <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
+                                                                {formatIdrCompact(amountOf(invoice))}
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                )
+                                            })}
+                                        </ol>
+                                    )}
+                                </div>
+                            ) : null}
+                            <RecordFacts
+                                title="About this record"
+                                rows={[
+                                    { icon: IconCalendarPlus, label: "Added on", value: localDate(data.createdAt) },
+                                    {
+                                        icon: IconClock,
+                                        label: "Last change",
+                                        value: `${localDate(data.updatedAt)}${updatedByName ? ` by ${updatedByName}` : ""}`,
+                                    },
+                                    {
+                                        icon: IconFileCertificate,
+                                        label: "Tax ID (NPWP)",
+                                        value: data.npwp ? (
+                                            <span className="font-mono">{data.npwp}</span>
+                                        ) : (
+                                            <WarningChip>Not added yet</WarningChip>
+                                        ),
+                                    },
+                                ]}
+                            />
+                        </aside>
                     </div>
                 </TabsContent>
 
@@ -432,50 +432,24 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                     </DashboardPageCard>
                 </TabsContent>
 
-                <TabsContent value="shipment-history" className="mt-6">
-                    <DashboardPageCard>
-                        <SectionIntro
-                            title="Shipment history"
-                            description={
-                                COSTING_MODULE_ENABLED
-                                    ? "Shipments linked through this vendor’s costings, including routes and ETAs."
-                                    : "Shipments linked to this vendor, including routes and ETAs."
-                            }
-                        />
-                        {vendorShipments.length === 0 ? (
-                            <EmptyState
-                                icon={IconShip}
-                                title="No shipments yet"
-                                description={
-                                    COSTING_MODULE_ENABLED
-                                        ? "Shipments tied to this vendor’s costings will appear here."
-                                        : "Shipments tied to this vendor will appear here."
-                                }
-                            />
-                        ) : (
-                            <ShipmentHistoryPage vendorShipments={vendorShipments} />
-                        )}
-                    </DashboardPageCard>
-                </TabsContent>
-
-                {COSTING_MODULE_ENABLED ? (
+                {VENDOR_INVOICE_MODULE_ENABLED ? (
                 <>
-                <TabsContent value="costings" className="mt-6">
+                <TabsContent value="vendor-invoices" className="mt-6">
                     <DashboardPageCard>
                         <SectionIntro
-                            title="Costing history"
-                            description="Vendor invoices and amounts linked to this vendor."
+                            title="Vendor invoice history"
+                            description="Vendor invoices and amounts from this vendor."
                         />
-                        {costings.length === 0 ? (
+                        {vendorInvoices.length === 0 ? (
                             <EmptyState
                                 icon={IconReceipt}
-                                title="No costings yet"
-                                description="Costings assigned to this vendor will show up in this list."
+                                title="No vendor invoices yet"
+                                description="Vendor invoices from this vendor will show up in this list."
                             />
                         ) : (
-                            <CostingHistoryPage
+                            <VendorInvoiceHistoryPage
                                 vendorName={data.vendorName}
-                                vendorCostings={vendorCostings}
+                                vendorVendorInvoices={vendorVendorInvoices}
                             />
                         )}
                     </DashboardPageCard>
@@ -485,13 +459,13 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                     <DashboardPageCard>
                         <SectionIntro
                             title="Monthly summary"
-                            description="Costings grouped by transaction month, with paid and unpaid totals."
+                            description="Vendor invoices grouped by transaction month, with paid and unpaid totals."
                         />
                         {monthlySummary.length === 0 ? (
                             <EmptyState
                                 icon={IconChartBar}
                                 title="No transactions yet"
-                                description="Monthly totals will appear once this vendor has costings."
+                                description="Monthly totals will appear once this vendor has vendor invoices."
                             />
                         ) : (
                             <MonthlySummary rows={monthlySummary} />

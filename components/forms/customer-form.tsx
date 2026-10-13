@@ -19,12 +19,24 @@ import { sameShipmentTypes } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
 import { toast } from "sonner"
 
+export type CustomerFormValues = {
+  customerCode: string
+  customerName: string
+  npwp: string
+  address: string
+  shipmentTypes: NonNullable<Customer["shipmentTypes"]>
+  isActive: boolean
+}
+
 export default function CustomerForm({
   mode,
   customer,
+  onValuesChange,
 }: {
   mode: "edit" | "create"
   customer?: Customer
+  /** Called as the user types, e.g. to drive a live preview. */
+  onValuesChange?: (values: CustomerFormValues) => void
 }) {
   const router = useRouter()
   const createCustomer = useCreateCustomer()
@@ -39,6 +51,9 @@ export default function CustomerForm({
       address: customer?.address ?? "",
       shipmentTypes: customer?.shipmentTypes ?? [],
       isActive: customer?.isActive ?? true,
+    },
+    listeners: {
+      onChange: ({ formApi }) => onValuesChange?.(formApi.state.values),
     },
     onSubmit: async ({ value }) => {
       if (mode === "create") {
@@ -106,8 +121,8 @@ export default function CustomerForm({
         </h2>
         <p className="text-sm text-muted-foreground">
           {mode === "create"
-            ? "Set up a new customer with code, name, shipment type, and tax information."
-            : "Update customer profile information and active status."}
+            ? "Fill in the boxes below. Boxes marked * must be filled."
+            : "Change the details and press Save changes."}
         </p>
       </div>
 

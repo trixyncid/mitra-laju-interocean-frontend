@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import { shipmentReference } from "@/lib/shipment-reference"
 import { useEffect, useMemo, type ReactNode } from "react"
-import { IconArrowRight } from "@tabler/icons-react"
+import { IconArrowRight, IconShip } from "@tabler/icons-react"
 
 import type {
   DashboardVoyageGroup,
@@ -84,10 +85,10 @@ const VOYAGE_STATUS_OPTIONS: {
 ]
 
 const TYPE_CHIP_IDLE =
-  "border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.55)] text-muted-foreground hover:border-[rgba(214,227,255,0.85)] hover:bg-[rgba(247,249,251,0.9)] hover:text-foreground"
+  "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
 
 const TYPE_CHIP_ACTIVE: Record<DashboardShipmentTypeFilter, string> = {
-  all: "border-[var(--mli-primary-container)]/35 bg-[var(--mli-primary-container)] text-primary-foreground hover:bg-[var(--mli-primary-container)] hover:text-primary-foreground",
+  all: "border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
   EXPORT:
     "border-[var(--mli-export-container)]/50 bg-[var(--mli-export-container)] text-[var(--mli-on-export-container)] hover:bg-[var(--mli-export-container)] hover:text-[var(--mli-on-export-container)]",
   IMPORT:
@@ -183,19 +184,19 @@ function CustomerCell({
 
 function OrderCell({
   id,
-  orderNumber,
+  reference,
   canReadShipments,
 }: {
   id: string
-  orderNumber: string
+  reference: string
   canReadShipments: boolean
 }) {
   const label: ReactNode = canReadShipments ? (
     <Link href={`/dashboard/shipments/${id}`} className={brandLink}>
-      {orderNumber}
+      {reference}
     </Link>
   ) : (
-    orderNumber
+    reference
   )
 
   return <div className="font-semibold text-foreground">{label}</div>
@@ -289,7 +290,7 @@ function TypeFilterChip({
       aria-pressed={active}
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow] duration-150",
+        "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow] duration-150",
         "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
         active ? TYPE_CHIP_ACTIVE[tone] : TYPE_CHIP_IDLE
       )}
@@ -298,8 +299,8 @@ function TypeFilterChip({
       {typeof count === "number" ? (
         <span
           className={cn(
-            "rounded px-1 py-px text-[10px] font-semibold tabular-nums",
-            active ? "bg-black/10 text-inherit" : "bg-[rgba(214,227,255,0.55)] text-muted-foreground"
+            "rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums",
+            active ? "bg-current/15 text-inherit" : "bg-muted text-muted-foreground"
           )}
         >
           {count}
@@ -353,22 +354,14 @@ export function DashboardShipmentsByVoyage() {
     <Card
       className={cn(
         glassPanel,
-        "relative min-w-0 gap-0 overflow-hidden p-5 shadow-none lg:p-7"
+        "relative min-w-0 gap-0 overflow-hidden rounded-2xl p-5 shadow-none sm:p-6"
       )}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
-      />
-
-      <CardHeader className="gap-5 pb-0">
+      <CardHeader className="flex flex-col gap-4 pb-0 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
-          <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-            Operations
-          </p>
-          <CardTitle className="text-lg">Shipments by Vessel Voyage</CardTitle>
-          <CardDescription className="max-w-2xl">
-            {selectedStatus?.description}
+          <CardTitle className="text-lg">Shipments Activities</CardTitle>
+          <CardDescription className="max-w-2xl text-[13px]">
+            {selectedStatus?.description ?? "Keep track of shipments by vessel voyage"}
           </CardDescription>
         </div>
 
@@ -387,14 +380,14 @@ export function DashboardShipmentsByVoyage() {
           className="gap-0"
         >
           <TabsList
-            className="h-auto w-full min-w-0 justify-start gap-1 overflow-x-auto rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-1 backdrop-blur-xl sm:w-fit"
+            className="scrollbar-none h-11 w-full min-w-0 justify-start gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 sm:w-fit"
             aria-label="Voyage status"
           >
             {VOYAGE_STATUS_OPTIONS.map((option) => (
               <TabsTrigger
                 key={option.value}
                 value={option.value}
-                className={cn(glassTabsTrigger, "min-w-[5.5rem] px-5")}
+                className={cn(glassTabsTrigger, "min-w-[5.5rem] px-4")}
               >
                 {option.label}
               </TabsTrigger>
@@ -403,9 +396,9 @@ export function DashboardShipmentsByVoyage() {
         </Tabs>
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-4">
+      <CardContent className="space-y-4 pt-5">
         {showTypeFilter ? (
-          <div className="flex flex-col gap-3 border-b border-[rgba(214,227,255,0.35)] pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {!isRestored || isLoading ? (
                 <span>Loading voyages…</span>
@@ -416,7 +409,7 @@ export function DashboardShipmentsByVoyage() {
                   <span className="font-medium text-foreground">
                     {voyageCount} voyage{voyageCount === 1 ? "" : "s"}
                   </span>
-                  <span className="mx-1.5 text-[rgba(214,227,255,0.9)]">·</span>
+                  <span className="mx-1.5 text-muted-foreground/50">·</span>
                   <span>
                     {shipmentCount} shipment{shipmentCount === 1 ? "" : "s"}
                     {typeLabel ? (
@@ -437,9 +430,7 @@ export function DashboardShipmentsByVoyage() {
               role="group"
               aria-label="Filter by shipment type"
             >
-              <span className="mr-1 text-[10px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-                Type
-              </span>
+              <span className="mr-1 text-xs text-muted-foreground">Type</span>
               {typeOptions.map((option) => (
                 <TypeFilterChip
                   key={option.value}
@@ -464,7 +455,7 @@ export function DashboardShipmentsByVoyage() {
             {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton
                 key={index}
-                className="h-28 rounded-lg bg-[rgba(214,227,255,0.35)]"
+                className="h-28 rounded-xl"
               />
             ))}
           </div>
@@ -482,16 +473,21 @@ export function DashboardShipmentsByVoyage() {
           filteredData.map((voyage) => (
             <div
               key={voyage.vesselId}
-              className={cn(tableShell, "overflow-x-auto rounded-lg")}
+              className={cn(tableShell, "overflow-x-auto rounded-xl")}
             >
-              <div className="flex flex-col gap-1 border-b border-[rgba(214,227,255,0.35)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+              <div className="flex flex-col gap-1 border-b border-border px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <IconShip className="size-[18px]" aria-hidden />
+                  </span>
+                  <div>
                   <p className={cn("font-semibold", brandText)}>
                     {voyage.vesselName} / {voyage.voyageNumber}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     ETD {formatDateTime(voyage.etd)}
                   </p>
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {voyage.shipments.length} shipment
@@ -501,7 +497,7 @@ export function DashboardShipmentsByVoyage() {
               <Table>
                 <TableHeader>
                   <TableRow className={tableHeaderRow}>
-                    <TableHead className={tableHeaderCell}>Order Number</TableHead>
+                    <TableHead className={tableHeaderCell}>Shipment</TableHead>
                     <TableHead className={tableHeaderCell}>Customer</TableHead>
                     <TableHead className={tableHeaderCell}>Route</TableHead>
                     <TableHead className={tableHeaderCell}>Booking / BL</TableHead>
@@ -520,7 +516,10 @@ export function DashboardShipmentsByVoyage() {
                       <TableCell className={tableCellClass}>
                         <OrderCell
                           id={shipment.id}
-                          orderNumber={shipment.orderNumber}
+                          reference={shipmentReference({
+                            customerName: shipment.customerName,
+                            vesselName: voyage.vesselName,
+                          })}
                           canReadShipments={canReadShipments}
                         />
                       </TableCell>

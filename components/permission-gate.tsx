@@ -69,8 +69,10 @@ export function PermissionGate({
         dashboard: "DASHBOARD",
         masterData: null,
         shipments: "SHIPMENT",
-        costings: "COSTING",
+        vendorInvoices: "VENDOR_INVOICE",
         sellings: "SELLING",
+        sales: "SALES",
+        "customer-invoices": "CUSTOMER_INVOICE",
         users: "USER",
         roles: "ROLE",
       }

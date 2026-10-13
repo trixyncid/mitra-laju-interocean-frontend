@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { pageCard, pageHeader, pageMain, pageShell } from "@/lib/design"
 import { DashboardAtmosphere } from "@/components/layout/dashboard-atmosphere"
+import { PageHeaderMark } from "@/components/layout/page-header-mark"
 
 export function DashboardPage({
   children,
@@ -39,7 +40,8 @@ export function DashboardPageHeader({
 }) {
   return (
     <header className={cn(pageHeader, className)}>
-      <div className="min-w-0 flex-1 space-y-2">
+      <div className="min-w-0 flex-1 space-y-3">
+        <PageHeaderMark title={title} />
         <h1 className="text-headline-lg">{title}</h1>
         {description ? (
           <p className="max-w-4xl text-pretty text-body-md text-muted-foreground">{description}</p>
@@ -59,11 +61,7 @@ export function DashboardPageCard({
 }) {
   return (
     <section className={cn(pageCard, "relative overflow-hidden", className)}>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
-      />
-      <div className="relative">{children}</div>
+      {children}
     </section>
   )
 }

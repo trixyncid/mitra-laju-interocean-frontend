@@ -21,7 +21,11 @@ import {
   tableHeaderRow,
   tableRowClass,
   tableShell,
+  stickyActionCell,
+  stickyActionHeaderCell,
 } from "@/lib/design"
+import { cn } from "@/lib/utils"
+import { isActionColumn } from "@/lib/data-table"
 import type { TableFilterConfig } from "@/lib/data-table-filters"
 import {
   Table,
@@ -46,6 +50,8 @@ type ServerEntityDataTableProps<TData, TValue> = {
   applied: AppliedTableFilters
   onApply: (next: AppliedTableFilters) => void
   extra?: ReactNode
+  /** Shown between the toolbar and the table, e.g. active column filters. */
+  beforeTable?: ReactNode
 }
 
 export function ServerEntityDataTable<TData, TValue>({
@@ -62,6 +68,7 @@ export function ServerEntityDataTable<TData, TValue>({
   applied,
   onApply,
   extra,
+  beforeTable,
 }: ServerEntityDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const pagination = useMemo(
@@ -103,13 +110,21 @@ export function ServerEntityDataTable<TData, TValue>({
         extra={extra}
       />
 
+      {beforeTable}
+
       <div className={tableShell}>
         <Table>
           <TableHeader className="[&_tr]:border-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className={tableHeaderRow}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className={tableHeaderCell}>
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      tableHeaderCell,
+                      isActionColumn(header.column.id) && stickyActionHeaderCell
+                    )}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -126,7 +141,13 @@ export function ServerEntityDataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} className={tableRowClass}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={tableCellClass}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        tableCellClass,
+                        isActionColumn(cell.column.id) && stickyActionCell
+                      )}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

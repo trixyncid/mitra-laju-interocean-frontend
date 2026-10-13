@@ -1,110 +1,75 @@
 "use client"
 
 import type { DashboardContainerStats, DashboardData } from "@/app/dashboard/dashboard-types"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { glassPanel, glassShine } from "@/lib/design"
-import { cn } from "@/lib/utils"
+import { OverviewCard } from "@/components/dashboard/overview-card"
 
-const SIZE_COLORS: Record<string, string> = {
-  "20": "var(--chart-1)",
-  "40": "var(--chart-3)",
-}
+/** Fixed order so a given size/type keeps its color across periods. */
+const SERIES_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-5)"]
 
-const TYPE_COLORS: Record<string, string> = {
-  DRY: "var(--chart-2)",
-  RF: "var(--chart-4)",
-}
-
-const FALLBACK_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)"]
-
-function MixList({
-  title,
-  rows,
-  colors,
-}: {
-  title: string
-  rows: DashboardContainerStats["bySize"]
-  colors: Record<string, string>
-}) {
+function MixBar({ title, rows }: { title: string; rows: DashboardContainerStats["bySize"] }) {
   const total = rows.reduce((sum, row) => sum + row.count, 0)
-
-  if (rows.length === 0) {
-    return (
-      <div>
-        <p className="mb-2 text-sm font-medium">{title}</p>
-        <p className="text-sm text-muted-foreground">No container lines in this range.</p>
-      </div>
-    )
-  }
+  const sorted = [...rows].sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <div className="space-y-2.5">
-      <p className="text-sm font-medium">{title}</p>
-      {rows.map((row, index) => {
-        const share = total === 0 ? 0 : Math.round((row.count / total) * 100)
-        const color = colors[row.name] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length]
-
-        return (
-          <div key={`${title}-${row.name}`}>
-            <div className="mb-1 flex items-center gap-2 text-sm">
-              <span className="size-2.5 shrink-0 rounded-md" style={{ backgroundColor: color }} />
-              <span className="truncate text-muted-foreground">{row.name}</span>
-              <span className="ml-auto font-semibold tabular-nums">
-                {row.count.toLocaleString("id-ID")}
-              </span>
-              <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
-                {share}%
-              </span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(214,227,255,0.45)]">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${share}%`, backgroundColor: color }}
-              />
-            </div>
-          </div>
-        )
-      })}
+    <div>
+      <p className="mb-2 text-sm text-muted-foreground">{title}</p>
+      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted">
+        {sorted.map((row, index) => (
+          <div
+            key={row.name}
+            className="h-full first:rounded-l-full last:rounded-r-full"
+            style={{
+              width: `${total === 0 ? 0 : (row.count / total) * 100}%`,
+              backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length],
+            }}
+            title={`${row.name}: ${row.count}`}
+          />
+        ))}
+      </div>
+      <ul className="mt-3 space-y-1.5">
+        {sorted.map((row, index) => (
+          <li key={row.name} className="flex items-center gap-2 text-sm">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length] }}
+            />
+            <span className="truncate text-foreground/80">{row.name}</span>
+            <span className="ml-auto font-medium tabular-nums text-foreground">
+              {row.count.toLocaleString("id-ID")}
+            </span>
+            <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
+              {total === 0 ? 0 : Math.round((row.count / total) * 100)}%
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
 
 export function DashboardContainerMix({ data }: { data: DashboardData }) {
   const { total, teu, bySize, byType } = data.containerStats
-  const hasData = total > 0
 
   return (
-    <Card className={cn(glassPanel, "relative h-full min-w-0 gap-0 overflow-hidden p-6 shadow-none lg:p-7")}>
-      <div aria-hidden className={glassShine} />
-      <CardHeader className="pb-2">
-        <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-          Mix
+    <OverviewCard
+      title="Container Mix"
+      description={
+        total > 0
+          ? `${total.toLocaleString("id-ID")} boxes · ${teu.toLocaleString("id-ID")} TEU`
+          : "Size and type split this period"
+      }
+      className="h-full"
+    >
+      {total > 0 ? (
+        <div className="space-y-6">
+          <MixBar title="By size" rows={bySize} />
+          <MixBar title="By type" rows={byType} />
+        </div>
+      ) : (
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          No containers on operationals in this date range.
         </p>
-        <CardTitle>Container mix</CardTitle>
-        <CardDescription>
-          {hasData
-            ? `${total.toLocaleString("id-ID")} boxes · ${teu.toLocaleString("id-ID")} TEU`
-            : "Size and type split for containers in this period"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {hasData ? (
-          <div className="grid grid-cols-1 gap-6">
-            <MixList title="By size" rows={bySize} colors={SIZE_COLORS} />
-            <MixList title="By type" rows={byType} colors={TYPE_COLORS} />
-          </div>
-        ) : (
-          <p className="py-12 text-center text-sm text-muted-foreground">
-            No containers on operationals in this date range.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </OverviewCard>
   )
 }

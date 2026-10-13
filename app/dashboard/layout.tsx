@@ -1,10 +1,8 @@
 "use client"
 
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-
-import { useRequireAuth } from "@/hooks/use-auth-redirect";
+import { SupportedByTrixync } from "@/components/brand/trixync-mark"
+import { AppTopNav } from "@/components/layout/app-top-nav"
+import { useRequireAuth } from "@/hooks/use-auth-redirect"
 import { DashboardRouteGuard } from "@/components/dashboard-route-guard";
 import DashboardPrepLoading from "@/components/loading/dashboard-prep-loading";
 
@@ -22,27 +20,16 @@ export default function DashboardLayout({
   if (!session) return null
 
   return (
-    <>
-        <SidebarProvider
-          style={
-            {
-                "--sidebar-width": "calc(var(--spacing) * 72)",
-                "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-          }
-        >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-            <SiteHeader />
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="@container/main flex min-h-0 flex-1 flex-col">
-                  <div className="flex min-h-0 flex-1 flex-col">
-                    <DashboardRouteGuard>{children}</DashboardRouteGuard>
-                  </div>
-                </div>
-              </div>
-            </SidebarInset>
-        </SidebarProvider>
-    </>
+    <div className="relative isolate flex min-h-svh flex-col">
+      <div className="mli-canvas" aria-hidden />
+      <AppTopNav />
+      <div className="@container/main flex min-h-0 flex-1 flex-col">
+        <DashboardRouteGuard>{children}</DashboardRouteGuard>
+      </div>
+      <footer className="mx-auto flex w-full max-w-[var(--mli-container-max)] flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border/60 px-4 pt-4 pb-6 text-xs text-muted-foreground sm:px-6 lg:px-8">
+        <span>© {new Date().getFullYear()} Mitra Laju Interocean</span>
+        <SupportedByTrixync className="-mr-2.5" />
+      </footer>
+    </div>
   );
 }

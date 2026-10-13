@@ -29,13 +29,43 @@ export const customerKeys = {
   search: (term: string) => [...customerKeys.all, "search", term] as const,
 }
 
+export const vendorInvoiceKeys = {
+  all: ["vendor-invoices"] as const,
+  lists: () => [...vendorInvoiceKeys.all, "list"] as const,
+  list: (params: unknown) => [...vendorInvoiceKeys.lists(), params] as const,
+  breakdownLists: () => [...vendorInvoiceKeys.all, "breakdown-list"] as const,
+  breakdownList: (params: unknown) =>
+    [...vendorInvoiceKeys.breakdownLists(), params] as const,
+  details: () => [...vendorInvoiceKeys.all, "detail"] as const,
+  detail: (id: string) => [...vendorInvoiceKeys.details(), id] as const,
+}
+
+export const sellingLineKeys = {
+  all: ["selling-lines"] as const,
+  lists: () => [...sellingLineKeys.all, "list"] as const,
+  details: () => [...sellingLineKeys.all, "detail"] as const,
+  detail: (id: string) => [...sellingLineKeys.details(), id] as const,
+}
+
+export const salesKeys = {
+  all: ["sales"] as const,
+  lists: () => [...salesKeys.all, "list"] as const,
+  details: () => [...salesKeys.all, "detail"] as const,
+  detail: (id: string) => [...salesKeys.details(), id] as const,
+}
+
+export const customerInvoiceKeys = {
+  all: ["customer-invoices"] as const,
+  lists: () => [...customerInvoiceKeys.all, "list"] as const,
+  details: () => [...customerInvoiceKeys.all, "detail"] as const,
+  detail: (id: string) => [...customerInvoiceKeys.details(), id] as const,
+  nextNumber: (salesId: string, type: string) => [...customerInvoiceKeys.all, "next-number", salesId, type] as const,
+}
+
 export const costingKeys = {
   all: ["costings"] as const,
   lists: () => [...costingKeys.all, "list"] as const,
   list: (params: unknown) => [...costingKeys.lists(), params] as const,
-  breakdownLists: () => [...costingKeys.all, "breakdown-list"] as const,
-  breakdownList: (params: unknown) =>
-    [...costingKeys.breakdownLists(), params] as const,
   details: () => [...costingKeys.all, "detail"] as const,
   detail: (id: string) => [...costingKeys.details(), id] as const,
 }

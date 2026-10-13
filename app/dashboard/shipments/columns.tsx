@@ -1,10 +1,13 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
+import { ColumnFilterHeader } from "@/components/column-filter/column-filter"
+import { formatCalendarDate } from "@/lib/date-input"
 import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
 import { IconArrowRight } from "@tabler/icons-react"
 import { cn, localDate } from "@/lib/utils"
 import Link from "next/link"
+import { shipmentReference } from "@/lib/shipment-reference"
 import { Info } from "lucide-react"
 import { ShipmentLifecycleChip, WarningChip } from "@/components/ui/status-chip"
 import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
@@ -34,7 +37,6 @@ export type Shipment = {
     id?: string
     customerCodeId: string
     customerShipperId: string
-    orderNumber: string
     status: ShipmentStatus
     customerCode?: { customerName: string, customerCode: string }
     customerShipper?: { name: string }
@@ -43,6 +45,9 @@ export type Shipment = {
         blNumber?: string | null
         bookingNumber?: string | null
         remarks?: string | null
+        eta?: string | null
+        loadingInAt?: string | null
+        loadingOutAt?: string | null
         portDeparture: { portName: string; portCountry: string } | null
         portDestination: { portName: string; portCountry: string } | null
         vessel?: { vesselName: string; voyageNumber: string } | null
@@ -114,12 +119,13 @@ function LabeledStack({
 
 export const columns: ColumnDef<Shipment>[] = [
     {
-        accessorKey: "orderNumber",
-        header: ({ column }) => sortHeader(column, "Order Number"),
+        id: "reference",
+        accessorFn: (row) => shipmentReference(row),
+        header: ({ column }) => sortHeader(column, "Shipment"),
         ...textSort,
         cell: ({ row }) => (
             <div className={`${primaryText} flex items-center gap-x-1`}>
-                <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link>
+                <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ shipmentReference(row.original) }</Link>
                 <Info className="size-3.5 text-muted-foreground" />
             </div>
         )
@@ -134,7 +140,12 @@ export const columns: ColumnDef<Shipment>[] = [
                 row.customerShipper?.name ?? "",
                 row.shipmentOperational?.shipmentType ?? "",
             ].join(" "),
-        header: ({ column }) => sortHeader(column, "Customer"),
+        header: () => (
+            <span className="flex items-center gap-4">
+                <ColumnFilterHeader field="customer" sortKey="customer" label="Customer" />
+                <ColumnFilterHeader field="type" sortKey="type" label="Type" />
+            </span>
+        ),
         ...textSort,
         cell: ({ row }) => {
             const customer = row.original.customerCode
@@ -164,7 +175,7 @@ export const columns: ColumnDef<Shipment>[] = [
             if (!vessel) return ""
             return `${vessel.vesselName} v. ${vessel.voyageNumber}`
         },
-        header: ({ column }) => sortHeader(column, "Vessel"),
+        header: () => <ColumnFilterHeader field="vessel" sortKey="vessel" label="Vessel" />,
         ...textSort,
         enableGlobalFilter: false,
         cell: ({ row }) => {
@@ -186,7 +197,13 @@ export const columns: ColumnDef<Shipment>[] = [
             row.shipmentOperational
                 ? `${row.shipmentOperational.portDeparture?.portName ?? ""} ${row.shipmentOperational.portDestination?.portName ?? ""}`
                 : "",
-        header: ({ column }) => sortHeader(column, "Route"),
+        header: () => (
+            <span className="flex items-center gap-2">
+                <ColumnFilterHeader field="departure" sortKey="departure" label="From" />
+                <IconArrowRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <ColumnFilterHeader field="destination" sortKey="destination" label="To" />
+            </span>
+        ),
         ...textSort,
         cell: ({ row }) => {
             if (!row.original.shipmentOperational) {
@@ -207,10 +224,32 @@ export const columns: ColumnDef<Shipment>[] = [
         }
     },
     {
+        id: "loadingOutAt",
+        accessorFn: (row) => row.shipmentOperational?.loadingOutAt ?? "",
+        header: () => <ColumnFilterHeader field="loading" sortKey="loading" label="Loading out" />,
+        enableGlobalFilter: false,
+        cell: ({ row }) => (
+            <span className={cn(secondaryText, "whitespace-nowrap")}>
+                {formatCalendarDate(row.original.shipmentOperational?.loadingOutAt, "—")}
+            </span>
+        ),
+    },
+    {
+        id: "eta",
+        accessorFn: (row) => row.shipmentOperational?.eta ?? "",
+        header: () => <ColumnFilterHeader field="eta" sortKey="eta" label="ETA" />,
+        enableGlobalFilter: false,
+        cell: ({ row }) => (
+            <span className={cn(secondaryText, "whitespace-nowrap")}>
+                {formatCalendarDate(row.original.shipmentOperational?.eta, "—")}
+            </span>
+        ),
+    },
+    {
         id: "bookingBl",
         accessorFn: (row) =>
             `${row.shipmentOperational?.bookingNumber ?? ""} ${row.shipmentOperational?.blNumber ?? ""}`,
-        header: ({ column }) => sortHeader(column, "Booking / BL"),
+        header: () => <ColumnFilterHeader field="bl" label="Booking / BL" />,
         ...textSort,
         enableGlobalFilter: false,
         cell: ({ row }) => {
@@ -240,7 +279,15 @@ export const columns: ColumnDef<Shipment>[] = [
                 vendorLabel(row.shipmentOperational?.truckingBookTo) ?? "",
                 vendorLabel(row.shipmentOperational?.freightBookTo) ?? "",
             ].join(" "),
-        header: ({ column }) => sortHeader(column, "Book To"),
+        header: () => (
+            <span className="flex items-center gap-1">
+                Book to:
+                <span className="ml-2 flex items-center gap-4">
+                    <ColumnFilterHeader field="trucking" label="Trucking" />
+                    <ColumnFilterHeader field="freight" label="Freight" />
+                </span>
+            </span>
+        ),
         ...textSort,
         enableGlobalFilter: false,
         cell: ({ row }) => {
@@ -312,7 +359,7 @@ export const columns: ColumnDef<Shipment>[] = [
     },
     {
         accessorKey: "status",
-        header: ({ column }) => sortHeader(column, "Status"),
+        header: () => <ColumnFilterHeader field="status" sortKey="status" label="Status" />,
         ...sortDescFirst,
         cell: ({ row }) => <ShipmentLifecycleChip status={row.original.status} />,
         enableGlobalFilter: false,
@@ -335,7 +382,7 @@ export const columns: ColumnDef<Shipment>[] = [
     },
     {
         ...actionColumn,
-        header: "Action",
+        header: "Actions",
         cell: ({ row }) => <ShipmentActionCell row={row} />,
     },
 ]

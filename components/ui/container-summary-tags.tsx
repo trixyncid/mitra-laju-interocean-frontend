@@ -11,7 +11,7 @@ export type ContainerSummary = {
 }
 
 /** Breakdown (or similar) row that may carry optional container metadata. */
-export type CostingContainerSource = {
+export type VendorInvoiceContainerSource = {
   id?: string
   containerNumber?: string | null
   containerSizeId?: string | null
@@ -20,7 +20,7 @@ export type CostingContainerSource = {
   containerType?: { id?: string; name: string } | null
 }
 
-export type DetectedCostingContainer = {
+export type DetectedVendorInvoiceContainer = {
   key: string
   containerNumber: string | null
   containerSize: { id?: string; name: string } | null
@@ -43,7 +43,7 @@ export function formatContainerTag(container: ContainerSummary) {
     .join(" · ")
 }
 
-export function hasCostingContainer(line: CostingContainerSource) {
+export function hasVendorInvoiceContainer(line: VendorInvoiceContainerSource) {
   return Boolean(
     line.containerNumber?.trim() ||
       line.containerSize?.name?.trim() ||
@@ -53,14 +53,14 @@ export function hasCostingContainer(line: CostingContainerSource) {
   )
 }
 
-/** Unique containers inferred from costing breakdown lines (deduped by number). */
-export function extractCostingContainers(
-  lines: CostingContainerSource[] | null | undefined
-): DetectedCostingContainer[] {
-  const byKey = new Map<string, DetectedCostingContainer>()
+/** Unique containers inferred from vendor invoice breakdown lines (deduped by number). */
+export function extractVendorInvoiceContainers(
+  lines: VendorInvoiceContainerSource[] | null | undefined
+): DetectedVendorInvoiceContainer[] {
+  const byKey = new Map<string, DetectedVendorInvoiceContainer>()
 
   for (const [index, line] of (lines ?? []).entries()) {
-    if (!hasCostingContainer(line)) continue
+    if (!hasVendorInvoiceContainer(line)) continue
 
     const number = line.containerNumber?.trim() || null
     const key = number
@@ -110,18 +110,18 @@ function containerMixLabel(container: {
 }
 
 /** e.g. "1x 20DRY · 2x 40RF" from breakdown container fields. */
-export function formatCostingContainerMix(
-  lines: CostingContainerSource[] | null | undefined
+export function formatVendorInvoiceContainerMix(
+  lines: VendorInvoiceContainerSource[] | null | undefined
 ) {
-  return getCostingContainerMixEntries(lines)
+  return getVendorInvoiceContainerMixEntries(lines)
     .map(({ count, label }) => `${count}x ${label}`)
     .join(" · ")
 }
 
-export function getCostingContainerMixEntries(
-  lines: CostingContainerSource[] | null | undefined
+export function getVendorInvoiceContainerMixEntries(
+  lines: VendorInvoiceContainerSource[] | null | undefined
 ) {
-  const containers = extractCostingContainers(lines)
+  const containers = extractVendorInvoiceContainers(lines)
   if (containers.length === 0) return []
 
   const counts = new Map<string, number>()
@@ -138,21 +138,21 @@ export function getCostingContainerMixEntries(
 function mixBadgeClassName(label: string) {
   const upper = label.toUpperCase()
   if (upper.includes("RF")) {
-    return "bg-[rgba(191,219,254,0.65)] text-[var(--mli-primary-container)]"
+    return "bg-secondary text-secondary-foreground"
   }
   if (upper.includes("DRY")) {
-    return "bg-[rgba(214,227,255,0.7)] text-[var(--mli-primary-container)]"
+    return "bg-[rgba(var(--mli-tint-rgb),0.7)] text-[var(--mli-primary-container)]"
   }
   return "bg-secondary text-secondary-foreground"
 }
 
-/** Badge row for costing list Container column, e.g. `1x 20DRY` · `2x 40RF`. */
-export function CostingContainerMixBadges({
+/** Badge row for vendor invoice list Container column, e.g. `1x 20DRY` · `2x 40RF`. */
+export function VendorInvoiceContainerMixBadges({
   lines,
 }: {
-  lines?: CostingContainerSource[] | null
+  lines?: VendorInvoiceContainerSource[] | null
 }) {
-  const entries = getCostingContainerMixEntries(lines)
+  const entries = getVendorInvoiceContainerMixEntries(lines)
   if (entries.length === 0) {
     return <span className={secondaryText}>—</span>
   }

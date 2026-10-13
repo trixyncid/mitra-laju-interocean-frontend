@@ -9,7 +9,7 @@ import { useDeleteVessel } from "@/hooks/use-vessels";
 import { useState } from "react";
 import { usePermissions } from "@/hooks/use-permissions";
 
-export default function VesselActionCell({ row }: { row: Row<Vessel> }) {
+export default function VesselActionCell({ row }: { row: Pick<Row<Vessel>, "original"> }) {
     const { canWrite } = usePermissions()
     const deleteVessel = useDeleteVessel()
     const [open, setOpen] = useState(false)
@@ -18,7 +18,7 @@ export default function VesselActionCell({ row }: { row: Row<Vessel> }) {
 
     return (
         <div className="flex items-center gap-x-2">
-            <VesselForm mode="edit" vesselName={row.original.vesselName} voyageNumber={row.original.voyageNumber} etd={row.original.etd ?? undefined} closingReefer={row.original.closingReefer ?? undefined} isActive={row.original.isActive} id={row.original.id ?? undefined} />
+            <VesselForm mode="edit" vesselName={row.original.vesselName} voyageNumber={row.original.voyageNumber} etd={row.original.etd ?? undefined} eta={row.original.eta ?? undefined} closingReefer={row.original.closingReefer ?? undefined} isActive={row.original.isActive} id={row.original.id ?? undefined} />
             <Dialog open={open} onOpenChange={(next) => { if (deleteVessel.isPending) return; setOpen(next) }}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon"><IconTrash className="text-[var(--mli-on-error-container)] hover:bg-[var(--mli-error-container)]" /></Button>

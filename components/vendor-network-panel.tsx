@@ -107,7 +107,7 @@ function EmptyState({
         className
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+      <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(var(--mli-tint-rgb),0.45)] text-[var(--mli-primary-container)]">
         <Icon className="size-6" />
       </div>
       <div className="space-y-1">
@@ -125,7 +125,7 @@ function openDialogAfterMenu(open: () => void) {
 
 function CountPill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-md bg-[rgba(214,227,255,0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
+    <span className="inline-flex items-center rounded-md bg-[rgba(var(--mli-tint-rgb),0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
       {children}
     </span>
   )
@@ -143,10 +143,10 @@ function ContactRow({
   const whatsappUrl = toWhatsAppUrl(contact.phoneNumber)
 
   return (
-    <li className="flex flex-col gap-3 border-b border-[rgba(214,227,255,0.3)] py-3.5 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-center gap-3">
-        <Avatar>
-          <AvatarFallback className="bg-secondary text-secondary-foreground">
+    <li className="flex min-w-0 items-start justify-between gap-3 rounded-xl border border-border/70 bg-card p-3">
+      <div className="flex min-w-0 items-start gap-3">
+        <Avatar className="size-9 rounded-lg">
+          <AvatarFallback className="rounded-lg bg-[var(--mli-import-container)] text-xs font-semibold text-[var(--mli-on-import-container)]">
             {getInitialContactName(contact.contactName)}
           </AvatarFallback>
         </Avatar>
@@ -155,10 +155,10 @@ function ContactRow({
             <p className="text-sm font-semibold">{contact.contactName}</p>
             {!contact.isActive ? <StatusChip active={false} /> : null}
           </div>
-          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-3">
-            <span className="inline-flex items-center gap-1.5">
+          <div className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <IconMail className="size-3.5 shrink-0" />
-              {contact.email === "" ? "No email" : contact.email}
+              <span className="truncate">{contact.email === "" ? "No email" : contact.email}</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
               <IconPhone className="size-3.5 shrink-0" />
@@ -168,7 +168,7 @@ function ContactRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
+      <div className="flex shrink-0 items-center gap-1.5">
         {whatsappUrl ? (
           <Button variant="outline" size="icon-sm" asChild>
             <Link
@@ -212,17 +212,22 @@ function LocationCard({
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   return (
-    <article className={cn(glassInset, "space-y-5 p-5 lg:p-6")}>
+    <article className="overflow-hidden rounded-2xl bg-card shadow-elev-1">
+      {/* City band so offices are easy to scan. */}
+      <div className="flex items-center gap-2 bg-[linear-gradient(120deg,#0f2f57,#135c55)] px-5 py-2.5 text-xs font-medium text-white">
+        <IconMapPin className="size-3.5 shrink-0" />
+        <span className="truncate">
+          {[location.city, location.country].filter((part) => part && part.trim()).join(", ") || "Office"}
+        </span>
+      </div>
+      <div className="space-y-5 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            <IconMapPin className="size-4 shrink-0 text-[var(--mli-primary-container)]" />
-            <h3 className="text-base font-semibold tracking-tight">{location.addressLine1}</h3>
-          </div>
+          <h3 className="text-base font-semibold tracking-tight">{location.addressLine1}</h3>
           {secondaryAddress ? (
-            <p className="pl-6 text-sm text-muted-foreground">{secondaryAddress}</p>
+            <p className="text-sm text-muted-foreground">{secondaryAddress}</p>
           ) : null}
-          <p className="pl-6 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Updated {localDate(location.updatedAt)} by {location.updatedBy?.name ?? "Unknown"}
           </p>
         </div>
@@ -290,8 +295,8 @@ function LocationCard({
       <div>
         <div className="mb-1 flex items-center gap-2">
           <IconUsers className="size-4 text-[var(--mli-primary-container)]" />
-          <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-            Contacts · {contacts.length}
+          <p className="text-xs font-medium text-muted-foreground">
+            {contacts.length} contact{contacts.length === 1 ? "" : "s"} here
           </p>
         </div>
 
@@ -300,7 +305,7 @@ function LocationCard({
             icon={IconUsers}
             title="No contacts yet"
             description="Add someone at this office so your team knows who to call."
-            className="rounded-md bg-[rgba(232,238,246,0.45)] py-10"
+            className="rounded-xl surface-inset py-8"
             action={
               <MasterDataWriteGate>
                 <VendorContactForm
@@ -316,7 +321,7 @@ function LocationCard({
             }
           />
         ) : (
-          <ul className="divide-y-0">
+          <ul className="mt-2 grid gap-2">
             {contacts.map((contact) => (
               <ContactRow
                 key={contact.id}
@@ -327,6 +332,7 @@ function LocationCard({
             ))}
           </ul>
         )}
+      </div>
       </div>
     </article>
   )
@@ -355,7 +361,7 @@ export function VendorNetworkPanel({
         <div className="min-w-0 space-y-1">
           <h2 className="text-headline-md font-semibold tracking-tight">Office network</h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Manage vendor offices and the contacts at each location.
+            Each office of this vendor, with the people you can call there.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -425,7 +431,7 @@ export function VendorNetworkPanel({
               className={cn(glassInset, "py-10")}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="grid items-start gap-4 xl:grid-cols-2">
               {filteredLocations.map((location) => (
                 <LocationCard
                   key={location.id}

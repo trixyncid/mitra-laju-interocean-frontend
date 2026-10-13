@@ -1,6 +1,9 @@
 import {
+  VENDOR_INVOICE_MODULE_ENABLED,
   COSTING_MODULE_ENABLED,
   SELLING_MODULE_ENABLED,
+  SALES_MODULE_ENABLED,
+  CUSTOMER_INVOICE_MODULE_ENABLED,
   isModuleEnabled,
 } from "@/lib/feature-flags"
 
@@ -14,18 +17,41 @@ export type AppModule =
   | "VESSEL"
   | "CONTAINER"
   | "SHIPMENT"
+  | "VENDOR_INVOICE"
   | "COSTING"
   | "SELLING"
+  | "SALES"
+  | "CUSTOMER_INVOICE"
   | "USER"
   | "ROLE"
+
+export const MODULE_LABEL: Record<AppModule, string> = {
+  DASHBOARD: "Dashboard",
+  CUSTOMER: "Customers",
+  VENDOR: "Vendors",
+  PORT: "Ports",
+  VESSEL: "Vessels",
+  CONTAINER: "Containers",
+  SHIPMENT: "Shipments",
+  VENDOR_INVOICE: "Vendor invoices",
+  COSTING: "Costing",
+  SELLING: "Selling",
+  SALES: "Sales",
+  CUSTOMER_INVOICE: "Customer invoices",
+  USER: "Users",
+  ROLE: "Roles",
+}
 
 /** @deprecated Prefer AppModule — kept for call-site compatibility. */
 export type AppResource =
   | "dashboard"
   | "masterData"
   | "shipments"
+  | "vendor-invoices"
   | "costings"
   | "sellings"
+  | "sales"
+  | "customer-invoices"
   | "users"
   | "roles"
 
@@ -56,8 +82,11 @@ export type UserRole = string
 const RESOURCE_TO_MODULE: Record<Exclude<AppResource, "masterData">, AppModule> = {
   dashboard: "DASHBOARD",
   shipments: "SHIPMENT",
+  "vendor-invoices": "VENDOR_INVOICE",
   costings: "COSTING",
   sellings: "SELLING",
+  sales: "SALES",
+  "customer-invoices": "CUSTOMER_INVOICE",
   users: "USER",
   roles: "ROLE",
 }
@@ -200,8 +229,11 @@ export function getRouteModule(
   if (pathname.startsWith("/dashboard/vessels")) return "VESSEL"
   if (pathname.startsWith("/dashboard/containers")) return "CONTAINER"
   if (pathname.startsWith("/dashboard/shipments")) return "SHIPMENT"
+  if (pathname.startsWith("/dashboard/vendor-invoices")) return "VENDOR_INVOICE"
   if (pathname.startsWith("/dashboard/costings")) return "COSTING"
   if (pathname.startsWith("/dashboard/sellings")) return "SELLING"
+  if (pathname.startsWith("/dashboard/sales")) return "SALES"
+  if (pathname.startsWith("/dashboard/customer-invoices")) return "CUSTOMER_INVOICE"
   return null
 }
 
@@ -224,8 +256,11 @@ export function getRouteResource(
   const reverse: Partial<Record<AppModule, AppResource>> = {
     DASHBOARD: "dashboard",
     SHIPMENT: "shipments",
+    VENDOR_INVOICE: "vendor-invoices",
     COSTING: "costings",
     SELLING: "sellings",
+    SALES: "sales",
+    CUSTOMER_INVOICE: "customer-invoices",
     USER: "users",
     ROLE: "roles",
   }
@@ -241,7 +276,7 @@ export function canAccessRouteWithPermissions(
   if (module === null || module === "profile") return true
   if (module === "ROLE") return isAdminRole(roleSlug)
   if (
-    (module === "COSTING" || module === "SELLING") &&
+    (module === "VENDOR_INVOICE" || module === "COSTING" || module === "SELLING" || module === "SALES" || module === "CUSTOMER_INVOICE") &&
     !isModuleEnabled(module)
   ) {
     return false
@@ -254,26 +289,53 @@ export function canManageRoles(roleSlug?: string | null): boolean {
   return isAdminRole(roleSlug)
 }
 
-export function canReadVendorsForCostingWithPermissions(
-  permissions: MyPermissions["permissions"] | null | undefined,
-  roleSlug?: string | null
-): boolean {
-  return (
-    isAdminRole(roleSlug) ||
-    canViewModule(permissions, "VENDOR", roleSlug) ||
-    canWriteModule(permissions, "COSTING", roleSlug)
-  )
+/**
+ * Picker access: choosing a module's records inside a form without having its
+ * page. Never stored — granted automatically to roles that can create or edit a
+ * module listed here. Mirrors PICKER_GRANTS in the backend's lib/permissions.ts.
+ */
+export const PICKER_GRANTS: Partial<Record<AppModule, AppModule[]>> = {
+  SHIPMENT: ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER"],
+  VENDOR_INVOICE: ["VENDOR", "SHIPMENT", "CONTAINER"],
+  COSTING: ["VENDOR", "SALES", "VENDOR_INVOICE"],
+  SELLING: ["CUSTOMER", "SALES", "COSTING"],
+  SALES: ["CUSTOMER", "SHIPMENT", "COSTING", "SELLING"],
+  CUSTOMER_INVOICE: ["SALES", "SELLING"],
 }
 
-export function canReadShipmentsForCostingWithPermissions(
+/** Modules whose create/edit access grants picker access to `module`. */
+export function pickerSources(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  module: AppModule
+): AppModule[] {
+  return (Object.keys(PICKER_GRANTS) as AppModule[]).filter((source) => {
+    if (!PICKER_GRANTS[source]?.includes(module)) return false
+    const flags = flagsFor(permissions, source)
+    return flags.canCreate || flags.canEdit
+  })
+}
+
+export function canPickWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  module: AppModule,
+  roleSlug?: string | null
+): boolean {
+  if (canViewModule(permissions, module, roleSlug)) return true
+  return pickerSources(permissions, module).length > 0
+}
+
+export function canReadVendorsForVendorInvoiceWithPermissions(
   permissions: MyPermissions["permissions"] | null | undefined,
   roleSlug?: string | null
 ): boolean {
-  return (
-    isAdminRole(roleSlug) ||
-    canViewModule(permissions, "SHIPMENT", roleSlug) ||
-    canWriteModule(permissions, "COSTING", roleSlug)
-  )
+  return canPickWithPermissions(permissions, "VENDOR", roleSlug)
+}
+
+export function canReadShipmentsForVendorInvoiceWithPermissions(
+  permissions: MyPermissions["permissions"] | null | undefined,
+  roleSlug?: string | null
+): boolean {
+  return canPickWithPermissions(permissions, "SHIPMENT", roleSlug)
 }
 
 export function canReadContainersWithPermissions(
@@ -281,10 +343,9 @@ export function canReadContainersWithPermissions(
   roleSlug?: string | null
 ): boolean {
   return (
-    isAdminRole(roleSlug) ||
-    canWriteModule(permissions, "COSTING", roleSlug) ||
+    canPickWithPermissions(permissions, "CONTAINER", roleSlug) ||
     canViewModule(permissions, "SHIPMENT", roleSlug) ||
-    canWriteModule(permissions, "SHIPMENT", roleSlug)
+    canViewModule(permissions, "VENDOR_INVOICE", roleSlug)
   )
 }
 
@@ -297,11 +358,20 @@ export function getHomePathFromPermissions(
   const order: { module: AppModule; path: string }[] = [
     { module: "DASHBOARD", path: "/dashboard" },
     { module: "SHIPMENT", path: "/dashboard/shipments" },
+    ...(VENDOR_INVOICE_MODULE_ENABLED
+      ? [{ module: "VENDOR_INVOICE" as const, path: "/dashboard/vendor-invoices" }]
+      : []),
     ...(COSTING_MODULE_ENABLED
       ? [{ module: "COSTING" as const, path: "/dashboard/costings" }]
       : []),
+    ...(SALES_MODULE_ENABLED
+      ? [{ module: "SALES" as const, path: "/dashboard/sales" }]
+      : []),
     ...(SELLING_MODULE_ENABLED
       ? [{ module: "SELLING" as const, path: "/dashboard/sellings" }]
+      : []),
+    ...(CUSTOMER_INVOICE_MODULE_ENABLED
+      ? [{ module: "CUSTOMER_INVOICE" as const, path: "/dashboard/customer-invoices" }]
       : []),
     { module: "CUSTOMER", path: "/dashboard/customers" },
     { module: "USER", path: "/dashboard/users" },

@@ -26,7 +26,7 @@ export default function ContainerLookupActionCell({
   row,
 }: {
   kind: ContainerLookupKind
-  row: Row<ContainerLookup>
+  row: Pick<Row<ContainerLookup>, "original">
 }) {
   const { canWrite } = usePermissions()
   const deleteLookup = useDeleteContainerLookup(kind)

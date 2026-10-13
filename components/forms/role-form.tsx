@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { FormLabel } from "@/components/ui/form-label"
 import { TextField } from "@/components/ui/text-field"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ModuleAccessEditor } from "@/components/roles/module-access-editor"
 import {
   useCreateRole,
   useRoleModules,
@@ -58,11 +59,6 @@ export default function RoleForm({
         .filter((key) => !isFinancialModule(key) || isModuleEnabled(key)),
     [catalog]
   )
-  const moduleLabels = useMemo(() => {
-    const map = new Map<AppModule, string>()
-    for (const item of catalog ?? []) map.set(item.key, item.label)
-    return map
-  }, [catalog])
 
   const [name, setName] = useState(role?.name ?? "")
   const [slug, setSlug] = useState(role?.slug ?? "")
@@ -80,8 +76,11 @@ export default function RoleForm({
         "VESSEL",
         "CONTAINER",
         "SHIPMENT",
+        ...(isModuleEnabled("VENDOR_INVOICE") ? (["VENDOR_INVOICE"] as const) : []),
         ...(isModuleEnabled("COSTING") ? (["COSTING"] as const) : []),
         ...(isModuleEnabled("SELLING") ? (["SELLING"] as const) : []),
+        ...(isModuleEnabled("SALES") ? (["SALES"] as const) : []),
+        ...(isModuleEnabled("CUSTOMER_INVOICE") ? (["CUSTOMER_INVOICE"] as const) : []),
         "USER",
         "ROLE",
       ],
@@ -98,19 +97,13 @@ export default function RoleForm({
   const isSystem = role?.isSystem ?? false
   const isPending = createRole.isPending || updateRole.isPending
 
-  function setFlag(
-    module: AppModule,
-    key: keyof Omit<RolePermission, "module" | "id">,
-    value: boolean
-  ) {
+  function setFlags(module: AppModule, flags: Omit<RolePermission, "module" | "id">) {
     setPermissions((prev) => {
       const base = mergePermissions(
         modules.length ? modules : prev.map((p) => p.module),
         prev
       )
-      return base.map((row) =>
-        row.module === module ? { ...row, [key]: value } : row
-      )
+      return base.map((row) => (row.module === module ? { ...row, ...flags } : row))
     })
   }
 
@@ -123,11 +116,11 @@ export default function RoleForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) {
-      toast.error("Name is required")
+      toast.error("Please enter a name")
       return
     }
     if (!slug.trim()) {
-      toast.error("Slug is required")
+      toast.error("Please enter a code")
       return
     }
 
@@ -189,7 +182,7 @@ export default function RoleForm({
           onChange={(e) => setName(e.target.value)}
         />
         <TextField
-          label="Slug"
+          label="Code"
           required
           id="role-slug"
           value={slug}
@@ -199,8 +192,8 @@ export default function RoleForm({
           }
           description={
             isSystem
-              ? "System role slugs cannot be changed."
-              : "Lowercase snake_case identifier. Changing this updates assigned users."
+              ? "The code of a system role cannot be changed."
+              : "A short name for the system, in small letters. Use _ instead of spaces, for example sales_staff."
           }
         />
         <div className="space-y-2">
@@ -216,16 +209,16 @@ export default function RoleForm({
 
       {isSystem ? (
         <p className="rounded-md border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          System roles always have full access. Permissions and shipment scopes cannot be
-          changed.
+          System roles can do everything. Their access cannot be changed.
         </p>
       ) : (
         <>
           <div className="space-y-3">
             <div>
-              <h3 className="text-base font-semibold">Shipment type scope</h3>
+              <h3 className="text-base font-semibold">Shipment types</h3>
               <p className="text-sm text-muted-foreground">
-                Leave all unchecked to allow every shipment type.
+                Tick the shipment types this role can work on. Leave all empty to allow every
+                type.
               </p>
             </div>
             <div className="flex flex-wrap gap-4">
@@ -241,54 +234,7 @@ export default function RoleForm({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-base font-semibold">Module permissions</h3>
-              <p className="text-sm text-muted-foreground">
-                Configure View, Create, Edit, and Delete for each module.
-              </p>
-            </div>
-            <div className="overflow-x-auto rounded-md border border-border/60">
-              <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="bg-muted/40 text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Module</th>
-                    <th className="px-3 py-2 font-medium">View</th>
-                    <th className="px-3 py-2 font-medium">Create</th>
-                    <th className="px-3 py-2 font-medium">Edit</th>
-                    <th className="px-3 py-2 font-medium">Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resolvedPermissions.map((row) => (
-                    <tr key={row.module} className="border-t border-border/50">
-                      <td className="px-3 py-2 font-medium">
-                        {moduleLabels.get(row.module) ?? row.module}
-                      </td>
-                      {(
-                        [
-                          ["canView", "View"],
-                          ["canCreate", "Create"],
-                          ["canEdit", "Edit"],
-                          ["canDelete", "Delete"],
-                        ] as const
-                      ).map(([key]) => (
-                        <td key={key} className="px-3 py-2">
-                          <Checkbox
-                            checked={row[key]}
-                            onCheckedChange={(checked) =>
-                              setFlag(row.module, key, checked === true)
-                            }
-                            aria-label={`${row.module} ${key}`}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ModuleAccessEditor rows={resolvedPermissions} onChange={setFlags} />
         </>
       )}
 

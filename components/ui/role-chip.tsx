@@ -10,7 +10,7 @@ export function RoleChip({ role, className }: { role: string; className?: string
       : slugGuess === "admin" || role === "Admin"
         ? chipInfo(className)
         : slugGuess === "viewer" || role === "Viewer"
-          ? cn(chipBase, "bg-[rgba(232,238,246,0.85)] text-muted-foreground", className)
+          ? cn(chipBase, "bg-[rgba(var(--mli-panel-rgb),0.85)] text-muted-foreground", className)
           : cn(chipBase, "bg-secondary/80 text-secondary-foreground", className)
 
   return <span className={styles}>{formatRoleLabel(role)}</span>

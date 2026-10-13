@@ -92,7 +92,7 @@ export function CustomerMetadataCard({ customer }: { customer: Customer }) {
           <StatusChip active={customer.isActive} />
         </MetadataRow>
 
-        <Separator className="bg-[rgba(214,227,255,0.35)]" />
+        <Separator className="bg-[rgba(var(--mli-tint-rgb),0.35)]" />
 
         {customer.createdAt ? (
           <MetadataRow icon={IconCalendar} label="Created">

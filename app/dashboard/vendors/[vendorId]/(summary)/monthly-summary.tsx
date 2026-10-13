@@ -21,8 +21,8 @@ import { cn } from "@/lib/utils"
 export type VendorMonthlySummaryRow = {
   key: string
   label: string
-  costingCount: number
-  costingTotal: number
+  vendorInvoiceCount: number
+  vendorInvoiceTotal: number
   paidTotal: number
   unpaidTotal: number
 }
@@ -35,21 +35,21 @@ export default function MonthlySummary({ rows }: { rows: VendorMonthlySummaryRow
   if (rows.length === 0) {
     return (
       <div className={cn(glassInset, "px-6 py-10 text-center text-sm text-muted-foreground")}>
-        No costing transactions yet to summarize.
+        No vendor invoice transactions yet to summarize.
       </div>
     )
   }
 
   const totals = rows.reduce(
     (acc, row) => ({
-      costingCount: acc.costingCount + row.costingCount,
-      costingTotal: acc.costingTotal + row.costingTotal,
+      vendorInvoiceCount: acc.vendorInvoiceCount + row.vendorInvoiceCount,
+      vendorInvoiceTotal: acc.vendorInvoiceTotal + row.vendorInvoiceTotal,
       paidTotal: acc.paidTotal + row.paidTotal,
       unpaidTotal: acc.unpaidTotal + row.unpaidTotal,
     }),
     {
-      costingCount: 0,
-      costingTotal: 0,
+      vendorInvoiceCount: 0,
+      vendorInvoiceTotal: 0,
       paidTotal: 0,
       unpaidTotal: 0,
     }
@@ -61,7 +61,7 @@ export default function MonthlySummary({ rows }: { rows: VendorMonthlySummaryRow
         <TableHeader>
           <TableRow className={tableHeaderRow}>
             <TableHead className={tableHeaderCell}>Month</TableHead>
-            <TableHead className={cn(tableHeaderCell, "text-right")}>Costings</TableHead>
+            <TableHead className={cn(tableHeaderCell, "text-right")}>VendorInvoices</TableHead>
             <TableHead className={cn(tableHeaderCell, "text-right")}>Total</TableHead>
             <TableHead className={cn(tableHeaderCell, "text-right")}>Paid</TableHead>
             <TableHead className={cn(tableHeaderCell, "text-right")}>Unpaid</TableHead>
@@ -72,10 +72,10 @@ export default function MonthlySummary({ rows }: { rows: VendorMonthlySummaryRow
             <TableRow key={row.key} className={tableRowClass}>
               <TableCell className={cn(tableCellClass, "font-medium")}>{row.label}</TableCell>
               <TableCell className={cn(tableCellClass, "text-right tabular-nums")}>
-                {row.costingCount}
+                {row.vendorInvoiceCount}
               </TableCell>
               <TableCell className={cn(tableCellClass, "text-right tabular-nums")}>
-                {formatIdr(row.costingTotal)}
+                {formatIdr(row.vendorInvoiceTotal)}
               </TableCell>
               <TableCell
                 className={cn(
@@ -95,13 +95,13 @@ export default function MonthlySummary({ rows }: { rows: VendorMonthlySummaryRow
               </TableCell>
             </TableRow>
           ))}
-          <TableRow className={cn(tableHeaderRow, "border-t border-[rgba(214,227,255,0.45)]")}>
+          <TableRow className={cn(tableHeaderRow, "border-t border-[rgba(var(--mli-tint-rgb),0.45)]")}>
             <TableCell className={cn(tableCellClass, "font-semibold")}>All months</TableCell>
             <TableCell className={cn(tableCellClass, "text-right tabular-nums font-semibold")}>
-              {totals.costingCount}
+              {totals.vendorInvoiceCount}
             </TableCell>
             <TableCell className={cn(tableCellClass, "text-right tabular-nums font-semibold")}>
-              {formatIdr(totals.costingTotal)}
+              {formatIdr(totals.vendorInvoiceTotal)}
             </TableCell>
             <TableCell
               className={cn(

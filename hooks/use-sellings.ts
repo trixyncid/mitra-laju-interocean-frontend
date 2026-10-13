@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   sellingService,
-  type AddSellingLinesPayload,
   type CreateSellingPayload,
   type SellingListParams,
 } from "@/services/selling.service"
@@ -121,37 +120,6 @@ export const useDeleteSelling = () => {
     onSuccess: () => {
       invalidateSellingQueries(queryClient)
       toast.success("Invoice deleted")
-    },
-  })
-}
-
-export const useAddSellingLines = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string
-      payload: AddSellingLinesPayload
-    }) => sellingService.addLines(id, payload),
-    onSuccess: () => {
-      invalidateSellingQueries(queryClient)
-      toast.success("Lines added")
-    },
-  })
-}
-
-export const useDeleteSellingLine = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ id, lineId }: { id: string; lineId: string }) =>
-      sellingService.deleteLine(id, lineId),
-    onSuccess: () => {
-      invalidateSellingQueries(queryClient)
-      toast.success("Line removed")
     },
   })
 }

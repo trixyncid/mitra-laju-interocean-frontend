@@ -11,7 +11,7 @@ import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 
-export default function PortActionCell({ row }: { row: Row<Port> }) {
+export default function PortActionCell({ row }: { row: Pick<Row<Port>, "original"> }) {
     const { canWrite } = usePermissions()
     const deletePort = useDeletePort()
     const [open, setOpen] = useState(false)

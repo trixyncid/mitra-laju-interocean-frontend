@@ -2,11 +2,8 @@
 
 import TableSkeleton from "@/components/loading/table-skeleton"
 import RoleForm from "@/components/forms/role-form"
-import {
-  DashboardPage,
-  DashboardPageCard,
-  DashboardPageHeader,
-} from "@/components/layout/dashboard-page"
+import { RolePageHero } from "@/components/admin/role-page-hero"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
 import { useRequireSystemAdmin } from "@/hooks/use-require-system-admin"
 
 export default function NewRolePage() {
@@ -24,10 +21,7 @@ export default function NewRolePage() {
 
   return (
     <DashboardPage atmosphere>
-      <DashboardPageHeader
-        title="Create role"
-        description="Define a new role and configure module access."
-      />
+      <RolePageHero />
       <DashboardPageCard>
         <RoleForm mode="create" />
       </DashboardPageCard>

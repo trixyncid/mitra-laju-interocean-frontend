@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import {
   IconArrowLeft,
@@ -133,7 +133,7 @@ function EmptyState({
         className
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]">
+      <div className="flex size-12 items-center justify-center rounded-md bg-[rgba(var(--mli-tint-rgb),0.45)] text-[var(--mli-primary-container)]">
         <Icon className="size-6" />
       </div>
       <div className="space-y-1">
@@ -153,7 +153,7 @@ function openDialogAfterMenu(open: () => void) {
 
 function CountPill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-md bg-[rgba(214,227,255,0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
+    <span className="inline-flex items-center rounded-md bg-[rgba(var(--mli-tint-rgb),0.4)] px-2.5 py-1 text-xs font-medium text-[var(--mli-primary-container)]">
       {children}
     </span>
   )
@@ -173,10 +173,10 @@ function ContactRow({
   const whatsappUrl = toWhatsAppUrl(contact.phoneNumber)
 
   return (
-    <li className="flex flex-col gap-3 border-b border-[rgba(214,227,255,0.3)] py-3.5 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-center gap-3">
-        <Avatar>
-          <AvatarFallback className="bg-secondary text-secondary-foreground">
+    <li className="flex min-w-0 items-start justify-between gap-3 rounded-xl surface-inset p-3">
+      <div className="flex min-w-0 items-start gap-3">
+        <Avatar className="size-9">
+          <AvatarFallback className="bg-card text-xs font-semibold text-primary shadow-elev-1">
             {getInitialContactName(contact.contactName)}
           </AvatarFallback>
         </Avatar>
@@ -185,10 +185,10 @@ function ContactRow({
             <p className="text-sm font-semibold">{contact.contactName}</p>
             {!contact.isActive ? <StatusChip active={false} /> : null}
           </div>
-          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-3">
-            <span className="inline-flex items-center gap-1.5">
+          <div className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <IconMail className="size-3.5 shrink-0" />
-              {contact.email === "" ? "No email" : contact.email}
+              <span className="truncate">{contact.email === "" ? "No email" : contact.email}</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
               <IconPhone className="size-3.5 shrink-0" />
@@ -198,7 +198,7 @@ function ContactRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
+      <div className="flex shrink-0 items-center gap-1.5">
         {whatsappUrl ? (
           <Button variant="outline" size="icon-sm" asChild>
             <Link
@@ -245,17 +245,25 @@ function LocationSection({
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   return (
-    <section className="space-y-4 border-t border-[rgba(214,227,255,0.35)] pt-6 first:border-t-0 first:pt-0">
+    <li className="relative">
+      {/* Branch from the trunk to this place. */}
+      <span aria-hidden className="absolute top-5 -left-3 h-px w-3 bg-border" />
+      <span
+        aria-hidden
+        className="absolute top-1.5 -left-10 flex size-7 items-center justify-center rounded-full bg-card text-primary shadow-elev-1 ring-2 ring-[var(--mli-export-container)]"
+      >
+        <IconMapPin className="size-3.5" />
+      </span>
+      <section className="space-y-4 rounded-2xl bg-card p-4 shadow-elev-1 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2">
-            <IconMapPin className="size-4 shrink-0 text-[var(--mli-primary-container)]" />
             <h4 className="text-base font-semibold tracking-tight">{location.addressLine1}</h4>
           </div>
           {secondaryAddress ? (
-            <p className="pl-6 text-sm text-muted-foreground">{secondaryAddress}</p>
+            <p className="text-sm text-muted-foreground">{secondaryAddress}</p>
           ) : null}
-          <p className="pl-6 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Updated {localDate(location.updatedAt)} by {location.updatedBy?.name ?? "Unknown"}
           </p>
         </div>
@@ -325,8 +333,8 @@ function LocationSection({
       <div>
         <div className="mb-1 flex items-center gap-2">
           <IconUsers className="size-4 text-[var(--mli-primary-container)]" />
-          <p className="text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-            Contacts · {contacts.length}
+          <p className="text-xs font-medium text-muted-foreground">
+            {contacts.length} contact{contacts.length === 1 ? "" : "s"} here
           </p>
         </div>
 
@@ -334,8 +342,8 @@ function LocationSection({
           <EmptyState
             icon={IconUsers}
             title="No contacts yet"
-            description="Add someone at this location so your team knows who to call."
-            className="rounded-md bg-[rgba(232,238,246,0.45)] py-10"
+            description="Add someone at this place so your team knows who to call."
+            className="rounded-xl surface-inset py-8"
             action={
               <MasterDataWriteGate>
                 <CustomerContactForm
@@ -352,7 +360,7 @@ function LocationSection({
             }
           />
         ) : (
-          <ul className="divide-y-0">
+          <ul className="mt-2 grid gap-2 xl:grid-cols-2">
             {contacts.map((contact) => (
               <ContactRow
                 key={contact.id}
@@ -365,7 +373,8 @@ function LocationSection({
           </ul>
         )}
       </div>
-    </section>
+      </section>
+    </li>
   )
 }
 
@@ -385,8 +394,8 @@ function ShipperRailItem({
       className={cn(
         "w-full rounded-md border px-3.5 py-3 text-left transition-[border-color,background-color,box-shadow] duration-200",
         selected
-          ? "border-[rgba(27,54,93,0.35)] bg-[var(--mli-primary-container)] text-primary-foreground shadow-[0_8px_24px_rgba(27,54,93,0.18)]"
-          : "border-transparent bg-transparent hover:border-[rgba(214,227,255,0.55)] hover:bg-[rgba(247,249,251,0.7)]"
+          ? "border-[rgba(var(--mli-ink-rgb),0.35)] bg-[var(--mli-primary-container)] text-primary-foreground shadow-[0_8px_24px_rgba(var(--mli-ink-rgb),0.18)]"
+          : "border-transparent bg-transparent hover:border-[rgba(var(--mli-tint-rgb),0.55)] hover:bg-[rgba(var(--mli-inset-rgb),0.7)]"
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -453,7 +462,7 @@ function ShipperDetail({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.55)] text-[var(--mli-primary-container)]">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full brand-fill text-primary-foreground">
             <IconShip className="size-5" />
           </div>
           <div className="min-w-0 space-y-2">
@@ -545,12 +554,12 @@ function ShipperDetail({
         </MasterDataWriteGate>
       </div>
 
-      <div className="border-t border-[rgba(214,227,255,0.35)] pt-6">
+      <div>
         {locations.length === 0 ? (
           <EmptyState
             icon={IconMapPin}
             title="No locations"
-            description="Add an office or warehouse address for this shipper."
+            description="Add an office or warehouse for this shipper."
             action={
               <MasterDataWriteGate>
                 <CustomerLocationForm
@@ -570,7 +579,7 @@ function ShipperDetail({
             }
           />
         ) : (
-          <div className="space-y-8">
+          <ol className="relative space-y-4 pl-12 before:absolute before:-top-6 before:bottom-8 before:left-[1.375rem] before:w-px before:bg-border">
             {locations.map((location) => (
               <LocationSection
                 key={location.id}
@@ -579,7 +588,7 @@ function ShipperDetail({
                 shipperId={shipper.id}
               />
             ))}
-          </div>
+          </ol>
         )}
       </div>
     </div>
@@ -609,22 +618,11 @@ export function CustomerNetworkPanel({
     return shippers.filter((shipper) => shipperMatchesQuery(shipper, q))
   }, [shippers, shipperSearch])
 
-  useEffect(() => {
-    if (filteredShippers.length === 0) {
-      setSelectedShipperId(null)
-      return
-    }
-
-    setSelectedShipperId((current) => {
-      if (current && filteredShippers.some((shipper) => shipper.id === current)) {
-        return current
-      }
-      return filteredShippers[0].id
-    })
-  }, [filteredShippers])
-
+  // Keep the picked shipper while it matches the search; otherwise show the first match.
   const selectedShipper =
-    filteredShippers.find((shipper) => shipper.id === selectedShipperId) ?? null
+    filteredShippers.find((shipper) => shipper.id === selectedShipperId) ??
+    filteredShippers[0] ??
+    null
 
   const selectShipper = (shipperId: string) => {
     setSelectedShipperId(shipperId)
@@ -637,7 +635,7 @@ export function CustomerNetworkPanel({
         <div className="min-w-0 space-y-1">
           <h2 className="text-headline-md font-semibold tracking-tight">Shipper network</h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Select a shipper to manage its locations and contacts.
+            Pick a shipper. You will see its places and the people at each place.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -724,7 +722,7 @@ export function CustomerNetworkPanel({
                   <ShipperRailItem
                     key={shipper.id}
                     shipper={shipper}
-                    selected={shipper.id === selectedShipperId}
+                    selected={shipper.id === selectedShipper?.id}
                     onSelect={() => selectShipper(shipper.id)}
                   />
                 ))}

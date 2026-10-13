@@ -9,36 +9,29 @@ import { ShipmentLifecycleChip } from "@/components/ui/status-chip"
 import type { ShipmentStatus } from "@/lib/shipment-status"
 import {
   dateSort,
-  numberSort,
   sortHeader,
   textSort,
 } from "@/lib/data-table"
-import {
-  COSTING_MODULE_ENABLED,
-  SELLING_MODULE_ENABLED,
-} from "@/lib/feature-flags"
 
 export type LinkedShipment = {
   id: string
   eta: string
-  orderNumber: string
+  reference: string
   customerCode: string
   customerShipper: string
   departurePort: string
   arrivalPort: string
   status: ShipmentStatus
-  costingTotal: number
-  sellingTotal: number
 }
 
 export const columns: ColumnDef<LinkedShipment>[] = [
   {
-    accessorKey: "orderNumber",
-    header: ({ column }) => sortHeader(column, "Shipment Order Number"),
+    accessorKey: "reference",
+    header: ({ column }) => sortHeader(column, "Shipment"),
     ...textSort,
     cell: ({ row }) => {
       return <div className="font-bold flex items-center gap-x-1">
-        <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.orderNumber }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
+        <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ row.original.reference }</Link><Info className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
     }
   },
@@ -60,40 +53,6 @@ export const columns: ColumnDef<LinkedShipment>[] = [
     header: ({ column }) => sortHeader(column, "Shipper"),
     ...textSort,
   },
-  ...(COSTING_MODULE_ENABLED
-    ? ([
-        {
-          accessorKey: "costingTotal",
-          header: ({ column }) => sortHeader(column, "Costing"),
-          ...numberSort,
-          cell: ({ row }) => (
-            <span className="text-sm text-muted-foreground">
-              {row.original.costingTotal.toLocaleString("id-ID", {
-                style: "currency",
-                currency: "IDR",
-              })}
-            </span>
-          ),
-        },
-      ] as ColumnDef<LinkedShipment>[])
-    : []),
-  ...(SELLING_MODULE_ENABLED
-    ? ([
-        {
-          accessorKey: "sellingTotal",
-          header: ({ column }) => sortHeader(column, "Selling"),
-          ...numberSort,
-          cell: ({ row }) => (
-            <span className="text-sm text-muted-foreground">
-              {row.original.sellingTotal.toLocaleString("id-ID", {
-                style: "currency",
-                currency: "IDR",
-              })}
-            </span>
-          ),
-        },
-      ] as ColumnDef<LinkedShipment>[])
-    : []),
   {
     id: "route",
     accessorFn: (row) => `${row.departurePort} ${row.arrivalPort}`,

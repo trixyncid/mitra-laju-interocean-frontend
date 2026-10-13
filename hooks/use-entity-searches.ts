@@ -1,5 +1,5 @@
 import { useEntityListSearch } from "@/hooks/use-entity-list-search"
-import { costingService } from "@/services/costing.service"
+import { vendorInvoiceService } from "@/services/vendor-invoice.service"
 import { portsService } from "@/services/ports.service"
 import { rolesService } from "@/services/roles.service"
 import { sellingService } from "@/services/selling.service"
@@ -7,7 +7,7 @@ import { shipmentsService } from "@/services/shipments.service"
 import { vendorsService } from "@/services/vendors.service"
 import { vesselsService } from "@/services/vessels.service"
 import {
-  costingKeys,
+  vendorInvoiceKeys,
   portKeys,
   roleKeys,
   sellingKeys,
@@ -71,10 +71,10 @@ export function useShipmentSearch(
   )
 }
 
-export function useCostingSearch(search: string, enabled = true) {
+export function useVendorInvoiceSearch(search: string, enabled = true) {
   return useEntityListSearch(
-    [...costingKeys.all, "search"],
-    costingService.getAll,
+    [...vendorInvoiceKeys.all, "search"],
+    vendorInvoiceService.getAll,
     search,
     enabled,
     undefined,
@@ -82,21 +82,20 @@ export function useCostingSearch(search: string, enabled = true) {
   )
 }
 
-export function useCostingBreakdownSearch(
+/** Vendor invoice lines that are not in any costing yet. */
+export function useUnassignedBreakdownSearch(
   search: string,
   enabled = true,
-  assigned: "all" | "linked" | "unlinked" = "unlinked",
-  page = 1,
-  pageSize = PICKER_PAGE_SIZE
+  pageSize = PICKER_PAGE_SIZE,
+  vendorId?: string
 ) {
   return useEntityListSearch(
-    [...costingKeys.breakdownLists(), "search", assigned],
-    costingService.getBreakdowns,
+    [...vendorInvoiceKeys.breakdownLists(), "search", "unlinked", vendorId ?? "any"],
+    vendorInvoiceService.getBreakdowns,
     search,
     enabled,
-    { assigned },
-    pageSize,
-    page
+    { costing: "unlinked", ...(vendorId ? { vendorId } : {}) },
+    pageSize
   )
 }
 

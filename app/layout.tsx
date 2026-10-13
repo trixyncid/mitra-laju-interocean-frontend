@@ -1,19 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, Poppins, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
 
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: "--font-ibm-plex-sans",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
 });
 
 const poppins = Poppins({
@@ -29,10 +27,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#1b365d" },
-    { media: "(prefers-color-scheme: dark)", color: "#001833" },
-  ],
+  themeColor: "#eef2f7",
 };
 
 export default function RootLayout({
@@ -43,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${ibmPlexSans.variable} ${spaceGrotesk.variable} ${poppins.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <Providers>

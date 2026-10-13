@@ -89,7 +89,6 @@ export default function ShipmentOperationalForm({
     id,
     shipmentId,
     mode,
-    orderNumber,
     status,
     isActive,
     shipmentType,
@@ -114,7 +113,6 @@ export default function ShipmentOperationalForm({
     id: string | undefined
     shipmentId: string | undefined
     mode: "edit" | "create"
-    orderNumber?: string
     status?: ShipmentStatus
     isActive?: boolean
     shipmentType: string | undefined
@@ -433,7 +431,7 @@ export default function ShipmentOperationalForm({
                         }
                     }}
                 >
-                    <DialogHeader className="shrink-0 border-b border-[rgba(214,227,255,0.4)] px-6 py-5 pr-12">
+                    <DialogHeader className="shrink-0 border-b border-[rgba(var(--mli-tint-rgb),0.4)] px-6 py-5 pr-12">
                         <DialogTitle>
                             {mode === "edit" ? "Edit Shipment" : "Add Shipment Operational"}
                         </DialogTitle>
@@ -454,17 +452,9 @@ export default function ShipmentOperationalForm({
                                             Shipment details
                                         </h2>
                                         <p className="text-sm text-muted-foreground">
-                                            Update the booking party and lifecycle. The
-                                            order number stays the same.
+                                            Update the booking party and lifecycle.
                                         </p>
                                     </div>
-
-                                    {orderNumber ? (
-                                        <div>
-                                            <FormLabel className="my-2">Order Number</FormLabel>
-                                            <p className="text-sm font-medium">{orderNumber}</p>
-                                        </div>
-                                    ) : null}
 
                                     <form.Field name="status">
                                         {(field) => (
@@ -580,7 +570,7 @@ export default function ShipmentOperationalForm({
                                                         )}
                                                         {canCreateCustomer ? (
                                                             <div
-                                                                className="-mx-1 mt-1 border-t border-[rgba(214,227,255,0.4)]"
+                                                                className="-mx-1 mt-1 border-t border-[rgba(var(--mli-tint-rgb),0.4)]"
                                                                 onMouseDown={(event) =>
                                                                     event.preventDefault()
                                                                 }
@@ -933,7 +923,7 @@ export default function ShipmentOperationalForm({
                             </section>
                         </div>
 
-                        <DialogFooter className="shrink-0 border-t border-[rgba(214,227,255,0.4)] px-6 py-4">
+                        <DialogFooter className="shrink-0 border-t border-[rgba(var(--mli-tint-rgb),0.4)] px-6 py-4">
                             <Button type="submit" disabled={isPending}>
                                 {mode === "edit"
                                     ? isPending

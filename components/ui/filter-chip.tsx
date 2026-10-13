@@ -23,9 +23,9 @@ export function FilterChip({
     <div
       className={cn(
         glassControl,
-        "flex h-11 min-w-0 items-center border",
+        "flex h-10 min-w-0 items-center border",
         active &&
-          "border-[var(--mli-primary-container)]/40 bg-[rgba(247,249,251,0.92)]",
+          "border-[var(--mli-primary-container)]/40 bg-[rgba(var(--mli-inset-rgb),0.92)]",
         className
       )}
     >
@@ -33,7 +33,7 @@ export function FilterChip({
       {active && onClear ? (
         <button
           type="button"
-          className="mr-1 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[rgba(232,238,246,0.95)] hover:text-foreground"
+          className="mr-1 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[rgba(var(--mli-panel-rgb),0.95)] hover:text-foreground"
           onClick={(event) => {
             event.preventDefault()
             event.stopPropagation()
@@ -66,9 +66,9 @@ export function FilterChipButton({
       ref={ref}
       type="button"
       className={cn(
-        "flex h-11 min-w-0 cursor-pointer items-center gap-2 bg-transparent px-3 text-left text-sm text-foreground outline-none",
+        "flex h-10 min-w-0 cursor-pointer items-center gap-2 bg-transparent px-3 text-left text-sm text-foreground outline-none",
         "hover:bg-transparent focus-visible:ring-[3px] focus-visible:ring-ring/20",
-        "data-[state=open]:bg-[rgba(232,238,246,0.55)]",
+        "data-[state=open]:bg-[rgba(var(--mli-panel-rgb),0.55)]",
         className
       )}
       {...props}

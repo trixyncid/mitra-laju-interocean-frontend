@@ -23,6 +23,10 @@ export const actionColumn = {
   enableSorting: false,
 } as const
 
+export function isActionColumn(columnId: string) {
+  return columnId === actionColumn.id
+}
+
 export const textSort = {
   sortingFn: "alphanumeric",
   ...sortAscFirst,

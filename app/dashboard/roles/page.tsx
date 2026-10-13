@@ -1,33 +1,37 @@
 "use client"
 
 import Link from "next/link"
-import { IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconPlus, IconSearch, IconShieldLock } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
 
 import ErrorPage from "@/components/error-page"
+import { RANK_DOT, RANK_LABEL, RoleCard, type AccessRank } from "@/components/admin/role-card"
 import { Button } from "@/components/ui/button"
-import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import TableSkeleton from "@/components/loading/table-skeleton"
-import {
-  DashboardPage,
-  DashboardPageCard,
-  DashboardPageHeader,
-} from "@/components/layout/dashboard-page"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
+import { PageHeaderMark } from "@/components/layout/page-header-mark"
 import { useRequireSystemAdmin } from "@/hooks/use-require-system-admin"
 import { useDeleteRole, useRoles } from "@/hooks/use-roles"
-import { chipBase, chipInfo, primaryText, secondaryText } from "@/lib/design"
-import type { Role } from "@/services/roles.service"
 import { cn } from "@/lib/utils"
+
+const RANKS: AccessRank[] = [0, 1, 2, 3]
+
+function DotKey() {
+  return (
+    <div className="surface-inset rounded-2xl p-4">
+      <p className="mb-3 text-xs font-medium text-muted-foreground">How to read a card</p>
+      <ul className="grid grid-cols-2 gap-x-6 gap-y-2">
+        {RANKS.map((rank) => (
+          <li key={rank} className="flex items-center gap-2 text-sm text-foreground">
+            <span aria-hidden className={cn("h-2.5 w-5 rounded-full", RANK_DOT[rank])} />
+            {RANK_LABEL[rank]}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-muted-foreground">One mark for each page. Point at a mark to see its name.</p>
+    </div>
+  )
+}
 
 export default function RoleManagementPage() {
   const [page, setPage] = useState(1)
@@ -42,6 +46,8 @@ export default function RoleManagementPage() {
   const deleteRole = useDeleteRole()
   const roles = data?.items ?? []
   const pagination = data?.pagination ?? { page, pageSize: 20, total: 0, totalPages: 1 }
+  const people = roles.reduce((sum, role) => sum + role._count.users, 0)
+  const custom = roles.filter((role) => !role.isSystem).length
 
   if (isSessionPending || isRedirecting || !isSystemAdmin) {
     return (
@@ -59,160 +65,104 @@ export default function RoleManagementPage() {
 
   return (
     <DashboardPage atmosphere>
-      <DashboardPageHeader
-        title="Role Management"
-        description="Create custom roles and configure which modules and actions each role can access."
-        action={
-          <Button asChild>
-            <Link href="/dashboard/roles/new">
-              <IconPlus className="size-4" />
-              Add role
-            </Link>
-          </Button>
-        }
-      />
-      <DashboardPageCard>
-        <div className="mb-4">
+      <header className="mb-6 grid gap-6 lg:mb-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-end">
+        <div className="min-w-0 space-y-3">
+          <PageHeaderMark title="Roles" />
+          <h1 className="text-headline-lg">Roles</h1>
+          <p className="max-w-xl text-body-md text-muted-foreground">
+            A role is a set of pages a person can open and change. Give each person one role
+            on the Team page.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-sm">
+            <span>
+              <span className="font-semibold tabular-nums text-foreground">{pagination.total}</span>{" "}
+              <span className="text-muted-foreground">roles</span>
+            </span>
+            <span>
+              <span className="font-semibold tabular-nums text-foreground">{custom}</span>{" "}
+              <span className="text-muted-foreground">custom roles</span>
+            </span>
+            <span>
+              <span className="font-semibold tabular-nums text-foreground">{people}</span>{" "}
+              <span className="text-muted-foreground">people with a role</span>
+            </span>
+          </div>
+        </div>
+        <DotKey />
+      </header>
+
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="surface relative flex h-11 w-full items-center rounded-full sm:max-w-sm">
+          <IconSearch className="pointer-events-none absolute left-4 size-4 text-muted-foreground" />
+          <span className="sr-only">Search roles</span>
           <input
-            className="h-9 w-full max-w-sm rounded-md border border-input bg-transparent px-3 text-sm"
-            placeholder="Search roles…"
+            className="h-full w-full rounded-full bg-transparent pr-4 pl-11 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/30"
+            placeholder="Search by role name or code…"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
               setPage(1)
             }}
           />
-        </div>
-        {isLoading ? (
+        </label>
+        <Button asChild>
+          <Link href="/dashboard/roles/new">
+            <IconPlus className="size-4" />
+            New role
+          </Link>
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <DashboardPageCard>
           <TableSkeleton />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-muted-foreground">
-                <tr className="border-b border-border/60">
-                  <th className="px-2 py-2 font-medium">Name</th>
-                  <th className="px-2 py-2 font-medium">Slug</th>
-                  <th className="px-2 py-2 font-medium">System</th>
-                  <th className="px-2 py-2 font-medium">Users</th>
-                  <th className="px-2 py-2 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {roles.map((role) => (
-                  <RoleRow
-                    key={role.id}
-                    role={role}
-                    onDelete={(onSuccess) =>
-                      deleteRole.mutate(role.id, { onSuccess })
-                    }
-                    deleting={deleteRole.isPending}
-                  />
-                ))}
-              </tbody>
-            </table>
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                Page {pagination.page} of {pagination.totalPages} ({pagination.total}{" "}
-                roles)
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pagination.page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pagination.page >= pagination.totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </DashboardPageCard>
-    </DashboardPage>
-  )
-}
-
-function RoleRow({
-  role,
-  onDelete,
-  deleting,
-}: {
-  role: Role
-  onDelete: (onSuccess?: () => void) => void
-  deleting: boolean
-}) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <tr className="border-b border-border/40">
-      <td className="px-2 py-3">
-        <Link
-          href={`/dashboard/roles/${role.id}`}
-          className={`${primaryText} hover:underline`}
-        >
-          {role.name}
-        </Link>
-        {role.description ? (
-          <p className={`${secondaryText} mt-0.5 line-clamp-1`}>{role.description}</p>
-        ) : null}
-      </td>
-      <td className={`px-2 py-3 ${secondaryText}`}>{role.slug}</td>
-      <td className="px-2 py-3">
-        <span className={role.isSystem ? chipInfo() : cn(chipBase, "bg-secondary/80 text-secondary-foreground")}>
-          {role.isSystem ? "System" : "Custom"}
-        </span>
-      </td>
-      <td className={`px-2 py-3 ${secondaryText}`}>{role._count.users}</td>
-      <td className="px-2 py-3">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/roles/${role.id}`}>Edit</Link>
-          </Button>
-          {!role.isSystem ? (
-            <Dialog open={open} onOpenChange={(next) => {
-              if (deleting) return
-              setOpen(next)
-            }}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={role._count.users > 0 || deleting}
-                >
-                  <IconTrash className="size-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Role</DialogTitle>
-                </DialogHeader>
-                <DialogDescription>
-                  Are you sure you want to delete role "{role.name}"? Users must be
-                  reassigned first.
-                </DialogDescription>
-                <DialogFooter>
-                  <DeleteConfirmButton
-                    isPending={deleting}
-                    onClick={() => onDelete(() => setOpen(false))}
-                  />
-                  <DialogClose asChild>
-                    <Button variant="secondary" disabled={deleting}>Cancel</Button>
-                  </DialogClose>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          ) : null}
+        </DashboardPageCard>
+      ) : roles.length === 0 ? (
+        <div className="surface flex flex-col items-center gap-3 rounded-2xl px-6 py-14 text-center">
+          <span className="surface-inset flex size-12 items-center justify-center rounded-full text-muted-foreground">
+            <IconShieldLock className="size-6" />
+          </span>
+          <p className="font-medium text-foreground">No roles found</p>
+          <p className="max-w-sm text-sm text-muted-foreground">Try another name, or make a new role.</p>
         </div>
-      </td>
-    </tr>
+      ) : (
+        <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {roles.map((role) => (
+            <RoleCard
+              key={role.id}
+              role={role}
+              onDelete={(onSuccess) => deleteRole.mutate(role.id, { onSuccess })}
+              deleting={deleteRole.isPending}
+            />
+          ))}
+        </ul>
+      )}
+
+      {pagination.totalPages > 1 ? (
+        <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </DashboardPage>
   )
 }

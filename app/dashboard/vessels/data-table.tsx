@@ -9,7 +9,7 @@ import {
 } from "@/lib/data-table-filters"
 import { ColumnDef } from "@tanstack/react-table"
 
-const vesselFilters: TableFilterConfig<Vessel> = {
+export const vesselFilters: TableFilterConfig<Vessel> = {
   status: {
     id: "isActive",
     label: "Status",

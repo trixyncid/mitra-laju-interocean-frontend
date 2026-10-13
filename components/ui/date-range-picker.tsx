@@ -8,7 +8,7 @@ import {
   startOfMonth,
   subDays,
 } from "date-fns"
-import { CalendarIcon, X } from "lucide-react"
+import { CalendarIcon, ChevronDown, X } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,7 @@ type DateRangePickerProps = {
   onChange: (next: TableDateRange) => void
   className?: string
   /** Compact glass chip for page headers; toolbar sits inline with search. */
-  layout?: "stacked" | "inline" | "toolbar" | "embedded"
+  layout?: "stacked" | "inline" | "toolbar" | "embedded" | "timeframe"
   /** When false, hides the "All dates" preset (useful for required ranges). */
   showAllOption?: boolean
 }
@@ -167,7 +167,7 @@ function DateRangePanel({
   return (
     <div className="flex min-w-0 flex-col">
       <div className="flex flex-col md:flex-row">
-        <div className="flex flex-wrap gap-1 border-b border-[rgba(214,227,255,0.4)] p-2 md:w-40 md:flex-col md:flex-nowrap md:border-r md:border-b-0">
+        <div className="flex flex-wrap gap-1 border-b border-[rgba(var(--mli-tint-rgb),0.4)] p-2 md:w-40 md:flex-col md:flex-nowrap md:border-r md:border-b-0">
           {presets.map((preset) => {
             const isSelected = isSameRange(value, preset.range)
             return (
@@ -178,7 +178,7 @@ function DateRangePanel({
                   "h-8 cursor-pointer rounded-md px-2.5 text-left text-sm transition-colors",
                   isSelected
                     ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-[rgba(232,238,246,0.9)]"
+                    : "text-foreground hover:bg-[rgba(var(--mli-panel-rgb),0.9)]"
                 )}
                 onClick={() => applyRange(preset.range, true)}
               >
@@ -193,7 +193,7 @@ function DateRangePanel({
                 "h-8 cursor-pointer rounded-md px-2.5 text-left text-sm transition-colors",
                 !value.from && !value.to
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-[rgba(232,238,246,0.9)] hover:text-foreground"
+                  : "text-muted-foreground hover:bg-[rgba(var(--mli-panel-rgb),0.9)] hover:text-foreground"
               )}
               onClick={() => applyRange({}, true)}
             >
@@ -223,7 +223,7 @@ function DateRangePanel({
           }}
         />
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-[rgba(214,227,255,0.4)] px-3 py-2">
+      <div className="flex items-center justify-between gap-3 border-t border-[rgba(var(--mli-tint-rgb),0.4)] px-3 py-2">
         <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
           {summary}
         </p>
@@ -285,7 +285,7 @@ export function DateRangePicker({
         <Label className="text-xs font-medium text-muted-foreground">
           {label}
         </Label>
-        <div className="overflow-x-auto rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(247,249,251,0.72)]">
+        <div className="overflow-x-auto rounded-md border border-[rgba(var(--mli-tint-rgb),0.45)] bg-[rgba(var(--mli-inset-rgb),0.72)]">
           <DateRangePanel
             value={value}
             onChange={onChange}
@@ -316,8 +316,8 @@ export function DateRangePicker({
               glassControl,
               "flex-1 justify-start border text-sm font-normal text-foreground shadow-none hover:text-foreground",
               layout === "inline"
-                ? "h-9 bg-transparent px-3 has-[>svg]:px-3 hover:bg-[rgba(247,249,251,0.55)]"
-                : "h-11 px-5 has-[>svg]:px-5"
+                ? "h-9 bg-transparent px-3 has-[>svg]:px-3 hover:bg-[rgba(var(--mli-inset-rgb),0.55)]"
+                : "h-10 px-5 has-[>svg]:px-5"
             )}
             aria-label={`${label} date range`}
           >
@@ -341,7 +341,7 @@ export function DateRangePicker({
         <button
           type="button"
           className={cn(
-            "flex shrink-0 cursor-pointer items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-[rgba(232,238,246,0.8)] hover:text-foreground",
+            "flex shrink-0 cursor-pointer items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-[rgba(var(--mli-panel-rgb),0.8)] hover:text-foreground",
             compact ? "size-8" : "size-11"
           )}
           onClick={(event) => {
@@ -356,6 +356,43 @@ export function DateRangePicker({
       ) : null}
     </div>
   )
+
+  if (layout === "timeframe") {
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex h-10 cursor-pointer items-center gap-2 rounded-full bg-card pl-1 pr-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/15 data-[state=open]:bg-muted",
+              className
+            )}
+            aria-label={`${label} date range`}
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-card">
+              <CalendarIcon className="size-4" />
+            </span>
+            <span className="flex min-w-0 items-baseline gap-1.5 leading-tight">
+              <span className="hidden text-xs text-muted-foreground sm:inline">{label}</span>
+              <span className="truncate text-sm font-medium text-foreground">
+                {formatRangeLabel(value, "All dates")}
+              </span>
+            </span>
+            <ChevronDown className="ml-1 size-4 shrink-0 text-muted-foreground" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className={cn(glassMenu, "w-auto p-0")} align="end">
+          <DateRangePanel
+            open={open}
+            value={value}
+            onChange={onChange}
+            showAllOption={showAllOption}
+            onPresetSelect={() => setOpen(false)}
+          />
+        </PopoverContent>
+      </Popover>
+    )
+  }
 
   if (layout === "toolbar") {
     return (
@@ -391,7 +428,7 @@ export function DateRangePicker({
     return (
       <div
         className={cn(
-          "flex w-full items-center gap-3 rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] px-3 py-2 shadow-[0_8px_32px_rgba(27,54,93,0.06)] backdrop-blur-xl sm:w-auto",
+          "flex w-full items-center gap-3 rounded-lg border border-[rgba(var(--mli-tint-rgb),0.55)] bg-[rgba(var(--mli-panel-rgb),0.72)] px-3 py-2 shadow-[0_8px_32px_rgba(var(--mli-ink-rgb),0.06)] backdrop-blur-xl sm:w-auto",
           className
         )}
       >

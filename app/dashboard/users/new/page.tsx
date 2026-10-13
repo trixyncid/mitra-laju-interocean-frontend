@@ -1,18 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { IconArrowLeft } from "@tabler/icons-react"
+import { IconArrowLeft, IconUserPlus } from "@tabler/icons-react"
 
 import UserForm from "@/components/forms/user-form"
+import { AccessBadgePreview } from "@/components/admin/access-badge-preview"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import { PermissionFallback } from "@/components/permission-fallback"
-import { UserCreateSidebar } from "@/components/user-create-sidebar"
 import { Button } from "@/components/ui/button"
-import {
-  DashboardPage,
-  DashboardPageCard,
-  DashboardPageHeader,
-} from "@/components/layout/dashboard-page"
+import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
 import { useRequireAdmin } from "@/hooks/use-require-admin"
 
 export default function NewUserPage() {
@@ -34,36 +30,36 @@ export default function NewUserPage() {
   if (!canCreateUsers) {
     return (
       <PermissionFallback
-        title="Add Staff"
-        message="You do not have permission to create users."
+        title="Add person"
+        message="You cannot add people."
         backHref="/dashboard/users"
-        backLabel="Back to users"
+        backLabel="Back to team"
       />
     )
   }
 
   return (
     <DashboardPage atmosphere>
-      <DashboardPageHeader
-        title="Add Staff"
-        description="Create a new staff account with role and login credentials."
-        action={
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/users">
-              <IconArrowLeft className="size-4" />
-              Back to users
-            </Link>
-          </Button>
-        }
-      />
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,360px)_1fr]">
-        <aside className="lg:sticky lg:top-6">
-          <UserCreateSidebar />
-        </aside>
-        <DashboardPageCard>
-          <UserForm mode="create" />
-        </DashboardPageCard>
-      </div>
+      <Button asChild variant="ghost" size="sm" className="-ml-2 mb-3 text-muted-foreground">
+        <Link href="/dashboard/users">
+          <IconArrowLeft className="size-4" />
+          Team
+        </Link>
+      </Button>
+      <header className="mb-6 flex items-center gap-4 lg:mb-8">
+        <span className="brand-fill flex size-12 shrink-0 items-center justify-center rounded-2xl">
+          <IconUserPlus className="size-6" />
+        </span>
+        <div className="min-w-0">
+          <h1 className="text-headline-lg">Add a person</h1>
+          <p className="text-body-md text-muted-foreground">
+            Make an account so they can sign in. Their staff card fills in as you type.
+          </p>
+        </div>
+      </header>
+      <DashboardPageCard>
+        <UserForm mode="create" renderPreview={(preview) => <AccessBadgePreview {...preview} />} />
+      </DashboardPageCard>
     </DashboardPage>
   )
 }

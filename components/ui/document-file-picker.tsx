@@ -213,11 +213,11 @@ export function DocumentFilePicker({
             aria-label="Choose a document file"
             className={cn(
               "group relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center transition-[border-color,background-color,box-shadow] duration-150 outline-none",
-              "border-[rgba(214,227,255,0.75)] bg-[rgba(247,249,251,0.45)]",
-              "hover:border-[var(--mli-primary-container)]/45 hover:bg-[rgba(247,249,251,0.75)]",
+              "border-[rgba(var(--mli-tint-rgb),0.75)] bg-[rgba(var(--mli-inset-rgb),0.45)]",
+              "hover:border-[var(--mli-primary-container)]/45 hover:bg-[rgba(var(--mli-inset-rgb),0.75)]",
               "focus-visible:ring-[3px] focus-visible:ring-ring/20",
               isDragging &&
-                "border-[var(--mli-primary-container)] bg-[rgba(214,227,255,0.45)] shadow-[inset_0_0_0_1px_rgba(27,54,93,0.08)]",
+                "border-[var(--mli-primary-container)] bg-[rgba(var(--mli-tint-rgb),0.45)] shadow-[inset_0_0_0_1px_rgba(var(--mli-ink-rgb),0.08)]",
               hasError && "border-[var(--mli-error-container)]/80 bg-[rgba(255,236,236,0.35)]"
             )}
           >
@@ -239,7 +239,7 @@ export function DocumentFilePicker({
                 Click to choose from your computer
               </p>
             </div>
-            <span className="rounded-md border border-[rgba(214,227,255,0.65)] bg-[rgba(247,249,251,0.85)] px-2.5 py-1 text-[11px] font-medium text-[var(--mli-primary-container)]">
+            <span className="rounded-md border border-[rgba(var(--mli-tint-rgb),0.65)] bg-[rgba(var(--mli-inset-rgb),0.85)] px-2.5 py-1 text-[11px] font-medium text-[var(--mli-primary-container)]">
               Browse files
             </span>
           </div>

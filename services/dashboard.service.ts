@@ -1,4 +1,5 @@
 import type {
+  BusinessData,
   DashboardData,
   DashboardQueryParams,
   DashboardVoyageGroup,
@@ -14,6 +15,13 @@ export const dashboardService = {
 
     const query = searchParams.toString()
     return apiClient.get(`/dashboard${query ? `?${query}` : ""}`)
+  },
+  getBusiness: async (params?: DashboardQueryParams): Promise<BusinessData> => {
+    const searchParams = new URLSearchParams()
+    if (params?.startDate) searchParams.set("startDate", params.startDate)
+    if (params?.endDate) searchParams.set("endDate", params.endDate)
+    const query = searchParams.toString()
+    return apiClient.get(`/dashboard/business${query ? `?${query}` : ""}`)
   },
   getShipmentsByVoyage: async (
     voyageStatus: VoyageStatus = "ongoing"

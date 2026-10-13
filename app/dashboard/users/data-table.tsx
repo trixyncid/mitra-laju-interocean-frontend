@@ -9,7 +9,7 @@ import {
 } from "@/lib/data-table-filters"
 import { ColumnDef } from "@tanstack/react-table"
 
-const userFilters: TableFilterConfig<User> = {
+export const userFilters: TableFilterConfig<User> = {
   status: {
     id: "isActive",
     label: "Status",
@@ -60,7 +60,7 @@ export function DataTable({
       onApply={onApply}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
-      searchPlaceholder="Search by name or email..."
+      searchPlaceholder="Search name or email..."
       filters={userFilters}
     />
   )

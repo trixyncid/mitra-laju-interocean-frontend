@@ -80,7 +80,7 @@ function TextField({
         type={type}
         {...(isFileInput ? {} : { value: controlledValue })}
         {...sharedProps}
-        className={cn(trailing ? "pr-11" : sharedProps.className)}
+        className={trailing ? cn(className, "pr-11") : sharedProps.className}
       />
     )
 

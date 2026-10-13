@@ -1,74 +1,82 @@
 "use client"
 
-import { useMemo } from "react"
-import { columns } from "./columns"
-import { DataTable } from "./data-table"
-import { useSellings } from "@/hooks/use-sellings"
-import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
-import TableSkeleton from "@/components/loading/table-skeleton"
-import ErrorPage from "@/components/error-page"
-import {
-  DashboardPage,
-  DashboardPageCard,
-  DashboardPageHeader,
-} from "@/components/layout/dashboard-page"
+import { Suspense } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-export default function SellingPage() {
-  const {
-    applied,
-    page,
-    pageSize,
-    setApplied,
-    setPage,
-    setPageSize,
-    isRestored,
-  } = usePersistedTableState("sellings")
-  const params = useMemo(
-    () => ({
-      page,
-      pageSize,
-      search: applied.search || undefined,
-      status: applied.status as "all" | "DRAFT" | "PAID" | "UNPAID",
-      from: applied.dateRange.from,
-      to: applied.dateRange.to,
-    }),
-    [page, pageSize, applied]
-  )
-  const { data, isLoading, error } = useSellings(params, isRestored)
-  const sellings = data?.items ?? []
-  const pagination = data?.pagination ?? {
-    page,
-    pageSize,
-    total: 0,
-    totalPages: 1,
+import TableSkeleton from "@/components/loading/table-skeleton"
+import { LineViewToggle, type LineViewMode } from "@/components/costings/line-view-toggle"
+import { DashboardPage, DashboardPageCard, DashboardPageHeader } from "@/components/layout/dashboard-page"
+import { PermissionGate } from "@/components/permission-gate"
+import { SellingFormDialog } from "@/components/sellings/selling-form-dialog"
+import { SellingTable } from "@/components/sellings/selling-table"
+import { SellingWorkspace } from "@/components/sellings/selling-workspace"
+import { useLinkedView } from "@/hooks/use-linked-view"
+import { usePersistedChoice } from "@/hooks/use-persisted-choice"
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
+
+function SellingsContent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { applied, setApplied, page, pageSize, setPage, setPageSize, isRestored } = usePersistedTableState("sellingLines")
+  const [savedView, saveView] = usePersistedChoice<LineViewMode>("mli:sellings:view", ["split", "table"], "table")
+  const [view, setView] = useLinkedView(savedView, saveView, "selling", "split")
+  const openNew = searchParams.get("new") === "1"
+
+  const showSelling = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (id) params.set("selling", id)
+    params.delete("new")
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
-  if (error) return <ErrorPage message={error.message} />
-
   return (
-    <DashboardPage atmosphere>
+    <DashboardPage>
       <DashboardPageHeader
-        title="Customer invoices"
-        description="Customer invoices built from shipment costing markup. Create invoices from a shipment detail page."
+        className="mb-5 lg:mb-6"
+        title="Selling"
+        description="What you charge each customer. Link the costings a charge recovers to see its margin."
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <LineViewToggle view={view} onChange={setView} />
+            <PermissionGate resource="sellings" write>
+              <SellingFormDialog
+                mode="create"
+                defaultOpen={openNew}
+                onOpenChange={(open) => {
+                  if (!open && openNew) showSelling(null)
+                }}
+                onSaved={(selling) => showSelling(selling.id)}
+              />
+            </PermissionGate>
+          </div>
+        }
       />
-      <DashboardPageCard>
-        {!isRestored || isLoading ? (
-          <TableSkeleton />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={sellings}
-            page={pagination.page}
-            pageSize={pagination.pageSize}
-            totalPages={pagination.totalPages}
-            totalRows={pagination.total}
+      {!isRestored ? (
+        <TableSkeleton />
+      ) : view === "split" ? (
+        <SellingWorkspace applied={applied} onApply={setApplied} enabled={isRestored} />
+      ) : (
+        <DashboardPageCard>
+          <SellingTable
             applied={applied}
             onApply={setApplied}
+            page={page}
+            pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
           />
-        )}
-      </DashboardPageCard>
+        </DashboardPageCard>
+      )}
     </DashboardPage>
+  )
+}
+
+export default function SellingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SellingsContent />
+    </Suspense>
   )
 }

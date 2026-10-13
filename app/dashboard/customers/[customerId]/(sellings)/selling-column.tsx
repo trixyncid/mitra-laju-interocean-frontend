@@ -8,7 +8,6 @@ import { SellingStatusChip } from "@/components/ui/status-chip"
 import { secondaryText } from "@/lib/design"
 import {
   dateSort,
-  numberSort,
   sortHeader,
   textSort,
 } from "@/lib/data-table"
@@ -17,8 +16,7 @@ export type CustomerSelling = {
   id: string
   sellingNumber: string
   description: string
-  amount: number
-  shipmentOrderNumber: string
+  shipmentReference: string
   status: string
   updatedAt: string
 }
@@ -46,24 +44,11 @@ export const columns: ColumnDef<CustomerSelling>[] = [
     ...textSort,
   },
   {
-    accessorKey: "shipmentOrderNumber",
-    header: ({ column }) => sortHeader(column, "Shipment Order Number"),
+    accessorKey: "shipmentReference",
+    header: ({ column }) => sortHeader(column, "Shipment"),
     ...textSort,
     cell: ({ row }) => (
-      <span className={secondaryText}>{row.original.shipmentOrderNumber || "—"}</span>
-    ),
-  },
-  {
-    accessorKey: "amount",
-    header: ({ column }) => sortHeader(column, "Net Amount"),
-    ...numberSort,
-    cell: ({ row }) => (
-      <p>
-        {row.original.amount.toLocaleString("id-ID", {
-          style: "currency",
-          currency: "IDR",
-        })}
-      </p>
+      <span className={secondaryText}>{row.original.shipmentReference || "—"}</span>
     ),
   },
   {

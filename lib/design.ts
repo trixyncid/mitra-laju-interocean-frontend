@@ -1,76 +1,76 @@
 import { cn } from "@/lib/utils"
 
-/** Max content width for dashboard pages and data tables (1440px). */
+/** Max content width for dashboard pages and data tables (1536px). */
 export const containerMaxWidth = "max-w-[var(--mli-container-max)]"
 
-export const pageShell = "min-h-full w-full bg-background px-4 sm:px-6 lg:px-8 xl:px-10"
-export const pageMain = `mx-auto min-w-0 w-full ${containerMaxWidth} py-6 lg:py-12`
-export const pageHeader = "mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between lg:mb-12"
+export const pageShell = "min-h-full w-full px-4 sm:px-6 lg:px-8"
+export const pageMain = `mx-auto min-w-0 w-full ${containerMaxWidth} pt-4 pb-10 lg:pt-6 lg:pb-14 page-enter`
+export const pageHeader = "mb-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between lg:mb-8"
 
 /**
- * Frosted glass surface — cool blue-tinted fill (not pure white) so panels
- * sit softly on the atmosphere gradient without chalky contrast.
+ * Primary surface — a white card lifted off the canvas by a hairline ring and
+ * a soft ink-tinted shadow. (Name kept from the earlier glass system.)
  */
-export const glassPanel =
-  "rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl"
+export const glassPanel = "rounded-xl border border-transparent surface"
 
-export const glassPanelInteractive =
-  "rounded-lg border border-[rgba(214,227,255,0.55)] bg-[rgba(232,238,246,0.72)] shadow-[0_8px_32px_rgba(27,54,93,0.07)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-200 hover:border-[rgba(214,227,255,0.8)] hover:bg-[rgba(238,243,249,0.88)] hover:shadow-[0_12px_40px_rgba(27,54,93,0.1)]"
+export const glassPanelInteractive = "rounded-xl border border-transparent surface surface-lift"
 
-export const pageCard = cn(
-  glassPanel,
-  "p-6 shadow-[0_8px_32px_rgba(27,54,93,0.07)] lg:p-8"
-)
+export const pageCard = cn(glassPanel, "p-5 lg:p-7")
 
-/** Nested table shell inside glass page cards. */
-export const tableShell =
-  "overflow-x-auto rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.55)]"
+/** Nested table shell inside page cards. */
+export const tableShell = "overflow-x-auto rounded-lg border border-border bg-card shadow-elev-1"
 
 export const tableSearchInput =
-  "h-11 w-full max-w-xl cursor-text caret-primary rounded-md border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.6)] px-5 text-base shadow-none placeholder:text-muted-foreground/80 transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-input focus-visible:border-ring focus-visible:bg-[rgba(247,249,251,0.92)] focus-visible:ring-[3px] focus-visible:ring-ring/20"
+  "h-10 w-full max-w-xl cursor-text caret-primary rounded-full border-transparent bg-muted px-5 text-[15px] shadow-none placeholder:text-muted-foreground transition-[color,background-color,border-color,box-shadow] duration-200 hover:bg-accent focus-visible:border-input focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/10"
 
-/** Outline controls (selects, date pickers) on glass surfaces. */
+/** Outline controls (selects, date pickers) on card surfaces. */
 export const glassControl =
-  "rounded-md border-[rgba(214,227,255,0.55)] bg-[rgba(247,249,251,0.6)] shadow-none hover:border-input hover:bg-[rgba(247,249,251,0.85)]"
+  "rounded-full border-border bg-card shadow-elev-1 hover:border-input hover:bg-muted"
 
-/** Floating menus and filter popovers on glass dashboards. */
+/** Floating menus and filter popovers. */
 export const glassMenu =
-  "rounded-lg border border-[rgba(214,227,255,0.45)] bg-[rgba(247,249,251,0.96)] shadow-[0_16px_40px_rgba(27,54,93,0.12)] backdrop-blur-xl"
+  "rounded-lg border border-border bg-popover shadow-elev-3"
 
-export const tableHeaderRow =
-  "border-b border-[rgba(214,227,255,0.35)] bg-[rgba(232,238,246,0.55)] hover:bg-[rgba(232,238,246,0.55)]"
+export const tableHeaderRow = "border-b border-border bg-muted/60 hover:bg-muted/60"
 export const tableHeaderCell =
-  "h-auto px-4 py-3 text-left text-sm font-medium text-foreground/70 whitespace-nowrap"
-export const tableRowClass =
-  "border-b border-[rgba(214,227,255,0.28)] transition-colors hover:bg-[rgba(247,249,251,0.65)]"
-export const tableCellClass = "px-4 py-3 text-sm align-middle text-foreground"
+  "h-auto px-4 py-3.5 text-left text-[13px] font-medium text-muted-foreground whitespace-nowrap"
+export const tableRowClass = "border-b border-border/70 transition-colors hover:bg-muted/50"
+export const tableCellClass = "px-4 py-3.5 text-sm align-middle text-foreground"
 
-export const brandText = "text-[var(--mli-primary-container)]"
+/** Keeps a table's action column pinned to the right edge while the table scrolls sideways. */
+const stickyActionBase =
+  "sticky right-0 z-10 w-px whitespace-nowrap text-right shadow-[-6px_0_8px_-6px_rgba(var(--mli-ink-rgb),0.12)]"
+export const stickyActionHeaderCell = `${stickyActionBase} bg-muted`
+/** Opaque, so scrolled content hides behind it; follows the row's hover tint. */
+export const stickyActionCell = `${stickyActionBase} bg-card [tr:hover>&]:bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))]`
+
+export const brandText = "text-foreground"
 export const brandLink =
-  "font-medium text-[var(--mli-primary-container)] hover:underline"
+  "font-medium text-foreground underline-offset-4 decoration-foreground/30 hover:underline"
 
+/** Black pill for the active segment of a pill tab group. */
 export const glassTabsTrigger =
-  "rounded-md data-[state=active]:bg-[var(--mli-primary-container)] data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+  "rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
 
 export const glassTabCount =
-  "rounded-md bg-[rgba(247,249,251,0.7)] px-1.5 text-[var(--mli-primary-container)]"
+  "rounded-full bg-muted px-1.5 text-foreground"
 
-export const glassShine =
-  "pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.65)] to-transparent"
+/** Former highlight line on glass panels — no longer rendered. */
+export const glassShine = "hidden"
 
-export const glassInset =
-  "rounded-md border border-[rgba(214,227,255,0.4)] bg-[rgba(247,249,251,0.5)]"
+export const glassInset = "rounded-lg surface-inset"
 
-export const metadataCardShell = cn(
-  glassPanel,
-  "overflow-hidden rounded-lg shadow-[0_8px_32px_rgba(27,54,93,0.07)]"
-)
+export const metadataCardShell = cn(glassPanel, "overflow-hidden")
 
 export const metadataIconWell =
-  "flex size-9 shrink-0 items-center justify-center rounded-md bg-[rgba(214,227,255,0.45)] text-[var(--mli-primary-container)]"
+  "flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+
+/** Round icon "well" used for KPI icons and card action buttons. */
+export const iconCircle =
+  "flex size-12 shrink-0 items-center justify-center rounded-full surface text-foreground"
 
 export const chipBase =
-  "inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold tracking-[0.05em]"
+  "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
 
 export function chipActive(className?: string) {
   return cn(

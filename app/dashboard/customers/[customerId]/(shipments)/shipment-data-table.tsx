@@ -23,8 +23,8 @@ export function DataTable({ columns, data }: DataTableProps) {
     <EntityDataTable
       columns={columns}
       data={data}
-      searchPlaceholder="Filter shipment order number..."
-      searchColumn="orderNumber"
+      searchPlaceholder="Filter shipments..."
+      searchColumn="reference"
       filters={linkedShipmentFilters}
     />
   )

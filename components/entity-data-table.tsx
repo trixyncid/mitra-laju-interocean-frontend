@@ -36,7 +36,11 @@ import {
   tableHeaderRow,
   tableRowClass,
   tableShell,
+  stickyActionCell,
+  stickyActionHeaderCell,
 } from "@/lib/design"
+import { cn } from "@/lib/utils"
+import { isActionColumn } from "@/lib/data-table"
 
 type EntityDataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[]
@@ -137,7 +141,13 @@ export function EntityDataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className={tableHeaderRow}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className={tableHeaderCell}>
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      tableHeaderCell,
+                      isActionColumn(header.column.id) && stickyActionHeaderCell
+                    )}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -158,7 +168,13 @@ export function EntityDataTable<TData, TValue>({
                   className={tableRowClass}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={tableCellClass}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        tableCellClass,
+                        isActionColumn(cell.column.id) && stickyActionCell
+                      )}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

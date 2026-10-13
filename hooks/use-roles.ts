@@ -48,7 +48,7 @@ export const useCreateRole = () => {
       queryClient.setQueryData(roleKeys.detail(data.id), data)
       queryClient.invalidateQueries({ queryKey: roleKeys.all })
       queryClient.invalidateQueries({ queryKey: ["me", "permissions"] })
-      toast.success("Role created successfully")
+      toast.success("Role saved")
     },
   })
 }
@@ -63,7 +63,7 @@ export const useUpdateRole = () => {
       queryClient.setQueryData(roleKeys.detail(id), data)
       queryClient.invalidateQueries({ queryKey: roleKeys.all })
       queryClient.invalidateQueries({ queryKey: ["me", "permissions"] })
-      toast.success("Role updated successfully")
+      toast.success("Changes saved")
     },
   })
 }
@@ -76,7 +76,7 @@ export const useDeleteRole = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleKeys.all })
       queryClient.invalidateQueries({ queryKey: ["me", "permissions"] })
-      toast.success("Role deleted successfully")
+      toast.success("Role deleted")
     },
   })
 }

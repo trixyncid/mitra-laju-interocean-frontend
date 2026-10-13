@@ -2,171 +2,147 @@
 
 import Image from "next/image"
 import { motion } from "motion/react"
-import { Ship } from "lucide-react"
 
+import { SupportedByTrixync } from "@/components/brand/trixync-mark"
 import { LoginForm } from "@/components/forms/login-form"
 import { useGuestOnly } from "@/hooks/use-auth-redirect"
 import { Button } from "@/components/ui/button"
 import backgroundImage from "@/public/images/login-background.png"
 
+const easeOut = [0.22, 1, 0.36, 1] as const
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex size-10 items-center justify-center rounded-full brand-fill">
+        <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
+          <path
+            d="M3 15.5c2 0 2-1.5 4.5-1.5S9.5 15.5 12 15.5s2.5-1.5 4.5-1.5 2.5 1.5 4.5 1.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M3 19.5c2 0 2-1.5 4.5-1.5S9.5 19.5 12 19.5s2.5-1.5 4.5-1.5 2.5 1.5 4.5 1.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.55"
+          />
+          <path d="M7 11.5 12 4l5 7.5H7Z" fill="currentColor" />
+        </svg>
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className="text-[17px] font-semibold tracking-[-0.02em] text-foreground">
+          Mitra Laju
+        </span>
+        <span className="mt-1 text-[11px] font-medium text-muted-foreground">Interocean</span>
+      </span>
+    </div>
+  )
+}
+
 export default function LoginPage() {
   const { isPending, isRedirecting, error } = useGuestOnly()
 
   if (isPending || isRedirecting) {
-    return <div className="min-h-svh bg-[#1b365d]" />
+    return <div className="min-h-svh bg-background" />
   }
 
   return (
-    <div className="relative flex min-h-svh overflow-hidden bg-[#1b365d]">
-      {/* Full-bleed port photography — cooled so it sits under brand navy */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ scale: 1.06 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 14, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <Image
-          src={backgroundImage}
-          alt="Container vessel at port during golden hour"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-      </motion.div>
-
-      {/* Cool navy wash — ~20% lighter opacity, mid navy tint */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[#1b365d]/45 mix-blend-multiply"
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[linear-gradient(105deg,rgba(27,54,93,0.74)_0%,rgba(46,71,111,0.58)_38%,rgba(50,95,158,0.44)_62%,rgba(27,54,93,0.56)_100%)]"
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_75%_40%,rgba(110,158,247,0.14)_0%,transparent_55%)]"
-      />
-
-      <div className="relative z-10 flex w-full flex-col justify-between px-6 py-8 sm:px-10 lg:px-16 lg:py-12 xl:px-24">
-        {/* Brand mark */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center gap-3"
-        >
-          <div className="flex size-10 items-center justify-center rounded-md border border-white/20 bg-white/10 backdrop-blur-md">
-            <Ship className="size-5 text-white" strokeWidth={1.75} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-wide text-white">
-              Mitra Laju Interocean
-            </span>
-            <span className="text-[11px] font-medium tracking-[0.14em] text-white/50 uppercase">
-              Freight Forwarding
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Main composition */}
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center gap-12 py-12 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:py-0">
-          {/* Hero copy */}
+    <div className="flex min-h-svh bg-background p-3 sm:p-4">
+      <div className="grid w-full grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+        {/* Form panel */}
+        <div className="flex flex-col justify-between rounded-2xl surface px-6 py-8 sm:px-12 sm:py-10">
           <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden max-w-lg text-left lg:block"
-          >
-            <p className="mb-4 text-[11px] font-semibold tracking-[0.22em] text-white/55 uppercase">
-              Operations portal
-            </p>
-            <h1 className="text-[2.75rem] leading-[1.1] font-semibold tracking-[-0.03em] text-white xl:text-[3.25rem]">
-              Move cargo with
-              <span className="block text-white/70">clarity and control.</span>
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-white/55">
-              Sign in to manage shipments and partners across your
-              freight network.
-            </p>
-          </motion.div>
-
-          {/* Glass login panel */}
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-[420px]"
+            transition={{ duration: 0.5, ease: easeOut }}
           >
-            <div className="relative overflow-hidden rounded-lg border border-white/40 bg-[#f7f9fb]/88 p-7 shadow-[0_24px_64px_rgba(27,54,93,0.28)] backdrop-blur-2xl sm:p-9">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
-              />
-
-              <div className="relative">
-                <div className="mb-7 lg:hidden">
-                  <p className="mb-2 text-[11px] font-semibold tracking-[0.18em] text-[#44474e] uppercase">
-                    Operations portal
-                  </p>
-                  <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#191c1e]">
-                    Welcome back
-                  </h1>
-                  <p className="mt-1.5 text-sm text-[#44474e]">
-                    Sign in to continue to your dashboard.
-                  </p>
-                </div>
-
-                <div className="mb-7 hidden lg:block">
-                  <h2 className="text-2xl font-semibold tracking-[-0.02em] text-[#191c1e]">
-                    Welcome back
-                  </h2>
-                  <p className="mt-1.5 text-sm text-[#44474e]">
-                    Enter your credentials to access the dashboard.
-                  </p>
-                </div>
-
-                {error ? (
-                  <div
-                    role="alert"
-                    className="mb-5 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-                  >
-                    <p className="font-medium">Could not verify your session</p>
-                    <p className="mt-1 text-destructive/90">
-                      {error.message || "The server may be unreachable. You can still sign in below."}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={() => window.location.reload()}
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                ) : null}
-
-                <LoginForm variant="glass" />
-              </div>
-            </div>
-
-            <p className="mt-5 text-center text-xs text-white/40">
-              Protected access · Authorized personnel only
-            </p>
+            <Brand />
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: easeOut }}
+            className="mx-auto w-full max-w-[400px] py-12"
+          >
+            <p className="text-xl text-foreground">Hello,</p>
+            <h1 className="mt-1 text-[44px] font-medium leading-[1.05] tracking-[-0.035em] text-foreground">
+              Welcome back
+            </h1>
+            <p className="mt-3 text-[15px] text-muted-foreground">
+              Sign in to manage shipments, partners and finance across your freight network.
+            </p>
+
+            {error ? (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              >
+                <p className="font-medium">Could not verify your session</p>
+                <p className="mt-1 text-destructive/90">
+                  {error.message || "The server may be unreachable. You can still sign in below."}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : null}
+
+            <LoginForm variant="glass" className="mt-8" />
+          </motion.div>
+
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <span>
+              © {new Date().getFullYear()} Mitra Laju Interocean · Authorized personnel only
+            </span>
+            {/* On large screens the credit sits on the photo instead. */}
+            <SupportedByTrixync className="-mx-2.5 lg:hidden" />
+          </div>
         </div>
 
-        {/* Footer strip */}
+        {/* Imagery panel */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="flex items-center justify-between gap-4 text-[11px] tracking-wide text-white/35"
+          transition={{ duration: 0.8, ease: easeOut }}
+          className="relative hidden overflow-hidden rounded-2xl lg:block"
         >
-          <span>© {new Date().getFullYear()} Mitra Laju Interocean</span>
-          <span className="hidden sm:inline">Global logistics · Real-time ops</span>
+          <Image
+            src={backgroundImage}
+            alt="Container vessel at port during golden hour"
+            fill
+            priority
+            sizes="55vw"
+            className="object-cover object-center"
+          />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+          <SupportedByTrixync variant="glass" className="absolute right-6 top-6" />
+          <div className="absolute inset-x-6 bottom-6 flex items-end justify-between gap-6">
+            <p className="max-w-md text-[32px] font-medium leading-[1.15] tracking-[-0.03em] text-white">
+              Move cargo with clarity and control.
+            </p>
+            <div className="flex shrink-0 gap-2">
+              {["Shipments", "Voyages", "Finance"].map((label) => (
+                <span
+                  key={label}
+                  className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur-md"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

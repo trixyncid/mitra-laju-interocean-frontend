@@ -20,10 +20,10 @@ import {
 import { DocumentFilePicker } from "@/components/ui/document-file-picker"
 import { TextField } from "@/components/ui/text-field"
 import {
-  useCreateCostingAttachment,
-  useDeleteCostingAttachment,
-  useUpdateCostingAttachment,
-} from "@/hooks/use-costings"
+  useCreateVendorInvoiceAttachment,
+  useDeleteVendorInvoiceAttachment,
+  useUpdateVendorInvoiceAttachment,
+} from "@/hooks/use-vendor-invoices"
 import {
   useCreateShipmentOperationalAttachment,
   useDeleteShipmentOperationalAttachment,
@@ -33,22 +33,22 @@ import { fieldError } from "@/lib/form-field"
 import { attachmentNameSchema, documentFileSchema } from "@/lib/schemas/document"
 import { zodOnChange } from "@/lib/zod-form"
 
+type DocumentOwner =
+  | { shipmentId: string; vendorInvoiceId?: never }
+  | { vendorInvoiceId: string; shipmentId?: never }
+
 export default function DocumentUploadForm({
   shipmentId,
-  costingId,
-  module,
+  vendorInvoiceId,
   id,
   attachmentName,
   document,
   mode,
-}: {
-  shipmentId?: string | undefined
-  costingId?: string | undefined
+}: DocumentOwner & {
   id?: string | undefined
   attachmentName: string | undefined
   document: File | undefined
   mode: "create" | "edit"
-  module: "shipment" | "costing"
 }) {
   const [open, setOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -60,29 +60,67 @@ export default function DocumentUploadForm({
   const deleteShipmentOperationalAttachment =
     useDeleteShipmentOperationalAttachment(shipmentId ?? "")
 
-  const createCostingAttachment = useCreateCostingAttachment(costingId ?? "")
-  const updateCostingAttachment = useUpdateCostingAttachment(costingId ?? "")
-  const deleteCostingAttachment = useDeleteCostingAttachment(costingId ?? "")
+  const createVendorInvoiceAttachment = useCreateVendorInvoiceAttachment(
+    vendorInvoiceId ?? ""
+  )
+  const updateVendorInvoiceAttachment = useUpdateVendorInvoiceAttachment(
+    vendorInvoiceId ?? ""
+  )
+  const deleteVendorInvoiceAttachment = useDeleteVendorInvoiceAttachment(
+    vendorInvoiceId ?? ""
+  )
 
   const isCreatePending =
     createShipmentOperationalAttachment.isPending ||
-    createCostingAttachment.isPending
+    createVendorInvoiceAttachment.isPending
   const isUpdatePending =
     updateShipmentOperationalAttachment.isPending ||
-    updateCostingAttachment.isPending
+    updateVendorInvoiceAttachment.isPending
   const isDeletePending =
     deleteShipmentOperationalAttachment.isPending ||
-    deleteCostingAttachment.isPending
+    deleteVendorInvoiceAttachment.isPending
+
+  const closeAfterSave = {
+    onSuccess: () => {
+      setOpen(false)
+      form.reset()
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  }
+  const closeAfterDelete = {
+    onSuccess: () => {
+      setDeleteOpen(false)
+      form.reset()
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  }
 
   const form = useForm({
     defaultValues: {
       id: id ?? "",
-      shipmentId: shipmentId ?? undefined,
-      costingId: costingId ?? undefined,
       attachmentName: attachmentName ?? "",
       document: (document ?? null) as File | null,
     },
     onSubmit: async ({ value }) => {
+      if (vendorInvoiceId) {
+        if (mode === "create") {
+          const formData = new FormData()
+          formData.append("attachmentName", value.attachmentName)
+          formData.append("document", value.document ?? new File([], ""))
+          createVendorInvoiceAttachment.mutate(formData, closeAfterSave)
+        } else {
+          updateVendorInvoiceAttachment.mutate(
+            { id: id ?? "", attachmentName: value.attachmentName },
+            closeAfterSave
+          )
+        }
+        return
+      }
+
       const formData = new FormData()
 
       formData.append("attachmentName", value.attachmentName)
@@ -92,81 +130,26 @@ export default function DocumentUploadForm({
       formData.append("size", value.document?.size.toString() ?? "0")
       formData.append("fileName", value.document?.name ?? "")
       formData.append("shipmentId", shipmentId ?? "")
-      formData.append("costingId", costingId ?? "")
 
-      if (module === "shipment") {
-        if (mode === "create") {
-          createShipmentOperationalAttachment.mutate(
-            {
-              shipmentId: shipmentId ?? "",
-              shipmentOperationalAttachment: formData,
-            },
-            {
-              onSuccess: () => {
-                setOpen(false)
-                form.reset()
-              },
-              onError: (error: Error) => {
-                toast.error(error.message)
-              },
-            }
-          )
-        } else {
-          updateShipmentOperationalAttachment.mutate(
-            {
-              shipmentId: shipmentId ?? "",
-              id: id ?? "",
-              shipmentOperationalAttachment: {
-                attachmentName: value.attachmentName,
-                shipmentId: shipmentId,
-              },
-            },
-            {
-              onSuccess: () => {
-                setOpen(false)
-                form.reset()
-              },
-              onError: (error: Error) => {
-                toast.error(error.message)
-              },
-            }
-          )
-        }
-      } else if (mode === "create") {
-        createCostingAttachment.mutate(
+      if (mode === "create") {
+        createShipmentOperationalAttachment.mutate(
           {
-            costingId: costingId ?? "",
-            costingAttachment: formData,
+            shipmentId: shipmentId ?? "",
+            shipmentOperationalAttachment: formData,
           },
-          {
-            onSuccess: () => {
-              setOpen(false)
-              form.reset()
-            },
-            onError: (error: Error) => {
-              toast.error(error.message)
-            },
-          }
+          closeAfterSave
         )
       } else {
-        updateCostingAttachment.mutate(
+        updateShipmentOperationalAttachment.mutate(
           {
-            costingId: costingId ?? "",
+            shipmentId: shipmentId ?? "",
             id: id ?? "",
-            costingAttachment: {
+            shipmentOperationalAttachment: {
               attachmentName: value.attachmentName,
-              costingId: costingId,
+              shipmentId,
             },
           },
-          {
-            onSuccess: () => {
-              setOpen(false)
-              form.reset()
-            },
-            onError: (error: Error) => {
-              toast.error(error.message)
-            },
-          }
+          closeAfterSave
         )
       }
     },
@@ -301,37 +284,12 @@ export default function DocumentUploadForm({
               <DeleteConfirmButton
                 isPending={isDeletePending}
                 onClick={() => {
-                  if (shipmentId !== undefined) {
-                    deleteShipmentOperationalAttachment.mutate(
-                      {
-                        shipmentId: shipmentId,
-                        id: id ?? "",
-                      },
-                      {
-                        onSuccess: () => {
-                          setDeleteOpen(false)
-                          form.reset()
-                        },
-                        onError: (error: Error) => {
-                          toast.error(error.message)
-                        },
-                      }
-                    )
+                  if (vendorInvoiceId) {
+                    deleteVendorInvoiceAttachment.mutate(id ?? "", closeAfterDelete)
                   } else {
-                    deleteCostingAttachment.mutate(
-                      {
-                        costingId: costingId ?? "",
-                        id: id ?? "",
-                      },
-                      {
-                        onSuccess: () => {
-                          setDeleteOpen(false)
-                          form.reset()
-                        },
-                        onError: (error: Error) => {
-                          toast.error(error.message)
-                        },
-                      }
+                    deleteShipmentOperationalAttachment.mutate(
+                      { shipmentId: shipmentId ?? "", id: id ?? "" },
+                      closeAfterDelete
                     )
                   }
                 }}

@@ -3,6 +3,7 @@
 import Link from "next/link"
 
 import UserActionCell from "@/components/action-cell/user-action-cell"
+import { PersonAvatar } from "@/components/admin/person-avatar"
 import { RoleChip } from "@/components/ui/role-chip"
 import { StatusChip } from "@/components/ui/status-chip"
 import { localDate } from "@/lib/utils"
@@ -51,17 +52,28 @@ export function getUserColumns({
     accessorKey: "name",
     header: ({ column }) => sortHeader(column, "Name"),
     ...textSort,
-    cell: ({ row }) =>
-      canEditUsers ? (
-        <Link
-          href={`/dashboard/users/${row.original.id}`}
-          className={`${primaryText} hover:underline`}
-        >
-          {row.original.name}
-        </Link>
-      ) : (
-        <span className={primaryText}>{row.original.name}</span>
-      ),
+    cell: ({ row }) => (
+      <span className="flex items-center gap-3">
+        <PersonAvatar
+          userId={row.original.id}
+          name={row.original.name}
+          hasImage={!!row.original.image}
+          version={row.original.updatedAt}
+          className="size-8"
+          fallbackClassName="text-xs"
+        />
+        {canEditUsers ? (
+          <Link
+            href={`/dashboard/users/${row.original.id}`}
+            className={`${primaryText} hover:underline`}
+          >
+            {row.original.name}
+          </Link>
+        ) : (
+          <span className={primaryText}>{row.original.name}</span>
+        )}
+      </span>
+    ),
   },
   {
     accessorKey: "email",

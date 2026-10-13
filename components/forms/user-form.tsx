@@ -50,12 +50,17 @@ function FormField({
   )
 }
 
+export type UserPreview = { name: string; email: string; roleLabel: string }
+
 export default function UserForm({
   mode,
   user,
+  renderPreview,
 }: {
   mode: "edit" | "create"
   user?: User
+  /** Shown beside the form and updated as the person is typed in. */
+  renderPreview?: (preview: UserPreview) => ReactNode
 }) {
   const router = useRouter()
   const createUser = useCreateUser()
@@ -123,16 +128,16 @@ export default function UserForm({
 
   const isPending = mode === "create" ? createUser.isPending : updateUser.isPending
 
-  return (
+  const content = (
     <div className="space-y-6">
       <div>
         <h2 className="text-headline-md font-semibold">
-          {mode === "create" ? "Staff details" : "Edit staff details"}
+          {mode === "create" ? "About this person" : "Details"}
         </h2>
         <p className="text-sm text-muted-foreground">
           {mode === "create"
-            ? "Set up a new staff account with name, email, role, and initial password."
-            : "Update account information, role, and active status."}
+            ? "Enter their name and email, choose a role, and set a first password."
+            : "Change their name, email, role, or whether they can sign in."}
         </p>
       </div>
 
@@ -193,7 +198,8 @@ export default function UserForm({
             >
               {(field) => (
                 <TextField
-                  label="Initial password"
+                  label="First password"
+                  description="Send it to them safely. They can change it on their profile."
                   required
                   id={field.name}
                   name={field.name}
@@ -262,7 +268,7 @@ export default function UserForm({
                 id={field.name}
                 value={field.state.value === true}
                 onChange={(checked) => field.handleChange(checked)}
-                description="Inactive accounts cannot sign in. Sessions are revoked when deactivated."
+                description="Inactive people cannot sign in. They are signed out right away."
               />
             )}
           </form.Field>
@@ -275,8 +281,8 @@ export default function UserForm({
                 ? "Saving..."
                 : "Save changes"
               : isPending
-                ? "Creating..."
-                : "Create staff"}
+                ? "Adding..."
+                : "Add person"}
           </Button>
           <Button
             type="button"
@@ -287,6 +293,23 @@ export default function UserForm({
           </Button>
         </div>
       </form>
+    </div>
+  )
+
+  if (!renderPreview) return content
+
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {content}
+      <form.Subscribe selector={(state) => state.values}>
+        {(values) =>
+          renderPreview({
+            name: values.name,
+            email: values.email,
+            roleLabel: roleItems.find((item) => item.value === values.roleId)?.label ?? "",
+          })
+        }
+      </form.Subscribe>
     </div>
   )
 }

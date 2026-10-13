@@ -5,22 +5,22 @@ import { cn } from "@/lib/utils"
 
 const inputVariants = cva(
   [
-    "w-full min-w-0 rounded-md border bg-card px-5 py-1 text-base text-foreground shadow-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
+    "w-full min-w-0 rounded-full border bg-card px-5 py-1 text-base text-foreground shadow-[inset_0_1px_2px_rgba(var(--mli-ink-rgb),0.05)] outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
     "placeholder:text-muted-foreground/80",
     "selection:bg-primary selection:text-primary-foreground",
     "caret-primary",
     "cursor-text",
     "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
     "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-    "focus-visible:border-ring focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/20",
+    "focus-visible:border-ring focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/10",
     "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
   ],
   {
     variants: {
       fieldSize: {
-        default: "h-11",
+        default: "h-10",
         sm: "h-9 px-4 text-sm",
-        lg: "h-12 px-6 text-base",
+        lg: "h-11 px-6 text-base",
       },
     },
     defaultVariants: {

@@ -5,9 +5,6 @@ import type { ShipmentDetail } from "@/lib/types/entity-details";
 import type { ShipmentStatus } from "@/lib/shipment-status";
 
 export type CreateShipmentInput = {
-    orderNumber?: string;
-    month?: number;
-    year?: number;
     customerCodeId: string;
     customerShipperId: string;
     status?: ShipmentStatus;
@@ -16,7 +13,6 @@ export type CreateShipmentInput = {
 
 export type CreatedShipment = {
     id: string;
-    orderNumber: string;
     customerCodeId: string;
     customerShipperId: string;
     status: ShipmentStatus;
@@ -49,7 +45,39 @@ export type ShipmentListParams = {
     shipmentType?: "all" | "EXPORT" | "IMPORT" | "DOMESTIC";
     from?: string;
     to?: string;
+    /** Excel-style column filters: ticked values per field (see SHIPMENT_FILTER_PARAM). */
+    columns?: Record<string, string[]>;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
 };
+
+/** Column filter fields of the shipment list, and their query names. */
+export const SHIPMENT_FILTER_PARAM: Record<string, string> = {
+    customer: "customerIds",
+    status: "statuses",
+    type: "types",
+    vessel: "vesselIds",
+    departure: "departureIds",
+    destination: "destinationIds",
+    eta: "etaDates",
+    loading: "loadingDates",
+    bl: "bl",
+    trucking: "truckingIds",
+    freight: "freightIds",
+};
+
+export type ShipmentFacet = { value: string; label: string; count: number };
+
+function setColumnParams(query: URLSearchParams, params: Pick<ShipmentListParams, "columns" | "sortBy" | "sortDir">) {
+    for (const [field, values] of Object.entries(params.columns ?? {})) {
+        const name = SHIPMENT_FILTER_PARAM[field];
+        if (name && values.length) query.set(name, values.join(","));
+    }
+    if (params.sortBy) {
+        query.set("sortBy", params.sortBy);
+        query.set("sortDir", params.sortDir ?? "asc");
+    }
+}
 
 export type PaginatedShipments = {
     items: Shipment[];
@@ -84,6 +112,7 @@ export const shipmentsService = {
         if (params.search) query.set("search", params.search);
         if (params.from) query.set("from", params.from);
         if (params.to) query.set("to", params.to);
+        setColumnParams(query, params);
 
         const response = await apiClient.getEnvelope(`/shipments?${query.toString()}`);
         const pagination = response.meta?.pagination ?? {
@@ -109,6 +138,8 @@ export const shipmentsService = {
         if (params.search) query.set("search", params.search);
         if (params.from) query.set("from", params.from);
         if (params.to) query.set("to", params.to);
+        // Export what the list shows: same column filters (sort does not matter for Excel).
+        setColumnParams(query, { columns: params.columns });
 
         const fallbackFilename = buildShipmentExportFilename(
             params.lifecycleStatus
@@ -118,6 +149,16 @@ export const shipmentsService = {
             fallbackFilename
         );
         return { rowCount: result.rowCount };
+    },
+    /** One column's values and counts, given the search and every other column filter. */
+    getFacets: async (
+        field: string,
+        params: Pick<ShipmentListParams, "search" | "columns">
+    ): Promise<ShipmentFacet[]> => {
+        const query = new URLSearchParams({ field });
+        if (params.search) query.set("search", params.search);
+        setColumnParams(query, { columns: params.columns });
+        return apiClient.get<ShipmentFacet[]>(`/shipments/facets?${query.toString()}`);
     },
     getById: async (id: string): Promise<ShipmentDetail> => {
         return apiClient.get<ShipmentDetail>(`/shipments/${id}`);

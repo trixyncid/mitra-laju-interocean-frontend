@@ -1,112 +1,22 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { createContainerLookupColumns } from "./columns"
-import { DataTable } from "./data-table"
-import ContainerLookupForm from "@/components/forms/container-lookup-form"
-import { useContainerLookups } from "@/hooks/use-container-lookups"
-import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
-import TableSkeleton from "@/components/loading/table-skeleton"
-import ErrorPage from "@/components/error-page"
 import {
   DashboardPage,
-  DashboardPageCard,
   DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
-import { PermissionGate } from "@/components/permission-gate"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { glassTabsTrigger } from "@/lib/design"
-import type { ContainerLookupKind } from "@/services/container-lookups.service"
-
-function ContainerLookupTable({ kind }: { kind: ContainerLookupKind }) {
-  const {
-    applied,
-    page,
-    pageSize,
-    setApplied,
-    setPage,
-    setPageSize,
-    isRestored,
-  } = usePersistedTableState(`containers.${kind}`)
-  const params = useMemo(
-    () => ({
-      page,
-      pageSize,
-      search: applied.search || undefined,
-      status: applied.status as "all" | "true" | "false",
-      from: applied.dateRange.from,
-      to: applied.dateRange.to,
-    }),
-    [page, pageSize, applied]
-  )
-  const { data, isLoading, error } = useContainerLookups(kind, params, isRestored)
-  const items = data?.items ?? []
-  const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
-  const columns = useMemo(() => createContainerLookupColumns(kind), [kind])
-
-  if (error) return <ErrorPage />
-
-  return !isRestored || isLoading ? (
-    <TableSkeleton />
-  ) : (
-    <DataTable
-      kind={kind}
-      columns={columns}
-      data={items}
-      page={pagination.page}
-      pageSize={pagination.pageSize}
-      totalPages={pagination.totalPages}
-      totalRows={pagination.total}
-      applied={applied}
-      onApply={setApplied}
-      onPageChange={setPage}
-      onPageSizeChange={setPageSize}
-    />
-  )
-}
+import { EquipmentPanel } from "@/components/reference/equipment-catalog"
 
 export default function ContainerMasterDataPage() {
-  const [tab, setTab] = useState<ContainerLookupKind>("size")
-
   return (
     <DashboardPage atmosphere>
       <DashboardPageHeader
-        title="Container Management"
-        description="Configure container sizes and types used when recording shipment containers."
-        action={
-          <PermissionGate resource="masterData" write>
-            <ContainerLookupForm
-              key={tab}
-              kind={tab}
-              mode="create"
-              name={undefined}
-              isActive={true}
-              id={undefined}
-            />
-          </PermissionGate>
-        }
+        title="Container catalog"
+        description="The container sizes and types people can choose when they add containers to a shipment."
       />
-      <DashboardPageCard>
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as ContainerLookupKind)}
-        >
-          <TabsList className="mb-4 h-auto min-w-max rounded-md border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-1 backdrop-blur-xl">
-            <TabsTrigger value="size" className={glassTabsTrigger}>
-              Size
-            </TabsTrigger>
-            <TabsTrigger value="type" className={glassTabsTrigger}>
-              Type
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="size">
-            <ContainerLookupTable kind="size" />
-          </TabsContent>
-          <TabsContent value="type">
-            <ContainerLookupTable kind="type" />
-          </TabsContent>
-        </Tabs>
-      </DashboardPageCard>
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
+        <EquipmentPanel kind="size" />
+        <EquipmentPanel kind="type" />
+      </div>
     </DashboardPage>
   )
 }

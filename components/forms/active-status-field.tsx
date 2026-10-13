@@ -48,10 +48,10 @@ export function ActiveStatusField({
             }
           }}
           className={cn(
-            "flex h-11 cursor-pointer items-center justify-center gap-1 rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
+            "flex h-10 cursor-pointer items-center justify-center gap-1 rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
             value
               ? "bg-[var(--mli-success-container)] text-[var(--mli-on-success-container)] shadow-sm"
-              : "text-muted-foreground hover:bg-[rgba(247,249,251,0.9)] hover:text-foreground"
+              : "text-muted-foreground hover:bg-[rgba(var(--mli-inset-rgb),0.9)] hover:text-foreground"
           )}
         >
           <Dot
@@ -79,10 +79,10 @@ export function ActiveStatusField({
             }
           }}
           className={cn(
-            "flex h-11 cursor-pointer items-center justify-center gap-1 rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
+            "flex h-10 cursor-pointer items-center justify-center gap-1 rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/20",
             !value
               ? "bg-[var(--mli-error-container)] text-[var(--mli-on-error-container)] shadow-sm"
-              : "text-muted-foreground hover:bg-[rgba(247,249,251,0.9)] hover:text-foreground"
+              : "text-muted-foreground hover:bg-[rgba(var(--mli-inset-rgb),0.9)] hover:text-foreground"
           )}
         >
           <Dot

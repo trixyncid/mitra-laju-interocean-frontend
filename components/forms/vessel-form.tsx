@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TextField } from "@/components/ui/text-field";
 import { fieldError } from "@/lib/form-field"
-import { vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
+import { etaBeforeEtdError, vesselNameSchema, voyageNumberSchema } from "@/lib/schemas/vessel"
 import { zodOnChange } from "@/lib/zod-form";
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -20,6 +20,7 @@ export default function VesselForm({
     vesselName,
     voyageNumber,
     etd,
+    eta,
     closingReefer,
     isActive
 }: {
@@ -28,6 +29,7 @@ export default function VesselForm({
     vesselName: string | undefined,
     voyageNumber: string | undefined,
     etd: string | undefined,
+    eta?: string | undefined,
     closingReefer: string | undefined,
     isActive: boolean | undefined
 }) {
@@ -42,6 +44,7 @@ export default function VesselForm({
             vesselName: vesselName ?? "",
             voyageNumber: voyageNumber ?? "",
             etd: etd ?? "",
+            eta: eta ?? "",
             closingReefer: closingReefer ?? "",
             isActive: isActive ?? true,
         },
@@ -51,6 +54,7 @@ export default function VesselForm({
                     vesselName: value.vesselName,
                     voyageNumber: value.voyageNumber,
                     etd: value.etd === "" ? null : value.etd,
+                    eta: value.eta === "" ? null : value.eta,
                     closingReefer: value.closingReefer === "" ? null : value.closingReefer,
                     isActive: value.isActive,
                 }, {
@@ -69,6 +73,7 @@ export default function VesselForm({
                         vesselName: value.vesselName,
                         voyageNumber: value.voyageNumber,
                         etd: value.etd === "" ? null : value.etd,
+                        eta: value.eta === "" ? null : value.eta,
                         closingReefer: value.closingReefer === "" ? null : value.closingReefer,
                         isActive: value.isActive,
                     }
@@ -154,6 +159,27 @@ export default function VesselForm({
                                             onValueChange={(nextValue) => field.handleChange(nextValue)}
                                             error={fieldError(field.state.meta.errors)}
                                             placeholder="Pick ETD"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field
+                                name="eta"
+                                validators={{
+                                    onChangeListenTo: ["etd"],
+                                    onChange: ({ value, fieldApi }) =>
+                                        etaBeforeEtdError(fieldApi.form.getFieldValue("etd"), value),
+                                }}
+                            >
+                                {( field ) => (
+                                    <div className="my-3">
+                                        <DatePicker
+                                            label="ETA"
+                                            id={field.name}
+                                            value={field.state.value}
+                                            onValueChange={(nextValue) => field.handleChange(nextValue)}
+                                            error={fieldError(field.state.meta.errors)}
+                                            placeholder="Pick ETA"
                                         />
                                     </div>
                                 )}

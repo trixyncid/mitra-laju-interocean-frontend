@@ -4,15 +4,15 @@ import { DashboardPage } from "@/components/layout/dashboard-page"
 export default function ShipmentLoading() {
     return (
         <DashboardPage atmosphere>
-            <Skeleton className="mb-6 h-9 w-44 rounded-md border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.35)]" />
+            <Skeleton className="mb-6 h-9 w-44 rounded-md border border-[rgba(var(--mli-tint-rgb),0.35)] bg-[rgba(var(--mli-tint-rgb),0.35)]" />
 
-            <div className="overflow-hidden rounded-lg border border-[rgba(214,227,255,0.45)] bg-[rgba(232,238,246,0.55)] p-6 lg:p-8">
+            <div className="overflow-hidden rounded-lg border border-[rgba(var(--mli-tint-rgb),0.45)] bg-[rgba(var(--mli-panel-rgb),0.55)] p-6 lg:p-8">
                 <div className="flex items-start gap-4">
-                    <Skeleton className="size-16 shrink-0 rounded-md bg-[rgba(214,227,255,0.4)]" />
+                    <Skeleton className="size-16 shrink-0 rounded-md bg-[rgba(var(--mli-tint-rgb),0.4)]" />
                     <div className="min-w-0 flex-1 space-y-3">
-                        <Skeleton className="h-8 w-2/3 max-w-md rounded-md bg-[rgba(214,227,255,0.4)]" />
-                        <Skeleton className="h-4 w-52 rounded-md bg-[rgba(214,227,255,0.35)]" />
-                        <Skeleton className="h-4 w-72 max-w-full rounded-md bg-[rgba(214,227,255,0.3)]" />
+                        <Skeleton className="h-8 w-2/3 max-w-md rounded-md bg-[rgba(var(--mli-tint-rgb),0.4)]" />
+                        <Skeleton className="h-4 w-52 rounded-md bg-[rgba(var(--mli-tint-rgb),0.35)]" />
+                        <Skeleton className="h-4 w-72 max-w-full rounded-md bg-[rgba(var(--mli-tint-rgb),0.3)]" />
                     </div>
                 </div>
 
@@ -20,7 +20,7 @@ export default function ShipmentLoading() {
                     {Array.from({ length: 4 }).map((_, index) => (
                         <Skeleton
                             key={index}
-                            className="h-28 rounded-md border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]"
+                            className="h-28 rounded-md border border-[rgba(var(--mli-tint-rgb),0.35)] bg-[rgba(var(--mli-tint-rgb),0.3)]"
                         />
                     ))}
                 </div>
@@ -28,11 +28,11 @@ export default function ShipmentLoading() {
 
             <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
                 <div className="min-w-0 space-y-6">
-                    <Skeleton className="h-56 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
-                    <Skeleton className="h-40 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
-                    <Skeleton className="h-48 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
+                    <Skeleton className="h-56 w-full rounded-lg border border-[rgba(var(--mli-tint-rgb),0.35)] bg-[rgba(var(--mli-tint-rgb),0.3)]" />
+                    <Skeleton className="h-40 w-full rounded-lg border border-[rgba(var(--mli-tint-rgb),0.35)] bg-[rgba(var(--mli-tint-rgb),0.3)]" />
+                    <Skeleton className="h-48 w-full rounded-lg border border-[rgba(var(--mli-tint-rgb),0.35)] bg-[rgba(var(--mli-tint-rgb),0.3)]" />
                 </div>
-                <Skeleton className="h-64 w-full rounded-lg border border-[rgba(214,227,255,0.35)] bg-[rgba(214,227,255,0.3)]" />
+                <Skeleton className="h-64 w-full rounded-lg border border-[rgba(var(--mli-tint-rgb),0.35)] bg-[rgba(var(--mli-tint-rgb),0.3)]" />
             </div>
         </DashboardPage>
     )
