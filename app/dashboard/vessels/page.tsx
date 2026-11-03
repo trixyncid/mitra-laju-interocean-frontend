@@ -6,7 +6,7 @@ import { IconLayoutList, IconShip, IconTable } from "@tabler/icons-react"
 import { useVessels } from "@/hooks/use-vessels"
 import { usePersistedTableState } from "@/hooks/use-persisted-table-state"
 import { columns } from "./columns"
-import { DataTable, vesselFilters } from "./data-table"
+import { DataTable } from "./data-table"
 import VesselForm from "@/components/forms/vessel-form"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import ErrorPage from "@/components/error-page"
@@ -17,6 +17,10 @@ import {
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
 import { DataTableToolbar } from "@/components/data-table-toolbar"
+import { ActiveColumnFilters, ColumnFilterBar } from "@/components/column-filter/column-filter"
+import { VesselExportButton } from "@/components/vessels/vessel-export-button"
+import { VESSEL_FILTER_BAR } from "@/components/vessels/vessel-filter-fields"
+import { VesselFilterProvider, vesselFilterParams } from "@/components/vessels/vessel-filter-provider"
 import { ReferenceEmpty } from "@/components/reference/reference-empty"
 import { ReferencePager } from "@/components/reference/reference-pager"
 import { SailingSchedule } from "@/components/reference/sailing-schedule"
@@ -36,15 +40,9 @@ export default function VesselMasterDataPage() {
         setPageSize,
         isRestored,
     } = usePersistedTableState("vessels", 50)
+    // Status and dates are column filters now; both views share them.
     const params = useMemo(
-        () => ({
-            page,
-            pageSize,
-            search: applied.search || undefined,
-            status: applied.status as "all" | "true" | "false",
-            from: applied.dateRange.from,
-            to: applied.dateRange.to,
-        }),
+        () => ({ page, pageSize, ...vesselFilterParams(applied) }),
         [page, pageSize, applied]
     )
     const { data, isLoading, error } = useVessels(params, isRestored)
@@ -96,56 +94,63 @@ export default function VesselMasterDataPage() {
                 }
             />
             <DashboardPageCard>
-                {view === "table" ? (
-                    !isRestored || isLoading ? (
-                        <TableSkeleton />
-                    ) : (
-                        <DataTable
-                            columns={columns}
-                            data={vessels}
-                            page={pagination.page}
-                            pageSize={pagination.pageSize}
-                            totalPages={pagination.totalPages}
-                            totalRows={pagination.total}
-                            applied={applied}
-                            onApply={setApplied}
-                            onPageChange={setPage}
-                            onPageSizeChange={setPageSize}
-                        />
-                    )
-                ) : (
-                    <>
-                        <DataTableToolbar
-                            searchPlaceholder="Search by vessel name..."
-                            filters={vesselFilters}
-                            applied={applied}
-                            onApply={setApplied}
-                        />
-                        {!isRestored || isLoading ? (
+                <VesselFilterProvider
+                    applied={applied}
+                    onChange={({ columns: nextColumns, sort }) => setApplied({ ...applied, columns: nextColumns, sort })}
+                >
+                    {view === "table" ? (
+                        !isRestored || isLoading ? (
                             <TableSkeleton />
-                        ) : vessels.length === 0 ? (
-                            <ReferenceEmpty
-                                icon={<IconShip />}
-                                title="No vessels found"
-                                description="Try another name or date, or clear the filters."
-                            />
                         ) : (
-                            <div className="space-y-6">
-                                <SailingSchedule vessels={vessels} partial={pagination.totalPages > 1} />
-                                <ReferencePager
-                                    className="border-t border-border/70 pt-4"
-                                    page={pagination.page}
-                                    pageSize={pagination.pageSize}
-                                    totalPages={pagination.totalPages}
-                                    total={pagination.total}
-                                    noun="vessels"
-                                    onPageChange={setPage}
-                                    onPageSizeChange={setPageSize}
+                            <DataTable
+                                columns={columns}
+                                data={vessels}
+                                page={pagination.page}
+                                pageSize={pagination.pageSize}
+                                totalPages={pagination.totalPages}
+                                totalRows={pagination.total}
+                                applied={applied}
+                                onApply={setApplied}
+                                onPageChange={setPage}
+                                onPageSizeChange={setPageSize}
+                            />
+                        )
+                    ) : (
+                        <>
+                            <DataTableToolbar
+                                searchPlaceholder="Search vessel or voyage..."
+                                applied={applied}
+                                onApply={setApplied}
+                                extra={<VesselExportButton applied={applied} totalRows={pagination.total} />}
+                            />
+                            <ColumnFilterBar items={VESSEL_FILTER_BAR} className="mb-3" />
+                            <ActiveColumnFilters />
+                            {!isRestored || isLoading ? (
+                                <TableSkeleton />
+                            ) : vessels.length === 0 ? (
+                                <ReferenceEmpty
+                                    icon={<IconShip />}
+                                    title="No vessels found"
+                                    description="Try another name or date, or clear the filters."
                                 />
-                            </div>
-                        )}
-                    </>
-                )}
+                            ) : (
+                                <div className="space-y-6">
+                                    <SailingSchedule vessels={vessels} partial={pagination.totalPages > 1} />
+                                    <ReferencePager
+                                        className="border-t border-border/70 pt-4"
+                                        page={pagination.page}
+                                        pageSize={pagination.pageSize}
+                                        totalPages={pagination.totalPages}
+                                        total={pagination.total}
+                                        noun="vessels"
+                                        onPageChange={setPage}
+                                        onPageSizeChange={setPageSize}
+                                    />
+                                </div>
+                            )}
+                        </>
+                    )}
+                </VesselFilterProvider>
             </DashboardPageCard>
         </DashboardPage>
     )

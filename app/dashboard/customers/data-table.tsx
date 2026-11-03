@@ -3,20 +3,11 @@
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
 import type { Customer } from "@/app/dashboard/customers/columns"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
-import {
-  SHIPMENT_TYPE_FILTER_OPTIONS,
-  type TableFilterConfig,
-} from "@/lib/data-table-filters"
+import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
+import { customerFilterParams } from "@/components/customers/customer-filter-provider"
+import { TableExportButton } from "@/components/table-export-button"
+import { customersService } from "@/services/customers.service"
 import { ColumnDef } from "@tanstack/react-table"
-
-const customerFilters: TableFilterConfig<Customer> = {
-  shipmentType: {
-    id: "shipmentTypes",
-    label: "Shipment Type",
-    options: SHIPMENT_TYPE_FILTER_OPTIONS,
-    getValue: (row) => row.shipmentTypes ?? [],
-  },
-}
 
 interface DataTableProps {
   columns: ColumnDef<Customer>[]
@@ -31,6 +22,7 @@ interface DataTableProps {
   onPageSizeChange: (pageSize: number) => void
 }
 
+/** Filtering is the Excel-style column headers (inside a CustomerFilterProvider) plus search. */
 export function DataTable({
   columns,
   data,
@@ -56,7 +48,15 @@ export function DataTable({
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       searchPlaceholder="Search by customer name or code..."
-      filters={customerFilters}
+      extra={
+        <TableExportButton
+          module="CUSTOMER"
+          noun="customers"
+          totalRows={totalRows}
+          onExport={() => customersService.exportExcel(customerFilterParams(applied))}
+        />
+      }
+      beforeTable={<ActiveColumnFilters />}
     />
   )
 }

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import Link from "next/link"
-import { IconArrowUpRight, IconBriefcase, IconFileInvoice, IconPencil, IconReceiptRefund, IconUser, IconX } from "@tabler/icons-react"
+import { IconArrowUpRight, IconBriefcase, IconFileInvoice, IconPencil, IconPrinter, IconReceiptRefund, IconUser, IconX } from "@tabler/icons-react"
 
 import { RecordLink } from "@/components/record-link"
 import { formatIdr } from "@/components/dashboard/overview-card"
@@ -140,6 +140,12 @@ export function CustomerInvoicePanel({
               />
             </>
           ) : null}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/customer-invoices/${invoice.id}/print`} target="_blank" rel="noopener">
+              <IconPrinter className="size-4" />
+              Print
+            </Link>
+          </Button>
           {invoice.updatedBy?.name ? (
             <p className="ml-auto text-xs text-muted-foreground">
               Updated {localDate(invoice.updatedAt)} by {invoice.updatedBy.name}

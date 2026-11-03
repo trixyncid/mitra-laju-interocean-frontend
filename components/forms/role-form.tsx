@@ -36,6 +36,7 @@ function mergePermissions(
       canCreate: row?.canCreate ?? false,
       canEdit: row?.canEdit ?? false,
       canDelete: row?.canDelete ?? false,
+      canExport: row?.canExport ?? false,
     }
   })
 }
@@ -75,6 +76,7 @@ export default function RoleForm({
         "PORT",
         "VESSEL",
         "CONTAINER",
+        "SERVICE",
         "SHIPMENT",
         ...(isModuleEnabled("VENDOR_INVOICE") ? (["VENDOR_INVOICE"] as const) : []),
         ...(isModuleEnabled("COSTING") ? (["COSTING"] as const) : []),
@@ -97,7 +99,7 @@ export default function RoleForm({
   const isSystem = role?.isSystem ?? false
   const isPending = createRole.isPending || updateRole.isPending
 
-  function setFlags(module: AppModule, flags: Omit<RolePermission, "module" | "id">) {
+  function setFlags(module: AppModule, flags: Partial<Omit<RolePermission, "module" | "id">>) {
     setPermissions((prev) => {
       const base = mergePermissions(
         modules.length ? modules : prev.map((p) => p.module),

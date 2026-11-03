@@ -11,6 +11,7 @@ import {
     IconFileCertificate,
     IconPencil,
     IconReceipt,
+    IconTruckDelivery,
 } from "@tabler/icons-react"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -236,6 +237,11 @@ export default function VendorDetailPage({ params }: { params: Promise<{ vendorI
                         </HeroFact>
                         <HeroFact icon={IconFileCertificate}>
                             {data.npwp ? `NPWP ${data.npwp}` : "No tax ID yet"}
+                        </HeroFact>
+                        <HeroFact icon={IconTruckDelivery}>
+                            {data.services?.length
+                                ? data.services.map((service) => service.serviceName).join(", ")
+                                : "No services tagged"}
                         </HeroFact>
                     </>
                 }

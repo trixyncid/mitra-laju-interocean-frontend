@@ -10,7 +10,51 @@ export type CustomerListParams = {
     shipmentType?: "all" | "EXPORT" | "IMPORT" | "DOMESTIC";
     from?: string;
     to?: string;
+    /** Excel-style column filters: ticked values per column field. */
+    columns?: Record<string, string[]>;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
 };
+
+/** Column filter fields of the customer list, and their query names. */
+export const CUSTOMER_FILTER_PARAM: Record<string, string> = {
+    customer: "customerIds",
+    status: "statuses",
+    shipmentType: "shipmentTypes",
+    modified: "modifiedDates",
+};
+
+export type CustomerFacet = { value: string; label: string; count: number };
+
+/** What the export needs: the list's filters without paging. */
+export type CustomerExportParams = Omit<CustomerListParams, "page" | "pageSize">;
+
+function setColumnParams(
+    query: URLSearchParams,
+    params: Pick<CustomerListParams, "columns" | "sortBy" | "sortDir">
+) {
+    for (const [field, values] of Object.entries(params.columns ?? {})) {
+        const name = CUSTOMER_FILTER_PARAM[field];
+        if (name && values.length) query.set(name, values.join(","));
+    }
+    if (params.sortBy) {
+        query.set("sortBy", params.sortBy);
+        query.set("sortDir", params.sortDir ?? "asc");
+    }
+}
+
+/** The list's filters (everything but paging) as a query string. */
+function filterQuery(params: CustomerExportParams) {
+    const query = new URLSearchParams({
+        status: params.status ?? "all",
+        shipmentType: params.shipmentType ?? "all",
+    });
+    if (params.search) query.set("search", params.search);
+    if (params.from) query.set("from", params.from);
+    if (params.to) query.set("to", params.to);
+    setColumnParams(query, params);
+    return query;
+}
 
 export type PaginatedCustomers = {
     items: Customer[];
@@ -38,15 +82,9 @@ export type CustomerLocationOption = {
 
 export const customersService = {
     getAll: async (params: CustomerListParams): Promise<PaginatedCustomers> => {
-        const query = new URLSearchParams({
-            page: String(params.page),
-            pageSize: String(params.pageSize),
-            status: params.status ?? "all",
-            shipmentType: params.shipmentType ?? "all",
-        });
-        if (params.search) query.set("search", params.search);
-        if (params.from) query.set("from", params.from);
-        if (params.to) query.set("to", params.to);
+        const query = filterQuery(params);
+        query.set("page", String(params.page));
+        query.set("pageSize", String(params.pageSize));
         const response = await apiClient.getEnvelope(`/customers?${query.toString()}`);
         const pagination = response.meta?.pagination ?? {
             page: params.page,
@@ -58,6 +96,23 @@ export const customersService = {
             items: (response.data ?? []) as Customer[],
             pagination,
         };
+    },
+    /** Values and counts for one column, under every other active filter. */
+    getFacets: async (
+        field: string,
+        params: Pick<CustomerListParams, "search" | "status" | "shipmentType" | "columns">
+    ): Promise<CustomerFacet[]> => {
+        const query = filterQuery(params);
+        query.set("field", field);
+        return apiClient.get<CustomerFacet[]>(`/customers/facets?${query.toString()}`);
+    },
+    /** Downloads the customer table as Excel under the current search and column filters. */
+    exportExcel: async (params: CustomerExportParams): Promise<{ rowCount: number | null }> => {
+        const result = await apiClient.download(
+            `/customers/export?${filterQuery(params).toString()}`,
+            `customers-${new Date().toLocaleDateString("en-CA")}.xlsx`
+        );
+        return { rowCount: result.rowCount };
     },
     create: async (customer: Customer) => {
         const response = await apiClient.post("/customers", customer);

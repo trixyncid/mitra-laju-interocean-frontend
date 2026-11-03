@@ -6,6 +6,7 @@ import { formatIdr, formatIdrCompact } from "@/components/dashboard/overview-car
 import { INVOICE_STATUS_DOT, invoiceTotals } from "@/components/customer-invoices/invoice-format"
 import { INVOICE_STATUS_LABEL, type CustomerInvoice } from "@/lib/types/customer-invoice"
 import { cn, localDate } from "@/lib/utils"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 type Props = { invoice: CustomerInvoice; selected?: boolean; onSelect: () => void }
 
@@ -17,7 +18,7 @@ export const CustomerInvoiceRow = forwardRef<HTMLButtonElement, Props>(function 
   const { due } = invoiceTotals(invoice.sellings)
   const customer = invoice.sales.customer?.customerName ?? invoice.sales.shipment?.customerCode?.customerName
   const paid = invoice.customerInvoiceStatus === "PAID"
-  const vessel = invoice.sales.shipment?.shipmentOperational?.vessel?.vesselName
+  const vessel = vesselLabel(invoice.sales.shipment?.shipmentOperational?.vessel)
 
   return (
     <button

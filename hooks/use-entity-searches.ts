@@ -43,14 +43,16 @@ export function useVesselSearch(search: string, enabled = true) {
 export function useVendorSearch(
   search: string,
   enabled = true,
-  status: "all" | "true" | "false" = "true"
+  status: "all" | "true" | "false" = "true",
+  /** Only vendors tagged with this service (plus untagged ones). */
+  serviceId?: string
 ) {
   return useEntityListSearch(
     [...vendorKeys.all, "search", status],
     vendorsService.getAll,
     search,
     enabled,
-    { status },
+    serviceId ? { status, serviceId } : { status },
     PICKER_PAGE_SIZE
   )
 }

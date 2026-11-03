@@ -7,8 +7,11 @@ import ShipmentActionCell from "@/components/action-cell/shipment-action-cell"
 import { IconArrowRight } from "@tabler/icons-react"
 import { cn, localDate } from "@/lib/utils"
 import Link from "next/link"
-import { shipmentReference } from "@/lib/shipment-reference"
-import { Info } from "lucide-react"
+import { vesselLabel } from "@/lib/shipment-reference"
+import { vendorLabel } from "@/lib/vendor-label"
+import { salesBilling } from "@/lib/sales-billing"
+import { RecordLink } from "@/components/record-link"
+import type { ServiceRef } from "@/app/dashboard/services/columns"
 import { ShipmentLifecycleChip, WarningChip } from "@/components/ui/status-chip"
 import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
 import {
@@ -24,13 +27,29 @@ import {
   textSort,
 } from "@/lib/data-table"
 import type { ShipmentStatus } from "@/lib/shipment-status"
-import type { ReactNode } from "react"
 
 export type ShipmentContainerSummary = {
     containerNumber: string | null
     sealNumber: string | null
     containerSize?: { name: string } | null
     containerType?: { name: string } | null
+}
+
+/** A service booked on a shipment, and the vendor it is booked to. */
+export type ShipmentServiceLine = {
+    id?: string
+    serviceId: string
+    vendorId: string | null
+    service: ServiceRef
+    vendor: { id: string; vendorName: string; vendorCode: string } | null
+}
+
+/** The sales job a shipment belongs to (list responses). */
+export type ShipmentSalesLink = {
+    id: string
+    salesNumber: string
+    sellings: { id: string; customerInvoice: { id: string; customerInvoiceStatus: string } | null }[]
+    customerInvoices: { id: string; customerInvoiceNumber: string; customerInvoiceStatus: string }[]
 }
 
 export type Shipment = {
@@ -51,10 +70,10 @@ export type Shipment = {
         portDeparture: { portName: string; portCountry: string } | null
         portDestination: { portName: string; portCountry: string } | null
         vessel?: { vesselName: string; voyageNumber: string } | null
-        truckingBookTo?: { vendorName: string; vendorCode: string } | null
-        freightBookTo?: { vendorName: string; vendorCode: string } | null
+        services?: ShipmentServiceLine[]
         shipmentOperationalContainers?: ShipmentContainerSummary[]
     }
+    sales?: ShipmentSalesLink | null
     isActive: boolean
     updatedBy?: string
     updatedAt?: string
@@ -65,46 +84,26 @@ function displayValue(value: string | null | undefined) {
     return trimmed ? trimmed : "—"
 }
 
-function StackedValue({
-    top,
-    bottom,
-}: {
-    top: ReactNode
-    bottom: ReactNode
-}) {
-    return (
-        <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
-            <span className={cn(secondaryText, "truncate")}>{top}</span>
-            <span className="truncate text-xs text-muted-foreground">{bottom}</span>
-        </div>
-    )
-}
-
-function vendorLabel(
-    vendor?: { vendorName: string; vendorCode: string } | null
-) {
-    if (!vendor) return null
-    if (!vendor.vendorName && !vendor.vendorCode) return null
-    if (!vendor.vendorCode) return vendor.vendorName
-    return `${vendor.vendorName} (${vendor.vendorCode})`
-}
+/** Lines shown in the Services cell before "+N more". */
+const SERVICE_CELL_LIMIT = 3
 
 function LabeledStack({
     items,
     labelClassName,
 }: {
-    items: { label: string; value: string | null | undefined }[]
+    items: { key?: string; label: string; value: string | null | undefined }[]
     labelClassName?: string
 }) {
     return (
         <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
             {items.map((item) => (
-                <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
+                <div key={item.key ?? item.label} className="flex min-w-0 items-baseline gap-1.5">
                     <span
                         className={cn(
-                            "w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
+                            "w-14 shrink-0 truncate text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
                             labelClassName
                         )}
+                        title={item.label}
                     >
                         {item.label}
                     </span>
@@ -118,18 +117,6 @@ function LabeledStack({
 }
 
 export const columns: ColumnDef<Shipment>[] = [
-    {
-        id: "reference",
-        accessorFn: (row) => shipmentReference(row),
-        header: ({ column }) => sortHeader(column, "Shipment"),
-        ...textSort,
-        cell: ({ row }) => (
-            <div className={`${primaryText} flex items-center gap-x-1`}>
-                <Link href={`/dashboard/shipments/${row.original.id}`} className="hover:underline">{ shipmentReference(row.original) }</Link>
-                <Info className="size-3.5 text-muted-foreground" />
-            </div>
-        )
-    },
     {
         id: "customerCode",
         accessorFn: (row) =>
@@ -150,13 +137,20 @@ export const columns: ColumnDef<Shipment>[] = [
         cell: ({ row }) => {
             const customer = row.original.customerCode
             const type = row.original.shipmentOperational?.shipmentType
-            const name = customer
-                ? `${customer.customerName} (${customer.customerCode})`
-                : "—"
             return (
                 <div className="flex min-w-0 max-w-[18rem] flex-col gap-0.5">
                     <span className={cn(secondaryText, "inline-flex min-w-0 items-center gap-1.5")}>
-                        <span className="truncate">{name}</span>
+                        {customer ? (
+                            <Link
+                                href={`/dashboard/shipments/${row.original.id}`}
+                                title={customer.customerName}
+                                className={cn(primaryText, "truncate hover:underline")}
+                            >
+                                {customer.customerCode}
+                            </Link>
+                        ) : (
+                            <span>—</span>
+                        )}
                         {type ? (
                             <ShipmentTypeTag type={type} className="shrink-0 px-2 py-0.5 text-xs" />
                         ) : null}
@@ -169,11 +163,63 @@ export const columns: ColumnDef<Shipment>[] = [
         }
     },
     {
+        id: "sales",
+        accessorFn: (row) =>
+            row.sales
+                ? [row.sales.salesNumber, ...row.sales.customerInvoices.map((invoice) => invoice.customerInvoiceNumber)].join(" ")
+                : "",
+        header: ({ column }) => sortHeader(column, "Sales # · Reference · Status"),
+        ...textSort,
+        enableGlobalFilter: false,
+        cell: ({ row }) => {
+            const sales = row.original.sales
+            if (!sales) {
+                return <span className={cn(secondaryText, "whitespace-nowrap")}>Not linked</span>
+            }
+            const billing = salesBilling(sales)
+            const invoices = sales.customerInvoices
+            return (
+                <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
+                    <span className="flex items-center gap-2">
+                        <RecordLink
+                            module="SALES"
+                            href={`/dashboard/sales/${sales.id}`}
+                            className="font-mono text-[13px] font-semibold whitespace-nowrap text-foreground hover:underline"
+                        >
+                            {sales.salesNumber}
+                        </RecordLink>
+                        <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap", billing.tone)}>
+                            {billing.label}
+                        </span>
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                        {invoices.length ? (
+                            invoices.map((invoice, index) => (
+                                <span key={invoice.id}>
+                                    {index > 0 ? ", " : ""}
+                                    <RecordLink
+                                        module="CUSTOMER_INVOICE"
+                                        href={`/dashboard/customer-invoices/${invoice.id}`}
+                                        className="font-mono hover:underline"
+                                    >
+                                        {invoice.customerInvoiceNumber}
+                                    </RecordLink>
+                                </span>
+                            ))
+                        ) : (
+                            "No invoice yet"
+                        )}
+                    </span>
+                </div>
+            )
+        }
+    },
+    {
         id: "vessel",
         accessorFn: (row) => {
             const vessel = row.shipmentOperational?.vessel
             if (!vessel) return ""
-            return `${vessel.vesselName} v. ${vessel.voyageNumber}`
+            return vesselLabel(vessel) ?? ""
         },
         header: () => <ColumnFilterHeader field="vessel" sortKey="vessel" label="Vessel" />,
         ...textSort,
@@ -183,11 +229,11 @@ export const columns: ColumnDef<Shipment>[] = [
             if (!vessel?.vesselName && !vessel?.voyageNumber) {
                 return <WarningChip>Unavailable</WarningChip>
             }
+            const label = vesselLabel(vessel) ?? undefined
             return (
-                <StackedValue
-                    top={displayValue(vessel?.vesselName)}
-                    bottom={vessel?.voyageNumber ? `v. ${vessel.voyageNumber}` : "—"}
-                />
+                <span className={cn(secondaryText, "block max-w-[16rem] truncate")} title={label}>
+                    {label}
+                </span>
             )
         }
     },
@@ -273,19 +319,15 @@ export const columns: ColumnDef<Shipment>[] = [
         }
     },
     {
-        id: "bookTo",
+        id: "services",
         accessorFn: (row) =>
-            [
-                vendorLabel(row.shipmentOperational?.truckingBookTo) ?? "",
-                vendorLabel(row.shipmentOperational?.freightBookTo) ?? "",
-            ].join(" "),
+            (row.shipmentOperational?.services ?? [])
+                .map((line) => `${line.service.serviceName} ${vendorLabel(line.vendor) ?? ""}`)
+                .join(" "),
         header: () => (
-            <span className="flex items-center gap-1">
-                Book to:
-                <span className="ml-2 flex items-center gap-4">
-                    <ColumnFilterHeader field="trucking" label="Trucking" />
-                    <ColumnFilterHeader field="freight" label="Freight" />
-                </span>
+            <span className="flex items-center gap-4">
+                <ColumnFilterHeader field="service" label="Services" />
+                <ColumnFilterHeader field="serviceVendor" label="Vendor" />
             </span>
         ),
         ...textSort,
@@ -294,20 +336,33 @@ export const columns: ColumnDef<Shipment>[] = [
             if (!row.original.shipmentOperational) {
                 return <WarningChip>Unavailable</WarningChip>
             }
+            const lines = row.original.shipmentOperational.services ?? []
+            if (lines.length === 0) {
+                return <span className={secondaryText}>—</span>
+            }
+            const hidden = lines.length - SERVICE_CELL_LIMIT
             return (
-                <LabeledStack
-                    labelClassName="w-16"
-                    items={[
-                        {
-                            label: "Trucking",
-                            value: vendorLabel(row.original.shipmentOperational.truckingBookTo),
-                        },
-                        {
-                            label: "Freight",
-                            value: vendorLabel(row.original.shipmentOperational.freightBookTo),
-                        },
-                    ]}
-                />
+                <div className="flex min-w-0 max-w-[18rem] flex-col gap-0.5">
+                    <LabeledStack
+                        labelClassName="w-16 normal-case tracking-normal text-[11px]"
+                        items={lines.slice(0, SERVICE_CELL_LIMIT).map((line, index) => ({
+                            key: line.id ?? `${line.serviceId}-${index}`,
+                            label: line.service.serviceName,
+                            value: vendorLabel(line.vendor),
+                        }))}
+                    />
+                    {hidden > 0 ? (
+                        <span
+                            className="text-xs text-muted-foreground"
+                            title={lines
+                                .slice(SERVICE_CELL_LIMIT)
+                                .map((line) => `${line.service.serviceName}: ${vendorLabel(line.vendor) ?? "—"}`)
+                                .join("\n")}
+                        >
+                            +{hidden} more
+                        </span>
+                    ) : null}
+                </div>
             )
         }
     },

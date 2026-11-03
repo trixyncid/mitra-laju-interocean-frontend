@@ -1,5 +1,6 @@
 import {
   IconBox,
+  IconTruckDelivery,
   IconBriefcase,
   IconBuildingLighthouse,
   IconBuildingWarehouse,
@@ -133,6 +134,13 @@ export const NAV_ENTRIES: NavEntry[] = [
         icon: IconBox,
         module: "CONTAINER",
         description: "Sizes and types",
+      },
+      {
+        label: "Services",
+        href: "/dashboard/services",
+        icon: IconTruckDelivery,
+        module: "SERVICE",
+        description: "Trucking, freight and other services",
       },
     ],
   },

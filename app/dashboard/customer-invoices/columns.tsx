@@ -12,6 +12,7 @@ import { secondaryText } from "@/lib/design"
 import { actionColumn } from "@/lib/data-table"
 import { INVOICE_STATUS_LABEL, INVOICE_TYPE_LABEL, type CustomerInvoice } from "@/lib/types/customer-invoice"
 import { cn, localDate } from "@/lib/utils"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 /** Whole rupiah for dense tables; the exact amount is in the tooltip. */
 function formatWholeIdr(value: number) {
@@ -119,7 +120,7 @@ export const columns: ColumnDef<CustomerInvoice>[] = [
     header: () => <span>Sales job</span>,
     cell: ({ row }) => {
       const sales = row.original.sales
-      const vessel = sales.shipment?.shipmentOperational?.vessel?.vesselName
+      const vessel = vesselLabel(sales.shipment?.shipmentOperational?.vessel)
       return (
         <div className="flex min-w-0 flex-col">
           <RecordLink

@@ -17,6 +17,7 @@ import {
 import { CustomerInvoiceRow } from "@/components/customer-invoices/customer-invoice-row"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TableExportButton } from "@/components/table-export-button"
 import { useInfiniteCustomerInvoices } from "@/hooks/use-customer-invoices"
 import { useIsDesktop } from "@/hooks/use-is-desktop"
 import { customerInvoiceKeys } from "@/lib/query-keys"
@@ -153,35 +154,46 @@ export function CustomerInvoiceWorkspace({
     <div className="grid min-w-0 grid-cols-1 gap-5 lg:h-[calc(100svh-13.75rem)] lg:min-h-[560px] lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
       <section aria-label="Customer invoice list" className="relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl surface">
         <div className="space-y-3 border-b border-border p-3">
-          <label className="relative block">
-            <span className="sr-only">Search invoices</span>
-            <IconSearch className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              ref={searchRef}
-              value={draftSearch}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search invoice, sales number, customer or vessel…"
-              className="h-10 w-full rounded-full bg-muted pl-10 pr-16 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:bg-card focus:ring-[3px] focus:ring-ring/15"
+          <div className="flex items-center gap-2">
+            <label className="relative block min-w-0 flex-1">
+              <span className="sr-only">Search invoices</span>
+              <IconSearch className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                ref={searchRef}
+                value={draftSearch}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder="Search invoice, sales number, customer or vessel…"
+                className="h-10 w-full rounded-full bg-muted pl-10 pr-16 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:bg-card focus:ring-[3px] focus:ring-ring/15"
+              />
+              {draftSearch ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftSearch("")
+                    window.clearTimeout(searchTimer.current)
+                    applyFilters({ search: "" })
+                  }}
+                  className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <IconX className="size-4" />
+                </button>
+              ) : (
+                <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-card px-1.5 text-[11px] text-muted-foreground lg:block">
+                  /
+                </kbd>
+              )}
+            </label>
+            <TableExportButton
+              compact
+              module="CUSTOMER_INVOICE"
+              noun="customer invoices"
+              totalRows={total}
+              onExport={() =>
+                customerInvoiceService.exportExcel({ search, columns, sortBy: applied.sort?.by, sortDir: applied.sort?.dir })
+              }
             />
-            {draftSearch ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setDraftSearch("")
-                  window.clearTimeout(searchTimer.current)
-                  applyFilters({ search: "" })
-                }}
-                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <IconX className="size-4" />
-              </button>
-            ) : (
-              <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-card px-1.5 text-[11px] text-muted-foreground lg:block">
-                /
-              </kbd>
-            )}
-          </label>
+          </div>
 
           <ColumnFilterProvider
             columns={applied.columns}

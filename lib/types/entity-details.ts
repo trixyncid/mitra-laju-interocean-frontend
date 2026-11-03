@@ -1,6 +1,6 @@
 import type { VendorInvoice } from "@/app/dashboard/vendor-invoices/columns"
 import type { Customer } from "@/app/dashboard/customers/columns"
-import type { Shipment } from "@/app/dashboard/shipments/columns"
+import type { Shipment, ShipmentServiceLine } from "@/app/dashboard/shipments/columns"
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import type { ShipmentStatus } from "@/lib/shipment-status"
 
@@ -180,8 +180,6 @@ export type ShipmentOperationalDetail = {
   portDestinationId: string | null
   loadingLocationId: string | null
   unloadingLocationId: string | null
-  truckingBookToId: string | null
-  freightBookToId: string | null
   remarks: string | null
   blNumber: string | null
   bookingNumber: string | null
@@ -194,8 +192,7 @@ export type ShipmentOperationalDetail = {
   portDeparture: { portName: string; portCountry: string } | null
   portDestination: { portName: string; portCountry: string } | null
   vessel: { vesselName: string; voyageNumber: string }
-  truckingBookTo: { id: string; vendorName: string; vendorCode: string } | null
-  freightBookTo: { id: string; vendorName: string; vendorCode: string } | null
+  services: ShipmentServiceLine[]
   shipmentOperationalContainers: ShipmentOperationalContainer[]
 }
 

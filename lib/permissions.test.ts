@@ -21,26 +21,26 @@ const adminRole: RoleDetails = {
 }
 
 const viewerPerms: MyPermissions["permissions"] = {
-  DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  SHIPMENT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  VENDOR_INVOICE: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  SELLING: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  CONTAINER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  SHIPMENT: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  VENDOR_INVOICE: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  SELLING: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  CONTAINER: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
 }
 
 const domesticPerms: MyPermissions["permissions"] = {
-  DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  SHIPMENT: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  VENDOR_INVOICE: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  CONTAINER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  SHIPMENT: { canView: true, canCreate: true, canEdit: true, canDelete: true, canExport: false },
+  VENDOR_INVOICE: { canView: true, canCreate: true, canEdit: true, canDelete: true, canExport: false },
+  CUSTOMER: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  VENDOR: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  PORT: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  VESSEL: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
+  CONTAINER: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
 }
 
 const domesticRole: RoleDetails = {
@@ -67,6 +67,14 @@ describe("dynamic permissions", () => {
     expect(canWriteResource(viewerPerms, "shipments", "viewer")).toBe(false)
   })
 
+  test("export needs the Export flag and view", () => {
+    const flags = { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: true }
+    expect(can({ SHIPMENT: flags }, "SHIPMENT", "export", "viewer")).toBe(true)
+    expect(can({ SHIPMENT: { ...flags, canExport: false } }, "SHIPMENT", "export", "viewer")).toBe(false)
+    expect(can({ SHIPMENT: { ...flags, canView: false } }, "SHIPMENT", "export", "viewer")).toBe(false)
+    expect(can({}, "SHIPMENT", "export", "admin")).toBe(true)
+  })
+
   test("domestic admin shipment type", () => {
     expect(canWriteResource(domesticPerms, "shipments", "domestic_admin")).toBe(true)
     expect(
@@ -89,7 +97,7 @@ describe("dynamic permissions", () => {
 
   test("USER view is not manage access", () => {
     const userViewOnly: MyPermissions["permissions"] = {
-      USER: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+      USER: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
     }
     expect(can(userViewOnly, "USER", "view", "custom")).toBe(true)
     expect(can(userViewOnly, "USER", "create", "custom")).toBe(false)
@@ -104,7 +112,7 @@ describe("dynamic permissions", () => {
 
   test("ROLE view is not role management access", () => {
     const roleViewOnly: MyPermissions["permissions"] = {
-      ROLE: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+      ROLE: { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false },
     }
     expect(can(roleViewOnly, "ROLE", "view", "custom")).toBe(true)
     expect(canManageRoles("custom")).toBe(false)

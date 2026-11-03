@@ -8,6 +8,7 @@ export type RolePermission = {
   canCreate: boolean
   canEdit: boolean
   canDelete: boolean
+  canExport: boolean
 }
 
 export type Role = {

@@ -1,6 +1,8 @@
 "use client"
 
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
+import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
+import { VendorExportButton } from "@/components/vendors/vendor-export-button"
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
 import {
@@ -57,6 +59,8 @@ export function DataTable({
       onPageSizeChange={onPageSizeChange}
       searchPlaceholder="Search by vendor name..."
       filters={vendorFilters}
+      extra={<VendorExportButton applied={applied} totalRows={totalRows} />}
+      beforeTable={<ActiveColumnFilters />}
     />
   )
 }

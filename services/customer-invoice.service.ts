@@ -78,6 +78,22 @@ export const customerInvoiceService = {
       summary: meta?.summary ?? EMPTY_SUMMARY,
     }
   },
+  /** Downloads the list as Excel: same search, column filters and order as on screen. */
+  exportExcel: async (
+    params: Omit<CustomerInvoiceListParams, "page" | "pageSize">
+  ): Promise<{ rowCount: number | null }> => {
+    const query = new URLSearchParams({
+      status: params.status ?? "all",
+      customerInvoiceType: params.customerInvoiceType ?? "all",
+    })
+    if (params.search) query.set("search", params.search)
+    if (params.salesId) query.set("salesId", params.salesId)
+    if (params.customerId) query.set("customerId", params.customerId)
+    setColumnParams(query, params)
+    const fallbackFilename = `customer-invoices-${new Date().toISOString().slice(0, 10)}.xlsx`
+    const result = await apiClient.download(`/customer-invoices/export?${query.toString()}`, fallbackFilename)
+    return { rowCount: result.rowCount }
+  },
   /** Values and counts for one column, under every other active filter. */
   getFacets: async (
     field: string,

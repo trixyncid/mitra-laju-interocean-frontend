@@ -3,25 +3,8 @@
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
 import type { User } from "@/app/dashboard/users/columns"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
-import {
-  ACTIVE_STATUS_OPTIONS,
-  type TableFilterConfig,
-} from "@/lib/data-table-filters"
+import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
 import { ColumnDef } from "@tanstack/react-table"
-
-export const userFilters: TableFilterConfig<User> = {
-  status: {
-    id: "isActive",
-    label: "Status",
-    options: ACTIVE_STATUS_OPTIONS,
-    getValue: (row) => row.isActive !== false,
-  },
-  date: {
-    id: "updatedAt",
-    label: "Updated",
-    getValue: (row) => row.updatedAt,
-  },
-}
 
 interface DataTableProps {
   columns: ColumnDef<User>[]
@@ -36,6 +19,7 @@ interface DataTableProps {
   onPageSizeChange: (pageSize: number) => void
 }
 
+/** Role, status, dates and sorting live in the column headers' Excel-style menus. */
 export function DataTable({
   columns,
   data,
@@ -61,7 +45,7 @@ export function DataTable({
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       searchPlaceholder="Search name or email..."
-      filters={userFilters}
+      beforeTable={<ActiveColumnFilters />}
     />
   )
 }

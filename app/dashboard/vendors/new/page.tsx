@@ -20,6 +20,7 @@ const EMPTY: VendorFormValues = {
   vendorName: "",
   npwp: "",
   shipmentTypes: [],
+  serviceIds: [],
   isActive: true,
 }
 

@@ -23,7 +23,7 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { useShipmentById, useUpdateShipment } from "@/hooks/use-shipments"
 import { formatCalendarDate } from "@/lib/date-input"
 import { cn, localDate } from "@/lib/utils"
-import { shipmentReference } from "@/lib/shipment-reference"
+import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
 import { shipmentsService } from "@/services/shipments.service"
 import ShipmentLoading from "@/components/loading/shipment-loading"
 import { PermissionGate } from "@/components/permission-gate"
@@ -55,6 +55,7 @@ import {
     tableShell,
 } from "@/lib/design"
 import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
+import { ShipmentServiceList } from "@/components/shipments/shipment-service-list"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -244,8 +245,6 @@ export default function ShipmentDetailPage({
             unloadingLocationId={undefined}
             blNumber={undefined}
             bookingNumber={undefined}
-            truckingBookToId={undefined}
-            freightBookToId={undefined}
             remarks={undefined}
             customerCodeId={data.customerCodeId}
             customerShipperId={data.customerShipperId}
@@ -270,11 +269,8 @@ export default function ShipmentDetailPage({
             unloadingLocationId={operational.unloadingLocationId ?? undefined}
             blNumber={operational.blNumber ?? undefined}
             bookingNumber={operational.bookingNumber ?? undefined}
-            truckingBookToId={operational.truckingBookToId ?? undefined}
-            freightBookToId={operational.freightBookToId ?? undefined}
+            services={operational.services}
             remarks={operational.remarks ?? undefined}
-            truckingBookTo={operational.truckingBookTo}
-            freightBookTo={operational.freightBookTo}
             customerCodeId={data.customerCodeId}
             customerShipperId={data.customerShipperId}
             vesselId={operational.vesselId}
@@ -338,9 +334,6 @@ export default function ShipmentDetailPage({
                                         )}
                                     >
                                         {data.customerCode.customerCode}
-                                        {operational?.vessel?.voyageNumber
-                                            ? ` · Voyage ${operational.vessel.voyageNumber}`
-                                            : ""}
                                     </p>
                                 </div>
 
@@ -423,7 +416,7 @@ export default function ShipmentDetailPage({
                             />
                             <MetricTile
                                 label="Vessel"
-                                value={`${operational.vessel.vesselName} / ${operational.vessel.voyageNumber}`}
+                                value={vesselLabel(operational.vessel) ?? "—"}
                                 hint="Assigned vessel & voyage"
                             />
                             <MetricTile
@@ -491,8 +484,7 @@ export default function ShipmentDetailPage({
                                     {data.customerShipper?.name ?? "—"}
                                 </OverviewField>
                                 <OverviewField label="Assigned vessel">
-                                    {operational.vessel.vesselName} /{" "}
-                                    {operational.vessel.voyageNumber}
+                                    {vesselLabel(operational.vessel) ?? "—"}
                                 </OverviewField>
                                 <OverviewField label="Origin port">
                                     {formatPort(operational.portDeparture) ?? (
@@ -518,16 +510,9 @@ export default function ShipmentDetailPage({
                                         <WarningChip>Unavailable</WarningChip>
                                     )}
                                 </OverviewField>
-                                <OverviewField label="Trucking book to">
-                                    {operational.truckingBookTo ? (
-                                        `${operational.truckingBookTo.vendorName} (${operational.truckingBookTo.vendorCode})`
-                                    ) : (
-                                        <WarningChip>Unavailable</WarningChip>
-                                    )}
-                                </OverviewField>
-                                <OverviewField label="Freight book to">
-                                    {operational.freightBookTo ? (
-                                        `${operational.freightBookTo.vendorName} (${operational.freightBookTo.vendorCode})`
+                                <OverviewField label="Services" className="sm:col-span-2">
+                                    {operational.services?.length ? (
+                                        <ShipmentServiceList lines={operational.services} className="max-w-xl" />
                                     ) : (
                                         <WarningChip>Unavailable</WarningChip>
                                     )}

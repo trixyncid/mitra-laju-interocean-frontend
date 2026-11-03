@@ -76,7 +76,7 @@ export function RosterRow({
   actions,
   preview = false,
 }: {
-  vendor: Pick<Vendor, "id" | "vendorName" | "vendorCode" | "npwp" | "shipmentTypes" | "isActive" | "updatedAt" | "updatedBy">
+  vendor: Pick<Vendor, "id" | "vendorName" | "vendorCode" | "npwp" | "shipmentTypes" | "services" | "isActive" | "updatedAt" | "updatedBy">
   actions?: ReactNode
   preview?: boolean
 }) {
@@ -105,6 +105,11 @@ export function RosterRow({
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <ShipmentTypeTags types={vendor.shipmentTypes} />
+          {vendor.services?.length ? (
+            <span className="truncate text-foreground/80">
+              {vendor.services.map((service) => service.serviceName).join(" · ")}
+            </span>
+          ) : null}
           {!vendor.isActive ? (
             <span className="font-medium text-[var(--mli-on-error-container)] sm:hidden">Inactive</span>
           ) : null}

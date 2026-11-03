@@ -25,6 +25,9 @@ import CustomerActionCell from "@/components/action-cell/customer-action-cell"
 import { ClientCard } from "@/components/directory/client-card"
 import { DirectoryPager, StatTile, ViewToggle } from "@/components/directory/primitives"
 import { DataTableToolbar } from "@/components/data-table-toolbar"
+import { ActiveColumnFilters, ColumnFilterBar } from "@/components/column-filter/column-filter"
+import { CUSTOMER_FILTER_BAR } from "@/components/customers/customer-filter-fields"
+import { CustomerFilterProvider, customerFilterParams } from "@/components/customers/customer-filter-provider"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -74,15 +77,10 @@ export default function CustomerMasterDataPage() {
   const shipmentType = (applied.shipmentType ?? "all") as ShipmentTypeFilter
   const status = applied.status as "all" | "true" | "false"
 
+  // Both views share the search, the stat tiles and the Excel-style column filters.
   const params = useMemo(
-    () => ({
-      page,
-      pageSize,
-      search: applied.search || undefined,
-      status,
-      shipmentType,
-    }),
-    [page, pageSize, applied.search, status, shipmentType]
+    () => ({ page, pageSize, ...customerFilterParams(applied) }),
+    [page, pageSize, applied]
   )
   const { data, isLoading, error } = useCustomers(params, isRestored)
   const customers = data?.items ?? []
@@ -180,67 +178,75 @@ export default function CustomerMasterDataPage() {
         />
       </div>
 
-      {view === "table" ? (
-        <DashboardPageCard>
-          {!isRestored || isLoading ? (
-            <TableSkeleton />
-          ) : (
-            <DataTable
-              columns={columns}
-              data={customers}
+      <CustomerFilterProvider
+        applied={applied}
+        onChange={({ columns: nextColumns, sort }) => setApplied({ ...applied, columns: nextColumns, sort })}
+      >
+        {view === "table" ? (
+          <DashboardPageCard>
+            {!isRestored || isLoading ? (
+              <TableSkeleton />
+            ) : (
+              <DataTable
+                columns={columns}
+                data={customers}
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                totalPages={pagination.totalPages}
+                totalRows={pagination.total}
+                applied={applied}
+                onApply={setApplied}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
+          </DashboardPageCard>
+        ) : (
+          <section>
+            <DataTableToolbar
+              searchPlaceholder="Search by customer name or code..."
+              applied={applied}
+              onApply={setApplied}
+            />
+            {/* Cards have no column headers, so the same filters sit in pills. */}
+            <ColumnFilterBar items={CUSTOMER_FILTER_BAR} className="mb-3 sm:flex-wrap sm:gap-y-2" />
+            <ActiveColumnFilters />
+            {!isRestored || isLoading ? (
+              <CardGridSkeleton />
+            ) : customers.length === 0 ? (
+              <div className="rounded-2xl surface px-6 py-16 text-center">
+                <IconUsersGroup className="mx-auto size-10 text-muted-foreground/60" />
+                <p className="mt-3 font-semibold text-foreground">No customers found</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try another name or code, or clear the filters.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {customers.map((customer) => (
+                  <ClientCard
+                    key={customer.id}
+                    customer={customer}
+                    href={`/dashboard/customers/${customer.id}`}
+                    actions={
+                      <CustomerActionCell row={{ original: customer } as Row<Customer>} />
+                    }
+                  />
+                ))}
+              </div>
+            )}
+            <DirectoryPager
               page={pagination.page}
               pageSize={pagination.pageSize}
               totalPages={pagination.totalPages}
               totalRows={pagination.total}
-              applied={applied}
-              onApply={setApplied}
+              noun="customers"
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
             />
-          )}
-        </DashboardPageCard>
-      ) : (
-        <section>
-          <DataTableToolbar
-            searchPlaceholder="Search by customer name or code..."
-            applied={applied}
-            onApply={setApplied}
-          />
-          {!isRestored || isLoading ? (
-            <CardGridSkeleton />
-          ) : customers.length === 0 ? (
-            <div className="rounded-2xl surface px-6 py-16 text-center">
-              <IconUsersGroup className="mx-auto size-10 text-muted-foreground/60" />
-              <p className="mt-3 font-semibold text-foreground">No customers found</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Try another name or code, or clear the filters.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {customers.map((customer) => (
-                <ClientCard
-                  key={customer.id}
-                  customer={customer}
-                  href={`/dashboard/customers/${customer.id}`}
-                  actions={
-                    <CustomerActionCell row={{ original: customer } as Row<Customer>} />
-                  }
-                />
-              ))}
-            </div>
-          )}
-          <DirectoryPager
-            page={pagination.page}
-            pageSize={pagination.pageSize}
-            totalPages={pagination.totalPages}
-            totalRows={pagination.total}
-            noun="customers"
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </section>
-      )}
+          </section>
+        )}
+      </CustomerFilterProvider>
     </DashboardPage>
   )
 }

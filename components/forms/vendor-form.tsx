@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import type { Vendor } from "@/app/dashboard/vendors/columns"
 import { ActiveStatusField } from "@/components/forms/active-status-field"
 import { ShipmentTypeField } from "@/components/forms/shipment-type-field"
+import { VendorServicesField } from "@/components/forms/vendor-services-field"
 import { Button } from "@/components/ui/button"
 import { TextField } from "@/components/ui/text-field"
 import { useCreateVendor, useUpdateVendor } from "@/hooks/use-vendors"
@@ -24,7 +25,14 @@ export type VendorFormValues = {
   vendorName: string
   npwp: string
   shipmentTypes: NonNullable<Vendor["shipmentTypes"]>
+  serviceIds: string[]
   isActive: boolean
+}
+
+const serviceIdsOf = (vendor?: Vendor) => vendor?.services?.map((service) => service.id) ?? []
+
+function sameIds(a: string[], b: string[]) {
+  return a.length === b.length && a.every((id) => b.includes(id))
 }
 
 export default function VendorForm({
@@ -48,6 +56,7 @@ export default function VendorForm({
       vendorName: vendor?.vendorName ?? "",
       npwp: vendor?.npwp ?? "",
       shipmentTypes: vendor?.shipmentTypes ?? [],
+      serviceIds: serviceIdsOf(vendor),
       isActive: vendor?.isActive ?? true,
     },
     listeners: {
@@ -61,6 +70,7 @@ export default function VendorForm({
             vendorCode: value.vendorCode,
             npwp: value.npwp,
             shipmentTypes: value.shipmentTypes,
+            serviceIds: value.serviceIds,
             isActive: value.isActive,
           },
           {
@@ -84,6 +94,7 @@ export default function VendorForm({
         npwp: value.npwp,
         isActive: value.isActive,
         shipmentTypes: value.shipmentTypes,
+        serviceIds: value.serviceIds,
       }
 
       const hasChanges =
@@ -91,6 +102,7 @@ export default function VendorForm({
         next.vendorCode !== vendor.vendorCode ||
         next.npwp !== (vendor.npwp ?? "") ||
         !sameShipmentTypes(value.shipmentTypes, vendor.shipmentTypes) ||
+        !sameIds(value.serviceIds, serviceIdsOf(vendor)) ||
         next.isActive !== vendor.isActive
 
       if (!hasChanges) {
@@ -184,6 +196,17 @@ export default function VendorForm({
           )}
         </form.Field>
 
+        <form.Field name="serviceIds">
+          {(field) => (
+            <VendorServicesField
+              id={field.name}
+              value={field.state.value}
+              current={vendor?.services}
+              onValueChange={(nextValue) => field.handleChange(nextValue)}
+            />
+          )}
+        </form.Field>
+
         <form.Field name="npwp">
           {(field) => (
             <TextField
@@ -239,6 +262,7 @@ export default function VendorForm({
                   vendorName: vendor?.vendorName ?? "",
                   npwp: vendor?.npwp ?? "",
                   shipmentTypes: vendor?.shipmentTypes ?? [],
+                  serviceIds: serviceIdsOf(vendor),
                   isActive: vendor?.isActive ?? true,
                 })
               }

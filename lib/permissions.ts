@@ -16,6 +16,7 @@ export type AppModule =
   | "PORT"
   | "VESSEL"
   | "CONTAINER"
+  | "SERVICE"
   | "SHIPMENT"
   | "VENDOR_INVOICE"
   | "COSTING"
@@ -32,6 +33,7 @@ export const MODULE_LABEL: Record<AppModule, string> = {
   PORT: "Ports",
   VESSEL: "Vessels",
   CONTAINER: "Containers",
+  SERVICE: "Services",
   SHIPMENT: "Shipments",
   VENDOR_INVOICE: "Vendor invoices",
   COSTING: "Costing",
@@ -55,14 +57,31 @@ export type AppResource =
   | "users"
   | "roles"
 
-export type PermissionAction = "view" | "create" | "edit" | "delete"
+export type PermissionAction = "view" | "create" | "edit" | "delete" | "export"
 
 export type ModulePermissionFlags = {
   canView: boolean
   canCreate: boolean
   canEdit: boolean
   canDelete: boolean
+  canExport: boolean
 }
+
+/**
+ * Modules whose table can be downloaded as Excel; only these show an Export
+ * switch in the role editor. Mirrors the export routes in the backend.
+ */
+export const EXPORTABLE_MODULES: AppModule[] = [
+  "SHIPMENT",
+  "SALES",
+  "VENDOR_INVOICE",
+  "COSTING",
+  "SELLING",
+  "CUSTOMER_INVOICE",
+  "CUSTOMER",
+  "VENDOR",
+  "VESSEL",
+]
 
 export type RoleDetails = {
   id: string | null
@@ -91,7 +110,7 @@ const RESOURCE_TO_MODULE: Record<Exclude<AppResource, "masterData">, AppModule> 
   roles: "ROLE",
 }
 
-const MASTER_MODULES: AppModule[] = ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER"]
+const MASTER_MODULES: AppModule[] = ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER", "SERVICE"]
 
 export function isAdminRole(role: string | undefined | null): boolean {
   return role === "admin" || role === "superadmin"
@@ -121,6 +140,7 @@ function flagsFor(
       canCreate: false,
       canEdit: false,
       canDelete: false,
+      canExport: false,
     }
   )
 }
@@ -142,6 +162,9 @@ export function can(
       return flags.canEdit
     case "delete":
       return flags.canDelete
+    case "export":
+      // Exporting is reading the table in bulk, so it also needs view.
+      return flags.canView && Boolean(flags.canExport)
     default:
       return false
   }
@@ -228,6 +251,7 @@ export function getRouteModule(
   if (pathname.startsWith("/dashboard/ports")) return "PORT"
   if (pathname.startsWith("/dashboard/vessels")) return "VESSEL"
   if (pathname.startsWith("/dashboard/containers")) return "CONTAINER"
+  if (pathname.startsWith("/dashboard/services")) return "SERVICE"
   if (pathname.startsWith("/dashboard/shipments")) return "SHIPMENT"
   if (pathname.startsWith("/dashboard/vendor-invoices")) return "VENDOR_INVOICE"
   if (pathname.startsWith("/dashboard/costings")) return "COSTING"
@@ -249,7 +273,8 @@ export function getRouteResource(
     module === "VENDOR" ||
     module === "PORT" ||
     module === "VESSEL" ||
-    module === "CONTAINER"
+    module === "CONTAINER" ||
+    module === "SERVICE"
   ) {
     return "masterData"
   }
@@ -295,7 +320,8 @@ export function canManageRoles(roleSlug?: string | null): boolean {
  * module listed here. Mirrors PICKER_GRANTS in the backend's lib/permissions.ts.
  */
 export const PICKER_GRANTS: Partial<Record<AppModule, AppModule[]>> = {
-  SHIPMENT: ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER"],
+  SHIPMENT: ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER", "SERVICE"],
+  VENDOR: ["SERVICE"],
   VENDOR_INVOICE: ["VENDOR", "SHIPMENT", "CONTAINER"],
   COSTING: ["VENDOR", "SALES", "VENDOR_INVOICE"],
   SELLING: ["CUSTOMER", "SALES", "COSTING"],

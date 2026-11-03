@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 
 import type { Customer } from "@/app/dashboard/customers/columns"
 import type { Port } from "@/app/dashboard/ports/columns"
-import type { Vendor } from "@/app/dashboard/vendors/columns"
 import type { Vessel } from "@/app/dashboard/vessels/columns"
 import { CustomerCombobox } from "@/components/customer-combobox"
 import { BookingTicket, splitPortLabel, type BookingTicketData } from "@/components/create-flow/booking-ticket"
@@ -17,7 +16,12 @@ import { QuickAddButton } from "@/components/forms/quick-add-button"
 import { QuickAddCustomerDialog } from "@/components/forms/quick-add-customer-dialog"
 import { QuickAddPortDialog } from "@/components/forms/quick-add-port-dialog"
 import { QuickAddShipperDialog } from "@/components/forms/quick-add-shipper-dialog"
-import { QuickAddVendorDialog } from "@/components/forms/quick-add-vendor-dialog"
+import {
+  ShipmentServicesField,
+  toServiceLinePayload,
+  useServiceOptions,
+  type ServiceLineDraft,
+} from "@/components/forms/shipment-services-field"
 import { QuickAddVesselDialog } from "@/components/forms/quick-add-vessel-dialog"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -36,7 +40,7 @@ import {
 } from "@/components/ui/select"
 import { TextField } from "@/components/ui/text-field"
 import { useCustomerById, useGetLocationsByCustomerId, useGetShippersByCustomerCodeId } from "@/hooks/use-customers"
-import { usePortSearch, useVendorSearch, useVesselSearch } from "@/hooks/use-entity-searches"
+import { usePortSearch, useVesselSearch } from "@/hooks/use-entity-searches"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useCreateShipmentWithOperational } from "@/hooks/use-shipments"
 import { fieldError } from "@/lib/form-field"
@@ -45,12 +49,10 @@ import {
   customerShipperIdSchema,
 } from "@/lib/schemas/shipment"
 import {
-  freightBookToIdSchema,
   loadingLocationIdSchema,
   portDepartureIdSchema,
   portDestinationIdSchema,
   shipmentTypeFieldSchema,
-  truckingBookToIdSchema,
   unloadingLocationIdSchema,
   vesselIdSchema,
 } from "@/lib/schemas/shipment-operational"
@@ -58,29 +60,17 @@ import { formatShipmentStatus, type ShipmentStatus } from "@/lib/shipment-status
 import { SHIPMENT_TYPE_OPTIONS } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
 import type { CustomerLocationOption } from "@/services/customers.service"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 type Shipper = {
   id: string
   name: string
 }
 
-type VendorOption = {
-  id: string
-  vendorName: string
-  vendorCode: string
-}
-
 function toLocationOption(location: CustomerLocationOption): SearchableComboboxOption {
   return {
     value: location.id,
     label: `${location.addressLine1}, ${location.city}, ${location.country}`,
-  }
-}
-
-function toVendorOption(vendor: VendorOption): SearchableComboboxOption {
-  return {
-    value: vendor.id,
-    label: `${vendor.vendorName} (${vendor.vendorCode})`,
   }
 }
 
@@ -106,13 +96,11 @@ export default function ShipmentCreateForm() {
   const canCreateCustomer = can("CUSTOMER", "create")
   const canCreatePort = can("PORT", "create")
   const canCreateVessel = can("VESSEL", "create")
-  const canCreateVendor = can("VENDOR", "create")
   const [selectedCustomerCode, setSelectedCustomerCode] = useState("")
   const [selectedShipperId, setSelectedShipperId] = useState("-")
   const [createdShipper, setCreatedShipper] = useState<Shipper | null>(null)
   const [createdPorts, setCreatedPorts] = useState<SearchableComboboxOption[]>([])
   const [createdVessels, setCreatedVessels] = useState<SearchableComboboxOption[]>([])
-  const [createdVendors, setCreatedVendors] = useState<SearchableComboboxOption[]>([])
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false)
   const [shipperSelectOpen, setShipperSelectOpen] = useState(false)
   const [shipperDialogOpen, setShipperDialogOpen] = useState(false)
@@ -120,12 +108,8 @@ export default function ShipmentCreateForm() {
   const [portDialogTarget, setPortDialogTarget] = useState<
     "departure" | "destination" | null
   >(null)
-  const [vendorDialogTarget, setVendorDialogTarget] = useState<
-    "trucking" | "freight" | null
-  >(null)
   const [portSearch, setPortSearch] = useState("")
   const [vesselSearch, setVesselSearch] = useState("")
-  const [vendorSearch, setVendorSearch] = useState("")
 
   const form = useForm({
     defaultValues: {
@@ -141,8 +125,7 @@ export default function ShipmentCreateForm() {
       eta: "",
       blNumber: "",
       bookingNumber: "",
-      truckingBookToId: "",
-      freightBookToId: "",
+      services: [] as ServiceLineDraft[],
       remarks: "",
     },
     onSubmit: async ({ value }) => {
@@ -166,8 +149,7 @@ export default function ShipmentCreateForm() {
             eta: value.eta === "" ? null : value.eta,
             blNumber: value.blNumber,
             bookingNumber: value.bookingNumber,
-            truckingBookToId: normalizeOptionalId(value.truckingBookToId),
-            freightBookToId: normalizeOptionalId(value.freightBookToId),
+            services: toServiceLinePayload(value.services),
             remarks: value.remarks.trim() === "" ? undefined : value.remarks,
           },
         },
@@ -197,8 +179,7 @@ export default function ShipmentCreateForm() {
     usePortSearch(portSearch)
   const { data: vesselsData, isLoading: vesselsLoading, isFetching: vesselsFetching, isError: vesselsError } =
     useVesselSearch(vesselSearch)
-  const { data: vendorsData, isLoading: vendorsLoading, isFetching: vendorsFetching, isError: vendorsError } =
-    useVendorSearch(vendorSearch, true, "true")
+  const { items: serviceItems } = useServiceOptions(true)
 
   const shipmentTypeOptions = useMemo(
     () =>
@@ -243,30 +224,13 @@ export default function ShipmentCreateForm() {
     const items =
       vesselsData?.items?.map((vessel: Vessel) => ({
         value: vessel.id ?? "",
-        label: `${vessel.vesselName} / ${vessel.voyageNumber}`,
+        label: vesselLabel(vessel) ?? "",
       })) ?? []
     const extras = createdVessels.filter(
       (vessel) => !items.some((item) => item.value === vessel.value)
     )
     return [...extras, ...items]
   }, [createdVessels, vesselsData?.items])
-
-  const vendorItems = useMemo<SearchableComboboxOption[]>(() => {
-    const items =
-      vendorsData?.items
-        ?.filter((vendor: Vendor) => vendor.id)
-        .map((vendor: Vendor) =>
-          toVendorOption({
-            id: vendor.id as string,
-            vendorName: vendor.vendorName,
-            vendorCode: vendor.vendorCode,
-          })
-        ) ?? []
-    const extras = createdVendors.filter(
-      (vendor) => !items.some((item) => item.value === vendor.value)
-    )
-    return [...extras, ...items]
-  }, [createdVendors, vendorsData?.items])
 
   const activeCustomerLocations = useMemo(
     () => activeLocations(locations),
@@ -332,8 +296,7 @@ export default function ShipmentCreateForm() {
   const bookingFilled = [
     values.bookingNumber.trim(),
     values.blNumber.trim(),
-    values.truckingBookToId,
-    values.freightBookToId,
+    values.services.some((line) => line.serviceId),
   ].filter(Boolean).length
 
   const steps: FlowStep[] = [
@@ -360,8 +323,8 @@ export default function ShipmentCreateForm() {
     {
       id: "step-booking",
       title: "Booking details",
-      state: bookingFilled === 4 ? "done" : "optional",
-      detail: `${bookingFilled} of 4 added`,
+      state: bookingFilled === 3 ? "done" : "optional",
+      detail: `${bookingFilled} of 3 added`,
     },
     {
       id: "step-review",
@@ -388,8 +351,12 @@ export default function ShipmentCreateForm() {
     eta: values.eta || null,
     bookingNumber: values.bookingNumber.trim() || null,
     blNumber: values.blNumber.trim() || null,
-    trucking: labelOf("truckingBookToId", values.truckingBookToId, vendorItems),
-    freight: labelOf("freightBookToId", values.freightBookToId, vendorItems),
+    services: values.services
+      .filter((line) => line.serviceId)
+      .map((line) => {
+        const service = serviceItems.find((item) => item.value === line.serviceId)?.label ?? "Service"
+        return line.vendorLabel ? `${service}: ${line.vendorLabel}` : service
+      }),
     stuffing: labelOf("loadingLocationId", values.loadingLocationId, loadingLocationItems),
   }
 
@@ -416,7 +383,7 @@ export default function ShipmentCreateForm() {
     setCreatedVessels((current) => [
       {
         value: vessel.id ?? "",
-        label: `${vessel.vesselName} / ${vessel.voyageNumber}`,
+        label: vesselLabel(vessel) ?? "",
       },
       ...current.filter((item) => item.value !== vessel.id),
     ])
@@ -437,24 +404,6 @@ export default function ShipmentCreateForm() {
     }
     if (portDialogTarget === "destination") {
       form.setFieldValue("portDestinationId", port.id)
-    }
-  }
-
-  function applyCreatedVendor(vendor: Vendor) {
-    if (!vendor.id) return
-    setCreatedVendors((current) => [
-      toVendorOption({
-        id: vendor.id as string,
-        vendorName: vendor.vendorName,
-        vendorCode: vendor.vendorCode,
-      }),
-      ...current.filter((item) => item.value !== vendor.id),
-    ])
-    if (vendorDialogTarget === "trucking") {
-      form.setFieldValue("truckingBookToId", vendor.id)
-    }
-    if (vendorDialogTarget === "freight") {
-      form.setFieldValue("freightBookToId", vendor.id)
     }
   }
 
@@ -852,65 +801,15 @@ export default function ShipmentCreateForm() {
                 )}
               </form.Field>
 
-              <form.Field
-                name="truckingBookToId"
-                validators={{ onChange: zodOnChange(truckingBookToIdSchema) }}
-              >
+              <form.Field name="services">
                 {(field) => (
-                  <SearchableCombobox
-                    id={field.name}
-                    label="Trucking Book To"
-                    value={field.state.value}
-                    onValueChange={(nextValue) => {
-                      field.handleChange(nextValue)
-                      remember(field.name, nextValue, vendorItems)
-                    }}
-                    items={vendorItems}
-                    error={fieldError(field.state.meta.errors)}
-                    isLoading={vendorsLoading}
-                    isSearching={vendorsFetching}
-                    searchError={vendorsError}
-                    onSearchTermChange={setVendorSearch}
-                    placeholder="Search trucking vendor..."
-                    emptyMessage="No vendors found."
-                    quickAddLabel="Add new vendor"
-                    onQuickAdd={
-                      canCreateVendor
-                        ? () => setVendorDialogTarget("trucking")
-                        : undefined
-                    }
-                  />
-                )}
-              </form.Field>
-
-              <form.Field
-                name="freightBookToId"
-                validators={{ onChange: zodOnChange(freightBookToIdSchema) }}
-              >
-                {(field) => (
-                  <SearchableCombobox
-                    id={field.name}
-                    label="Freight Book To"
-                    value={field.state.value}
-                    onValueChange={(nextValue) => {
-                      field.handleChange(nextValue)
-                      remember(field.name, nextValue, vendorItems)
-                    }}
-                    items={vendorItems}
-                    error={fieldError(field.state.meta.errors)}
-                    isLoading={vendorsLoading}
-                    isSearching={vendorsFetching}
-                    searchError={vendorsError}
-                    onSearchTermChange={setVendorSearch}
-                    placeholder="Search freight vendor..."
-                    emptyMessage="No vendors found."
-                    quickAddLabel="Add new vendor"
-                    onQuickAdd={
-                      canCreateVendor
-                        ? () => setVendorDialogTarget("freight")
-                        : undefined
-                    }
-                  />
+                  <div className="col-span-full">
+                    <ShipmentServicesField
+                      value={field.state.value}
+                      onChange={(next) => field.handleChange(next)}
+                      enabled
+                    />
+                  </div>
                 )}
               </form.Field>
             </div>
@@ -1046,13 +945,6 @@ export default function ShipmentCreateForm() {
           if (!next) setPortDialogTarget(null)
         }}
         onCreated={applyCreatedPort}
-      />
-      <QuickAddVendorDialog
-        open={vendorDialogTarget !== null}
-        onOpenChange={(next) => {
-          if (!next) setVendorDialogTarget(null)
-        }}
-        onCreated={applyCreatedVendor}
       />
     </>
   )

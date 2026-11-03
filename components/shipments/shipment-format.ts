@@ -1,13 +1,7 @@
 import { format } from "date-fns"
 import { formatCalendarDate, parseLocalDate } from "@/lib/date-input"
 
-export type VendorRef = { vendorName: string; vendorCode: string } | null | undefined
-
-export function vendorLabel(vendor: VendorRef) {
-  if (!vendor || (!vendor.vendorName && !vendor.vendorCode)) return null
-  if (!vendor.vendorCode) return vendor.vendorName
-  return `${vendor.vendorName} (${vendor.vendorCode})`
-}
+export { vendorLabel, type VendorRef } from "@/lib/vendor-label"
 
 export function shortDate(value: string | null | undefined) {
   const formatted = formatCalendarDate(value, "")

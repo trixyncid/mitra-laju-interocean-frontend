@@ -33,6 +33,34 @@ export type UserListParams = {
   status?: "all" | "true" | "false"
   from?: string
   to?: string
+  /** Excel-style column filters: ticked values per column field. */
+  columns?: Record<string, string[]>
+  sortBy?: string
+  sortDir?: "asc" | "desc"
+}
+
+/** Column filter fields of the team list, and their query names. */
+export const USER_FILTER_PARAM: Record<string, string> = {
+  role: "roleIds",
+  status: "statuses",
+  createdAt: "createdDates",
+  updatedAt: "updatedDates",
+}
+
+export type UserFacet = { value: string; label: string; count: number }
+
+function setColumnParams(
+  query: URLSearchParams,
+  params: Pick<UserListParams, "columns" | "sortBy" | "sortDir">
+) {
+  for (const [field, values] of Object.entries(params.columns ?? {})) {
+    const name = USER_FILTER_PARAM[field]
+    if (name && values.length) query.set(name, values.join(","))
+  }
+  if (params.sortBy) {
+    query.set("sortBy", params.sortBy)
+    query.set("sortDir", params.sortDir ?? "asc")
+  }
 }
 
 export type PaginatedUsers = {
@@ -55,6 +83,7 @@ export const usersService = {
     if (params.search) query.set("search", params.search)
     if (params.from) query.set("from", params.from)
     if (params.to) query.set("to", params.to)
+    setColumnParams(query, params)
     const response = await apiClient.getEnvelope(`/users?${query.toString()}`)
     const pagination = response.meta?.pagination ?? {
       page: params.page,
@@ -66,6 +95,13 @@ export const usersService = {
       items: (response.data ?? []) as User[],
       pagination,
     }
+  },
+  /** Values and counts for one column, under the search and every other column filter. */
+  getFacets: async (field: string, params: Pick<UserListParams, "search" | "columns">): Promise<UserFacet[]> => {
+    const query = new URLSearchParams({ field })
+    if (params.search) query.set("search", params.search)
+    setColumnParams(query, { columns: params.columns })
+    return apiClient.get<UserFacet[]>(`/users/facets?${query.toString()}`)
   },
   getById: async (id: string): Promise<User> => apiClient.get(`/users/${id}`),
   create: async (user: CreateUserPayload): Promise<User> => apiClient.post("/users", user),

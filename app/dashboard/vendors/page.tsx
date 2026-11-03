@@ -24,6 +24,10 @@ import {
   DashboardPageHeader,
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
+import { ActiveColumnFilters, ColumnFilterBar } from "@/components/column-filter/column-filter"
+import { VENDOR_FILTER_PILLS } from "@/components/vendors/vendor-filter-fields"
+import { VendorFilterProvider, vendorFilterParams } from "@/components/vendors/vendor-filter-provider"
+import { VendorExportButton } from "@/components/vendors/vendor-export-button"
 import { cn } from "@/lib/utils"
 
 type ShipmentTypeFilter = "all" | "EXPORT" | "IMPORT" | "DOMESTIC"
@@ -97,16 +101,18 @@ export default function VendorMasterDataPage() {
   const shipmentType = (applied.shipmentType ?? "all") as ShipmentTypeFilter
   const status = applied.status as StatusFilter
 
-  const params = useMemo(
-    () => ({
+  // Both views share the search, pills and column filters. The roster is
+  // always A–Z, so it pages by name; the table follows the chosen sort.
+  const params = useMemo(() => {
+    const sort = view === "roster" ? ({ by: "vendorName", dir: "asc" } as const) : applied.sort
+    return {
       page,
       pageSize,
-      search: applied.search || undefined,
-      status,
-      shipmentType,
-    }),
-    [page, pageSize, applied.search, status, shipmentType]
-  )
+      ...vendorFilterParams(applied),
+      sortBy: sort?.by,
+      sortDir: sort?.dir,
+    }
+  }, [page, pageSize, applied, view])
   const { data, isLoading, error } = useVendors(params, isRestored)
   const vendors = data?.items ?? []
   const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
@@ -186,65 +192,73 @@ export default function VendorMasterDataPage() {
         </div>
       </div>
 
-      {view === "table" ? (
-        <DashboardPageCard>
-          {!isRestored || isLoading ? (
-            <TableSkeleton />
-          ) : (
-            <DataTable
-              columns={columns}
-              data={vendors}
+      <VendorFilterProvider
+        applied={applied}
+        onChange={({ columns: nextColumns, sort }) => setApplied({ ...applied, columns: nextColumns, sort })}
+      >
+        {view === "table" ? (
+          <DashboardPageCard>
+            {!isRestored || isLoading ? (
+              <TableSkeleton />
+            ) : (
+              <DataTable
+                columns={columns}
+                data={vendors}
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                totalPages={pagination.totalPages}
+                totalRows={pagination.total}
+                applied={applied}
+                onApply={setApplied}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
+          </DashboardPageCard>
+        ) : (
+          <section>
+            <DataTableToolbar
+              searchPlaceholder="Search by vendor name or code..."
+              applied={applied}
+              onApply={setApplied}
+              extra={<VendorExportButton applied={applied} totalRows={pagination.total} />}
+            />
+            <ColumnFilterBar items={VENDOR_FILTER_PILLS} className="mb-3" />
+            <ActiveColumnFilters />
+            {!isRestored || isLoading ? (
+              <div className="grid gap-2 xl:grid-cols-2">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <Skeleton key={i} className="h-16 rounded-xl" />
+                ))}
+              </div>
+            ) : vendors.length === 0 ? (
+              <div className="rounded-2xl surface px-6 py-16 text-center">
+                <IconBuildingStore className="mx-auto size-10 text-muted-foreground/60" />
+                <p className="mt-3 font-semibold text-foreground">No vendors found</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try another name or code, or clear the filters.
+                </p>
+              </div>
+            ) : (
+              <SupplierRoster
+                vendors={vendors}
+                renderActions={(vendor) => (
+                  <VendorActionCell row={{ original: vendor } as Row<Vendor>} />
+                )}
+              />
+            )}
+            <DirectoryPager
               page={pagination.page}
               pageSize={pagination.pageSize}
               totalPages={pagination.totalPages}
               totalRows={pagination.total}
-              applied={applied}
-              onApply={setApplied}
+              noun="vendors"
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
             />
-          )}
-        </DashboardPageCard>
-      ) : (
-        <section>
-          <DataTableToolbar
-            searchPlaceholder="Search by vendor name or code..."
-            applied={applied}
-            onApply={setApplied}
-          />
-          {!isRestored || isLoading ? (
-            <div className="grid gap-2 xl:grid-cols-2">
-              {Array.from({ length: 8 }, (_, i) => (
-                <Skeleton key={i} className="h-16 rounded-xl" />
-              ))}
-            </div>
-          ) : vendors.length === 0 ? (
-            <div className="rounded-2xl surface px-6 py-16 text-center">
-              <IconBuildingStore className="mx-auto size-10 text-muted-foreground/60" />
-              <p className="mt-3 font-semibold text-foreground">No vendors found</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Try another name or code, or clear the filters.
-              </p>
-            </div>
-          ) : (
-            <SupplierRoster
-              vendors={vendors}
-              renderActions={(vendor) => (
-                <VendorActionCell row={{ original: vendor } as Row<Vendor>} />
-              )}
-            />
-          )}
-          <DirectoryPager
-            page={pagination.page}
-            pageSize={pagination.pageSize}
-            totalPages={pagination.totalPages}
-            totalRows={pagination.total}
-            noun="vendors"
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </section>
-      )}
+          </section>
+        )}
+      </VendorFilterProvider>
     </DashboardPage>
   )
 }

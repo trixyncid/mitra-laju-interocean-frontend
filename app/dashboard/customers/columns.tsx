@@ -5,14 +5,13 @@ import Link from "next/link"
 import { Info } from "lucide-react"
 import { localDate } from "@/lib/utils"
 import CustomerActionCell from "@/components/action-cell/customer-action-cell"
+import { ColumnFilterHeader } from "@/components/column-filter/column-filter"
 import { StatusChip, WarningChip } from "@/components/ui/status-chip"
 import { ShipmentTypeTags } from "@/components/ui/shipment-type-tag"
 import { primaryText, secondaryText } from "@/lib/design"
 import type { ShipmentType } from "@/lib/permissions"
 import {
   actionColumn,
-  dateSort,
-  sortDescFirst,
   sortHeader,
   textSort,
 } from "@/lib/data-table"
@@ -33,23 +32,30 @@ export type Customer = {
 export const columns: ColumnDef<Customer>[] = [
     {
         accessorKey: "customerName",
-        header: ({ column }) => sortHeader(column, "Customer Name"),
-        ...textSort,
+        header: () => <ColumnFilterHeader field="customer" sortKey="customerName" label="Customer Name" />,
         cell: ({ row }) => (
             <div className={`${primaryText} flex items-center gap-x-1.5`}>
                 <span className="inline-flex items-center gap-x-1">
                     <Link href={`/dashboard/customers/${row.original.id}`} className="hover:underline">{ row.original.customerName }</Link>
                     <Info className="size-3.5 text-muted-foreground" />
                 </span>
-                <ShipmentTypeTags types={row.original.shipmentTypes} />
             </div>
         )
     },
     {
         accessorKey: "customerCode",
-        header: ({ column }) => sortHeader(column, "Customer Code"),
-        ...textSort,
+        header: () => <ColumnFilterHeader sortKey="customerCode" label="Customer Code" />,
         cell: ({ row }) => <span className={secondaryText}>{row.original.customerCode}</span>
+    },
+    {
+        id: "shipmentTypes",
+        header: () => <ColumnFilterHeader field="shipmentType" label="Shipment Type" />,
+        cell: ({ row }) =>
+            row.original.shipmentTypes?.length ? (
+                <ShipmentTypeTags types={row.original.shipmentTypes} />
+            ) : (
+                <span className={secondaryText}>—</span>
+            )
     },
     {
         accessorKey: "npwp",
@@ -81,14 +87,12 @@ export const columns: ColumnDef<Customer>[] = [
     },
     {
         accessorKey: "updatedAt",
-        header: ({ column }) => sortHeader(column, "Modified At"),
-        ...dateSort,
+        header: () => <ColumnFilterHeader field="modified" sortKey="modified" label="Modified At" />,
         cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt as string)}</span>
     },
     {
         accessorKey: "isActive",
-        header: ({ column }) => sortHeader(column, "Status"),
-        ...sortDescFirst,
+        header: () => <ColumnFilterHeader field="status" label="Status" />,
         cell: ({ row }) => <StatusChip active={row.original.isActive} />
     },
     {

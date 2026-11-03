@@ -6,7 +6,7 @@ import { IconPencil, IconPlus } from "@tabler/icons-react"
 
 import type { Customer } from "@/app/dashboard/customers/columns"
 import type { Port } from "@/app/dashboard/ports/columns"
-import type { Vendor } from "@/app/dashboard/vendors/columns"
+import type { ShipmentServiceLine } from "@/app/dashboard/shipments/columns"
 import type { Vessel } from "@/app/dashboard/vessels/columns"
 import { CustomerCombobox } from "@/components/customer-combobox"
 import { ActiveStatusField } from "@/components/forms/active-status-field"
@@ -14,9 +14,13 @@ import { QuickAddButton } from "@/components/forms/quick-add-button"
 import { QuickAddCustomerDialog } from "@/components/forms/quick-add-customer-dialog"
 import { QuickAddPortDialog } from "@/components/forms/quick-add-port-dialog"
 import { QuickAddShipperDialog } from "@/components/forms/quick-add-shipper-dialog"
-import { QuickAddVendorDialog } from "@/components/forms/quick-add-vendor-dialog"
 import { QuickAddVesselDialog } from "@/components/forms/quick-add-vessel-dialog"
 import { ShipmentStatusField } from "@/components/forms/shipment-status-field"
+import {
+    ShipmentServicesField,
+    toServiceLineDrafts,
+    toServiceLinePayload,
+} from "@/components/forms/shipment-services-field"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -44,7 +48,7 @@ import { TextField } from "@/components/ui/text-field"
 import {
     useGetShippersByCustomerCodeId,
 } from "@/hooks/use-customers"
-import { usePortSearch, useVendorSearch, useVesselSearch } from "@/hooks/use-entity-searches"
+import { usePortSearch, useVesselSearch } from "@/hooks/use-entity-searches"
 import { usePermissions } from "@/hooks/use-permissions"
 import {
     useCreateShipmentOperational,
@@ -56,33 +60,19 @@ import {
     customerShipperIdSchema,
 } from "@/lib/schemas/shipment"
 import {
-    freightBookToIdSchema,
     portDepartureIdSchema,
     portDestinationIdSchema,
     shipmentTypeFieldSchema,
-    truckingBookToIdSchema,
     vesselIdSchema,
 } from "@/lib/schemas/shipment-operational"
 import { type ShipmentStatus } from "@/lib/shipment-status"
 import { SHIPMENT_TYPE_OPTIONS } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 type Shipper = {
     id: string
     name: string
-}
-
-type VendorOption = {
-    id: string
-    vendorName: string
-    vendorCode: string
-}
-
-function toVendorOption(vendor: VendorOption): SearchableComboboxOption {
-    return {
-        value: vendor.id,
-        label: `${vendor.vendorName} (${vendor.vendorCode})`,
-    }
 }
 
 export default function ShipmentOperationalForm({
@@ -102,11 +92,8 @@ export default function ShipmentOperationalForm({
     loadingOutAt,
     blNumber,
     bookingNumber,
-    truckingBookToId,
-    freightBookToId,
+    services,
     remarks,
-    truckingBookTo,
-    freightBookTo,
     customerCodeId,
     customerShipperId,
 }: {
@@ -126,11 +113,8 @@ export default function ShipmentOperationalForm({
     loadingOutAt: string | undefined
     blNumber: string | undefined
     bookingNumber: string | undefined
-    truckingBookToId: string | undefined
-    freightBookToId: string | undefined
+    services?: ShipmentServiceLine[]
     remarks: string | undefined
-    truckingBookTo?: VendorOption | null
-    freightBookTo?: VendorOption | null
     customerCodeId: string
     customerShipperId: string | undefined
 }) {
@@ -139,21 +123,12 @@ export default function ShipmentOperationalForm({
     const canCreateCustomer = can("CUSTOMER", "create")
     const canCreatePort = can("PORT", "create")
     const canCreateVessel = can("VESSEL", "create")
-    const canCreateVendor = can("VENDOR", "create")
 
     const [selectedCustomerCode, setSelectedCustomerCode] = useState(customerCodeId)
     const [selectedShipperId, setSelectedShipperId] = useState(customerShipperId ?? "-")
     const [createdShipper, setCreatedShipper] = useState<Shipper | null>(null)
     const [createdPorts, setCreatedPorts] = useState<SearchableComboboxOption[]>([])
     const [createdVessels, setCreatedVessels] = useState<SearchableComboboxOption[]>([])
-    const [createdVendors, setCreatedVendors] = useState<SearchableComboboxOption[]>(() => {
-        const extras: SearchableComboboxOption[] = []
-        if (truckingBookTo) extras.push(toVendorOption(truckingBookTo))
-        if (freightBookTo && freightBookTo.id !== truckingBookTo?.id) {
-            extras.push(toVendorOption(freightBookTo))
-        }
-        return extras
-    })
     const [customerDialogOpen, setCustomerDialogOpen] = useState(false)
     const [shipperSelectOpen, setShipperSelectOpen] = useState(false)
     const [shipperDialogOpen, setShipperDialogOpen] = useState(false)
@@ -161,19 +136,13 @@ export default function ShipmentOperationalForm({
     const [portDialogTarget, setPortDialogTarget] = useState<
         "departure" | "destination" | null
     >(null)
-    const [vendorDialogTarget, setVendorDialogTarget] = useState<
-        "trucking" | "freight" | null
-    >(null)
     const [portSearch, setPortSearch] = useState("")
     const [vesselSearch, setVesselSearch] = useState("")
-    const [vendorSearch, setVendorSearch] = useState("")
 
     const { data: portsData, isLoading: portsLoading, isFetching: portsFetching, isError: portsError } =
         usePortSearch(portSearch, open)
     const { data: vesselsData, isLoading: vesselsLoading, isFetching: vesselsFetching, isError: vesselsError } =
         useVesselSearch(vesselSearch, open)
-    const { data: vendorsData, isLoading: vendorsLoading, isFetching: vendorsFetching, isError: vendorsError } =
-        useVendorSearch(vendorSearch, open, "true")
     const { data: shippers, isLoading: shippersLoading, error: shippersError } =
         useGetShippersByCustomerCodeId(selectedCustomerCode)
 
@@ -199,8 +168,7 @@ export default function ShipmentOperationalForm({
             vesselId: vesselId ?? "",
             blNumber: blNumber ?? "",
             bookingNumber: bookingNumber ?? "",
-            truckingBookToId: truckingBookToId ?? "",
-            freightBookToId: freightBookToId ?? "",
+            services: toServiceLineDrafts(services),
             remarks: remarks ?? "",
         },
         onSubmit: async ({ value }) => {
@@ -222,8 +190,7 @@ export default function ShipmentOperationalForm({
                 vesselId: value.vesselId,
                 blNumber: value.blNumber,
                 bookingNumber: value.bookingNumber,
-                truckingBookToId: normalizeOptionalId(value.truckingBookToId),
-                freightBookToId: normalizeOptionalId(value.freightBookToId),
+                services: toServiceLinePayload(value.services),
                 remarks: value.remarks.trim() === "" ? (mode === "create" ? undefined : null) : value.remarks,
             }
 
@@ -299,30 +266,13 @@ export default function ShipmentOperationalForm({
         const items =
             vesselsData?.items?.map((vessel: Vessel) => ({
                 value: vessel.id ?? "",
-                label: `${vessel.vesselName} / ${vessel.voyageNumber}`,
+                label: vesselLabel(vessel) ?? "",
             })) ?? []
         const extras = createdVessels.filter(
             (vessel) => !items.some((item) => item.value === vessel.value)
         )
         return [...extras, ...items]
     }, [createdVessels, vesselsData?.items])
-
-    const vendorItems = useMemo<SearchableComboboxOption[]>(() => {
-        const items =
-            vendorsData?.items
-                ?.filter((vendor: Vendor) => vendor.id)
-                .map((vendor: Vendor) =>
-                    toVendorOption({
-                        id: vendor.id as string,
-                        vendorName: vendor.vendorName,
-                        vendorCode: vendor.vendorCode,
-                    })
-                ) ?? []
-        const extras = createdVendors.filter(
-            (vendor) => !items.some((item) => item.value === vendor.value)
-        )
-        return [...extras, ...items]
-    }, [createdVendors, vendorsData?.items])
 
     const shipperItems = useMemo<Shipper[]>(() => {
         const items = shippers ?? []
@@ -365,7 +315,7 @@ export default function ShipmentOperationalForm({
         setCreatedVessels((current) => [
             {
                 value: vessel.id ?? "",
-                label: `${vessel.vesselName} / ${vessel.voyageNumber}`,
+                label: vesselLabel(vessel) ?? "",
             },
             ...current.filter((item) => item.value !== vessel.id),
         ])
@@ -386,24 +336,6 @@ export default function ShipmentOperationalForm({
         }
         if (portDialogTarget === "destination") {
             form.setFieldValue("portDestinationId", port.id)
-        }
-    }
-
-    function applyCreatedVendor(vendor: Vendor) {
-        if (!vendor.id) return
-        setCreatedVendors((current) => [
-            toVendorOption({
-                id: vendor.id as string,
-                vendorName: vendor.vendorName,
-                vendorCode: vendor.vendorCode,
-            }),
-            ...current.filter((item) => item.value !== vendor.id),
-        ])
-        if (vendorDialogTarget === "trucking") {
-            form.setFieldValue("truckingBookToId", vendor.id)
-        }
-        if (vendorDialogTarget === "freight") {
-            form.setFieldValue("freightBookToId", vendor.id)
         }
     }
 
@@ -838,67 +770,16 @@ export default function ShipmentOperationalForm({
                                         )}
                                     </form.Field>
 
-                                    <form.Field
-                                        name="truckingBookToId"
-                                        validators={{
-                                            onChange: zodOnChange(truckingBookToIdSchema),
-                                        }}
-                                    >
+                                    <form.Field name="services">
                                         {(field) => (
-                                            <SearchableCombobox
-                                                id={field.name}
-                                                label="Trucking Book To"
-                                                value={field.state.value}
-                                                onValueChange={(nextValue) =>
-                                                    field.handleChange(nextValue)
-                                                }
-                                                items={vendorItems}
-                                                error={fieldError(field.state.meta.errors)}
-                                                isLoading={vendorsLoading}
-                                                isSearching={vendorsFetching}
-                                                searchError={vendorsError}
-                                                onSearchTermChange={setVendorSearch}
-                                                placeholder="Search trucking vendor..."
-                                                emptyMessage="No vendors found."
-                                                quickAddLabel="Add new vendor"
-                                                onQuickAdd={
-                                                    canCreateVendor
-                                                        ? () => setVendorDialogTarget("trucking")
-                                                        : undefined
-                                                }
-                                            />
-                                        )}
-                                    </form.Field>
-
-                                    <form.Field
-                                        name="freightBookToId"
-                                        validators={{
-                                            onChange: zodOnChange(freightBookToIdSchema),
-                                        }}
-                                    >
-                                        {(field) => (
-                                            <SearchableCombobox
-                                                id={field.name}
-                                                label="Freight Book To"
-                                                value={field.state.value}
-                                                onValueChange={(nextValue) =>
-                                                    field.handleChange(nextValue)
-                                                }
-                                                items={vendorItems}
-                                                error={fieldError(field.state.meta.errors)}
-                                                isLoading={vendorsLoading}
-                                                isSearching={vendorsFetching}
-                                                searchError={vendorsError}
-                                                onSearchTermChange={setVendorSearch}
-                                                placeholder="Search freight vendor..."
-                                                emptyMessage="No vendors found."
-                                                quickAddLabel="Add new vendor"
-                                                onQuickAdd={
-                                                    canCreateVendor
-                                                        ? () => setVendorDialogTarget("freight")
-                                                        : undefined
-                                                }
-                                            />
+                                            <div className="sm:col-span-2">
+                                                <ShipmentServicesField
+                                                    value={field.state.value}
+                                                    onChange={(next) => field.handleChange(next)}
+                                                    enabled={open}
+                                                    saved={services}
+                                                />
+                                            </div>
                                         )}
                                     </form.Field>
 
@@ -960,13 +841,6 @@ export default function ShipmentOperationalForm({
                     if (!next) setPortDialogTarget(null)
                 }}
                 onCreated={applyCreatedPort}
-            />
-            <QuickAddVendorDialog
-                open={vendorDialogTarget !== null}
-                onOpenChange={(next) => {
-                    if (!next) setVendorDialogTarget(null)
-                }}
-                onCreated={applyCreatedVendor}
             />
         </div>
     )

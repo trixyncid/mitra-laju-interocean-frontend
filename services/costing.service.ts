@@ -96,6 +96,12 @@ export const costingService = {
     query.set("field", field)
     return apiClient.get<CostingFacet[]>(`/costings/facets?${query.toString()}`)
   },
+  /** Downloads the list as Excel: same search, column filters and order as on screen. */
+  exportExcel: async (params: Omit<CostingListParams, "page" | "pageSize">): Promise<{ rowCount: number | null }> => {
+    const fallbackFilename = `costings-${new Date().toISOString().slice(0, 10)}.xlsx`
+    const result = await apiClient.download(`/costings/export?${listQuery(params).toString()}`, fallbackFilename)
+    return { rowCount: result.rowCount }
+  },
   getById: async (id: string): Promise<Costing> => apiClient.get<Costing>(`/costings/${id}`),
   create: async (costing: CostingInput) => apiClient.post<Costing>("/costings", costing),
   update: async (id: string, costing: CostingInput) =>

@@ -11,6 +11,7 @@ import { tableSearchInput } from "@/lib/design"
 import { SHIPMENT_STATUS_OPTIONS } from "@/lib/shipment-status"
 import type { CustomerShipment } from "@/lib/types/entity-details"
 import { cn, localDate } from "@/lib/utils"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 const PAGE = 12
 
@@ -59,7 +60,7 @@ function RouteCard({ shipment }: { shipment: CustomerShipment }) {
               href={`/dashboard/shipments/${shipment.id}`}
               className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
             >
-              {vessel ? `${vessel.vesselName}${vessel.voyageNumber ? ` · ${vessel.voyageNumber}` : ""}` : "No vessel yet"}
+              {vesselLabel(vessel) ?? "No vessel yet"}
             </Link>
           </p>
         </div>

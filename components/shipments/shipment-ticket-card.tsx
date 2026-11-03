@@ -8,11 +8,11 @@ import {
   dayMonth,
   modifiedByName,
   summarizeContainers,
-  vendorLabel,
 } from "@/components/shipments/shipment-format"
+import { summarizeServices } from "@/components/shipments/shipment-service-list"
 import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
 import { ShipmentLifecycleChip } from "@/components/ui/status-chip"
-import { shipmentReference } from "@/lib/shipment-reference"
+import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
 import { cn, localDate } from "@/lib/utils"
 
 function Port({
@@ -162,7 +162,7 @@ export const ShipmentTicketCard = forwardRef<HTMLButtonElement, Props>(function 
         <IconShip className="size-3.5 shrink-0 text-primary" />
         {op?.vessel ? (
           <span className="truncate">
-            <span className="font-medium text-foreground">{op.vessel.vesselName}</span> · Voyage {op.vessel.voyageNumber}
+            <span className="font-medium text-foreground">{vesselLabel(op.vessel)}</span>
           </span>
         ) : (
           <span>No vessel assigned</span>
@@ -177,8 +177,13 @@ export const ShipmentTicketCard = forwardRef<HTMLButtonElement, Props>(function 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
             <StubField label="Booking">{op.bookingNumber?.trim() || "—"}</StubField>
             <StubField label="BL number">{op.blNumber?.trim() || "—"}</StubField>
-            <StubField label="Trucking">{vendorLabel(op.truckingBookTo) ?? "—"}</StubField>
-            <StubField label="Freight">{vendorLabel(op.freightBookTo) ?? "—"}</StubField>
+            <StubField label={`Services (${op.services?.length ?? 0})`} className="col-span-2">
+              {op.services?.length ? (
+                <span title={summarizeServices(op.services)}>{summarizeServices(op.services)}</span>
+              ) : (
+                "None yet"
+              )}
+            </StubField>
             <StubField label={`Containers (${containers.length})`} className="col-span-2">
               {containers.length > 0 ? (
                 <span title={summarizeContainers(containers)}>{summarizeContainers(containers)}</span>

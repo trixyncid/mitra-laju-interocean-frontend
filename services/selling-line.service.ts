@@ -72,6 +72,12 @@ export const sellingLineService = {
     query.set("field", field)
     return apiClient.get<SellingFacet[]>(`/sellings/facets?${query.toString()}`)
   },
+  /** Downloads the list as Excel: same search, column filters and order as on screen. */
+  exportExcel: async (params: Omit<SellingListParams, "page" | "pageSize">): Promise<{ rowCount: number | null }> => {
+    const fallbackFilename = `sellings-${new Date().toISOString().slice(0, 10)}.xlsx`
+    const result = await apiClient.download(`/sellings/export?${listQuery(params).toString()}`, fallbackFilename)
+    return { rowCount: result.rowCount }
+  },
   getById: async (id: string): Promise<Selling> => apiClient.get<Selling>(`/sellings/${id}`),
   create: async (selling: SellingInput) => apiClient.post<Selling>("/sellings", selling),
   update: async (id: string, selling: Partial<Omit<SellingInput, "costingIds">>) =>

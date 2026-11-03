@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { glassInset } from "@/lib/design"
 import {
+  EXPORTABLE_MODULES,
   MODULE_LABEL,
   pickerSources,
   type AppModule,
@@ -18,6 +19,14 @@ import type { RolePermission } from "@/services/roles.service"
 type Flags = Pick<RolePermission, "canView" | "canCreate" | "canEdit" | "canDelete">
 
 export type AccessLevel = "none" | "view" | "edit" | "full"
+
+/** Level picked for a row: no access also drops Export; opening a page turns it on by default. */
+function levelChange(row: RolePermission, level: AccessLevel): Partial<RolePermission> {
+  return {
+    ...LEVEL_FLAGS[level],
+    canExport: level === "none" ? false : row.canView ? row.canExport : true,
+  }
+}
 
 const LEVELS: { value: AccessLevel; label: string; hint: string }[] = [
   { value: "none", label: "No access", hint: "Cannot open this page" },
@@ -52,7 +61,7 @@ export const ACCESS_GROUPS: { label: string; modules: AppModule[] }[] = [
   { label: "Overview", modules: ["DASHBOARD"] },
   { label: "Operations", modules: ["SHIPMENT"] },
   { label: "Commercial", modules: ["SALES", "VENDOR_INVOICE", "COSTING", "SELLING", "CUSTOMER_INVOICE"] },
-  { label: "Master data", modules: ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER"] },
+  { label: "Master data", modules: ["CUSTOMER", "VENDOR", "PORT", "VESSEL", "CONTAINER", "SERVICE"] },
   { label: "Administration", modules: ["USER", "ROLE"] },
 ]
 
@@ -132,7 +141,7 @@ function AdvancedControl({
   onChange,
 }: {
   row: RolePermission
-  onChange: (flags: Flags) => void
+  onChange: (flags: Partial<RolePermission>) => void
 }) {
   const label = MODULE_LABEL[row.module]
   return (
@@ -149,7 +158,7 @@ function AdvancedControl({
               const on = checked === true
               // Doing anything on a page needs the page: writes imply View,
               // and removing View removes everything else.
-              if (key === "canView" && !on) return onChange(LEVEL_FLAGS.none)
+              if (key === "canView" && !on) return onChange({ ...LEVEL_FLAGS.none, canExport: false })
               onChange({ ...row, [key]: on, ...(on && key !== "canView" ? { canView: true } : {}) })
             }}
           />
@@ -160,12 +169,36 @@ function AdvancedControl({
   )
 }
 
+/** Excel download for the module's table; needs View, so it is off without it. */
+function ExportToggle({ row, onChange }: { row: RolePermission; onChange: (on: boolean) => void }) {
+  const exportable = EXPORTABLE_MODULES.includes(row.module)
+  // Keep the column aligned on rows without an export.
+  if (!exportable) return <span aria-hidden className="hidden w-[4.75rem] shrink-0 sm:block" />
+  return (
+    <label
+      title={row.canView ? "Can download this table as Excel" : "Needs View access first"}
+      className={cn(
+        "flex h-8 w-[4.75rem] shrink-0 items-center gap-2 rounded-md px-2 text-[13px]",
+        row.canView ? "cursor-pointer text-muted-foreground hover:bg-muted" : "cursor-not-allowed text-muted-foreground/50"
+      )}
+    >
+      <Checkbox
+        checked={row.canView && row.canExport}
+        disabled={!row.canView}
+        aria-label={`${MODULE_LABEL[row.module]} Export`}
+        onCheckedChange={(checked) => onChange(checked === true)}
+      />
+      Export
+    </label>
+  )
+}
+
 export function ModuleAccessEditor({
   rows,
   onChange,
 }: {
   rows: RolePermission[]
-  onChange: (module: AppModule, flags: Flags) => void
+  onChange: (module: AppModule, flags: Partial<RolePermission>) => void
 }) {
   const [advanced, setAdvanced] = useState(
     () => rows.some((row) => levelOf(row) === null)
@@ -259,15 +292,18 @@ export function ModuleAccessEditor({
                           </p>
                         ) : null}
                       </div>
-                      {advanced ? (
-                        <AdvancedControl row={row} onChange={(flags) => onChange(row.module, flags)} />
-                      ) : (
-                        <LevelControl
-                          module={row.module}
-                          value={level}
-                          onChange={(next) => onChange(row.module, LEVEL_FLAGS[next])}
-                        />
-                      )}
+                      <div className="flex items-center gap-3">
+                        {advanced ? (
+                          <AdvancedControl row={row} onChange={(flags) => onChange(row.module, flags)} />
+                        ) : (
+                          <LevelControl
+                            module={row.module}
+                            value={level}
+                            onChange={(next) => onChange(row.module, levelChange(row, next))}
+                          />
+                        )}
+                        <ExportToggle row={row} onChange={(on) => onChange(row.module, { canExport: on })} />
+                      </div>
                     </li>
                   )
                 })}

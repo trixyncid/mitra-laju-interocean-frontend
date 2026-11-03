@@ -5,10 +5,13 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
 import { formatIdr, formatIdrCompact } from "@/components/dashboard/overview-card"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
+import { salesFilterParams } from "@/components/sales/sales-filter-provider"
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
 import { formatPercent } from "@/components/sellings/selling-margin"
+import { TableExportButton } from "@/components/table-export-button"
 import type { Sales, SalesSummary } from "@/lib/types/sales"
 import { cn } from "@/lib/utils"
+import { salesService } from "@/services/sales.service"
 
 /** Totals across every filtered job (all pages), matching the split view's summary. */
 function SalesTotals({ summary, total }: { summary: SalesSummary; total: number }) {
@@ -79,6 +82,14 @@ export function DataTable({
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       searchPlaceholder="Search number, customer, booking or BL…"
+      extra={
+        <TableExportButton
+          module="SALES"
+          noun="sales jobs"
+          totalRows={totalRows}
+          onExport={() => salesService.exportExcel(salesFilterParams(applied))}
+        />
+      }
       beforeTable={
         <>
           <ActiveColumnFilters />

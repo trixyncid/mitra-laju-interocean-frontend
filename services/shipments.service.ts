@@ -31,8 +31,7 @@ export type CreateShipmentOperationalInput = {
     bookingNumber?: string;
     loadingLocationId?: string;
     unloadingLocationId?: string;
-    truckingBookToId?: string;
-    freightBookToId?: string;
+    services?: { serviceId: string; vendorId: string | null }[];
     remarks?: string;
 };
 
@@ -62,8 +61,8 @@ export const SHIPMENT_FILTER_PARAM: Record<string, string> = {
     eta: "etaDates",
     loading: "loadingDates",
     bl: "bl",
-    trucking: "truckingIds",
-    freight: "freightIds",
+    service: "serviceIds",
+    serviceVendor: "serviceVendorIds",
 };
 
 export type ShipmentFacet = { value: string; label: string; count: number };

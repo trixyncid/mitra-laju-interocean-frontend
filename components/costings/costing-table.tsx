@@ -17,6 +17,7 @@ import TableSkeleton from "@/components/loading/table-skeleton"
 import { RecordLink } from "@/components/record-link"
 import { CostingRowActions } from "@/components/costings/costing-row-actions"
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
+import { TableExportButton } from "@/components/table-export-button"
 import { useCostingsQuery } from "@/hooks/use-costings"
 import { actionColumn } from "@/lib/data-table"
 import { primaryText, secondaryText } from "@/lib/design"
@@ -253,6 +254,14 @@ export function CostingTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
         searchPlaceholder="Search description, vendor or sales number…"
+        extra={
+          <TableExportButton
+            module="COSTING"
+            noun="costing lines"
+            totalRows={pagination.total}
+            onExport={() => costingService.exportExcel(listParams)}
+          />
+        }
         beforeTable={
           <>
             <ActiveColumnFilters />

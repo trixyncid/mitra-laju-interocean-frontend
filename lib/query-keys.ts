@@ -84,6 +84,12 @@ export const portKeys = {
   list: (params: unknown) => [...portKeys.lists(), params] as const,
 }
 
+export const serviceKeys = {
+  all: ["services"] as const,
+  lists: () => [...serviceKeys.all, "list"] as const,
+  list: (params: unknown) => [...serviceKeys.lists(), params] as const,
+}
+
 export const vesselKeys = {
   all: ["vessels"] as const,
   lists: () => [...vesselKeys.all, "list"] as const,

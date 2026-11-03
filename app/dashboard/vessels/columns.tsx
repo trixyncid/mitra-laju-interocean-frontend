@@ -1,6 +1,7 @@
 "use client"
 
 import VesselActionCell from "@/components/action-cell/vessel-action-cell"
+import { ColumnFilterHeader } from "@/components/column-filter/column-filter"
 import { formatCalendarDate } from "@/lib/date-input"
 import { localDate } from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
@@ -29,7 +30,7 @@ export type Vessel = {
 export const columns: ColumnDef<Vessel>[] = [
     {
         accessorKey: "vesselName",
-        header: ({ column }) => sortHeader(column, "Vessel Name"),
+        header: () => <ColumnFilterHeader field="vesselName" sortKey="vesselName" label="Vessel Name" />,
         ...textSort,
         cell: ({ row }) => {
             return <span className={primaryText}>{ row.original.vesselName }</span>
@@ -37,7 +38,7 @@ export const columns: ColumnDef<Vessel>[] = [
     },
     {
         accessorKey: "voyageNumber",
-        header: ({ column }) => sortHeader(column, "Voyage Number"),
+        header: () => <ColumnFilterHeader field="voyageNumber" sortKey="voyageNumber" label="Voyage Number" />,
         ...textSort,
         cell: ({ row }) => (
             <span className={secondaryText}>{row.original.voyageNumber}</span>
@@ -45,7 +46,7 @@ export const columns: ColumnDef<Vessel>[] = [
     },
     {
         accessorKey: "etd",
-        header: ({ column }) => sortHeader(column, "ETD"),
+        header: () => <ColumnFilterHeader field="etd" sortKey="etd" label="ETD" />,
         ...dateSort,
         cell: ({ row }) => {
             return row.original.etd === null || row.original.etd === undefined ? (
@@ -57,7 +58,7 @@ export const columns: ColumnDef<Vessel>[] = [
     },
     {
         accessorKey: "eta",
-        header: ({ column }) => sortHeader(column, "ETA"),
+        header: () => <ColumnFilterHeader field="eta" sortKey="eta" label="ETA" />,
         ...dateSort,
         cell: ({ row }) => {
             return row.original.eta === null || row.original.eta === undefined ? (
@@ -69,7 +70,7 @@ export const columns: ColumnDef<Vessel>[] = [
     },
     {
         accessorKey: "closingReefer",
-        header: ({ column }) => sortHeader(column, "Closing Reefer"),
+        header: () => <ColumnFilterHeader field="closingReefer" sortKey="closingReefer" label="Closing Reefer" />,
         ...dateSort,
         cell: ({ row }) => {
             return row.original.closingReefer === null || row.original.closingReefer === undefined ? (
@@ -98,7 +99,7 @@ export const columns: ColumnDef<Vessel>[] = [
     },
     {
         accessorKey: "isActive",
-        header: ({ column }) => sortHeader(column, "Status"),
+        header: () => <ColumnFilterHeader field="status" label="Status" />,
         ...sortDescFirst,
         cell: ({ row }) => <StatusChip active={row.original.isActive} />
     },

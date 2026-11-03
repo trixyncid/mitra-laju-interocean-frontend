@@ -213,7 +213,6 @@ export function SalesPanel({
               <ShipmentSummary shipment={shipment} />
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {formatShipmentStatus(shipment.status)}
-                {op?.vessel?.voyageNumber ? ` · Voyage ${op.vessel.voyageNumber}` : ""}
                 {op?.blNumber ? ` · BL ${op.blNumber}` : ""}
               </p>
             </div>

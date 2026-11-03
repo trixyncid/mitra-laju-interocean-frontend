@@ -16,8 +16,8 @@ export type BookingTicketData = {
   eta: string | null
   bookingNumber: string | null
   blNumber: string | null
-  trucking: string | null
-  freight: string | null
+  /** "Trucking: Truck Co (TRK)" — one entry per service line. */
+  services: string[]
   stuffing: string | null
 }
 
@@ -139,11 +139,7 @@ export function BookingTicket({ data, className }: { data: BookingTicketData; cl
       <div className="flex items-center gap-2 border-t border-border/70 bg-[rgba(var(--mli-inset-rgb),0.6)] px-5 py-3 text-xs text-muted-foreground">
         <IconTruck className="size-4 shrink-0" />
         <span className="min-w-0 truncate">
-          {data.trucking || data.freight
-            ? [data.trucking && `Trucking: ${data.trucking}`, data.freight && `Freight: ${data.freight}`]
-                .filter(Boolean)
-                .join(" · ")
-            : "No trucking or freight vendor yet"}
+          {data.services.length ? data.services.join(" · ") : "No services yet"}
         </span>
       </div>
     </article>

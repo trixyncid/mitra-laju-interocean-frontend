@@ -91,8 +91,8 @@ export interface DashboardVoyageShipment {
   portDestination: string | null
   bookingNumber: string | null
   blNumber: string | null
-  truckingBookTo: string | null
-  freightBookTo: string | null
+  /** Service lines; `vendor` is "Name (CODE)". */
+  services: { serviceName: string; vendor: string | null }[]
   remarks: string | null
   containers: DashboardVoyageContainer[]
 }

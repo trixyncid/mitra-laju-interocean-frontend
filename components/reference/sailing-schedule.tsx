@@ -13,6 +13,7 @@ import VesselActionCell from "@/components/action-cell/vessel-action-cell"
 import type { Vessel } from "@/app/dashboard/vessels/columns"
 import { parseLocalDate } from "@/lib/date-input"
 import { cn } from "@/lib/utils"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 type Bucket = "this-week" | "next-week" | "later" | "no-date" | "left"
 
@@ -120,11 +121,8 @@ function VoyageRow({ vessel, today, past }: { vessel: Vessel; today: Date; past:
       <div className="min-w-0 flex-1 self-center">
         <div className="flex flex-wrap items-center gap-2">
           <p className={cn("truncate text-sm font-semibold", vessel.isActive ? "text-foreground" : "text-muted-foreground")}>
-            {vessel.vesselName}
+            {vesselLabel(vessel)}
           </p>
-          <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] font-medium text-foreground">
-            {vessel.voyageNumber}
-          </span>
           {!vessel.isActive ? (
             <span className="rounded-full bg-[var(--mli-error-container)] px-2 py-0.5 text-[11px] font-medium text-[var(--mli-on-error-container)]">
               Not in use
@@ -176,10 +174,7 @@ function NextDeparture({ vessel, today }: { vessel: Vessel; today: Date }) {
       <div className="relative mt-5 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-sm font-medium">
           <IconShip className="size-4" />
-          {vessel.vesselName}
-        </span>
-        <span className="rounded-full bg-primary-foreground/15 px-3 py-1.5 font-mono text-xs font-medium">
-          {vessel.voyageNumber}
+          {vesselLabel(vessel)}
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-xs font-medium">
           <IconAnchor className="size-3.5" />

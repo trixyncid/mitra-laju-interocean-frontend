@@ -2,8 +2,8 @@ import { describe, expect, it } from "bun:test"
 
 import { canPickWithPermissions, pickerSources } from "@/lib/permissions"
 
-const edit = { canView: true, canCreate: true, canEdit: true, canDelete: false }
-const view = { canView: true, canCreate: false, canEdit: false, canDelete: false }
+const edit = { canView: true, canCreate: true, canEdit: true, canDelete: false, canExport: false }
+const view = { canView: true, canCreate: false, canEdit: false, canDelete: false, canExport: false }
 
 describe("picker access", () => {
   it("lets sales editors pick customers without the Customers page", () => {

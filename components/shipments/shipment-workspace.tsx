@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -10,7 +11,9 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   IconArrowUp,
+  IconChevronDown,
   IconLayoutList,
+  IconStack2,
   IconSearch,
   IconShip,
   IconTicket,
@@ -20,6 +23,7 @@ import {
 import { SHIPMENT_FILTER_PILLS } from "@/app/dashboard/shipments/column-filter-fields"
 import { ColumnFilterBar } from "@/components/column-filter/column-filter"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
+import type { Shipment } from "@/app/dashboard/shipments/columns"
 import { ShipmentCompactRow } from "@/components/shipments/shipment-compact-row"
 import { ShipmentDetailPanel } from "@/components/shipments/shipment-detail-panel"
 import { ShipmentExportButton } from "@/components/shipments/shipment-export-button"
@@ -27,16 +31,91 @@ import { ShipmentFilterProvider, shipmentFilterParams } from "@/components/shipm
 import { ShipmentTicketCard } from "@/components/shipments/shipment-ticket-card"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useIsDesktop } from "@/hooks/use-is-desktop"
 import { usePersistedChoice } from "@/hooks/use-persisted-choice"
 import { useInfiniteShipments } from "@/hooks/use-shipments"
 import { SHIPMENT_LIFECYCLE_OPTIONS } from "@/lib/data-table-filters"
+import { vesselLabel } from "@/lib/shipment-reference"
 import { cn } from "@/lib/utils"
 
 const BATCH_SIZE = 30
 const SEARCH_DELAY_MS = 300
 
 type Density = "compact" | "ticket"
+type GroupBy = "none" | "customer" | "vessel"
+
+const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: "none", label: "No grouping" },
+  { value: "customer", label: "Customer" },
+  { value: "vessel", label: "Vessel" },
+]
+
+type ShipmentGroup = { key: string; label: string; hint?: string; shipments: Shipment[] }
+
+/** Buckets the loaded shipments; groups keep the order they first appear in. */
+function groupShipments(shipments: Shipment[], groupBy: GroupBy): ShipmentGroup[] {
+  if (groupBy === "none") return [{ key: "all", label: "", shipments }]
+  const groups = new Map<string, ShipmentGroup>()
+  for (const shipment of shipments) {
+    let key: string
+    let label: string
+    let hint: string | undefined
+    if (groupBy === "customer") {
+      const customer = shipment.customerCode
+      key = shipment.customerCodeId || "none"
+      label = customer?.customerName?.trim() || "No customer"
+      hint = customer?.customerCode
+    } else {
+      const vessel = vesselLabel(shipment.shipmentOperational?.vessel)
+      key = vessel ?? "none"
+      label = vessel ?? "No vessel"
+    }
+    const group = groups.get(key)
+    if (group) group.shipments.push(shipment)
+    else groups.set(key, { key, label, hint, shipments: [shipment] })
+  }
+  return [...groups.values()]
+}
+
+function GroupMenu({ value, onChange }: { value: GroupBy; onChange: (value: GroupBy) => void }) {
+  const active = value !== "none"
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Group shipments"
+          title="Group shipments"
+          className={cn(
+            "flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+            active ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <IconStack2 className="size-4" />
+          {active ? GROUP_OPTIONS.find((option) => option.value === value)?.label : "Group"}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuLabel>Group by</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={value} onValueChange={(next) => onChange(next as GroupBy)}>
+          {GROUP_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
@@ -102,6 +181,12 @@ export function ShipmentWorkspace({
     ["compact", "ticket"],
     "compact"
   )
+  const [groupBy, setGroupBy] = usePersistedChoice<GroupBy>(
+    "mli:shipments:group",
+    ["none", "customer", "vessel"],
+    "none"
+  )
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -116,16 +201,27 @@ export function ShipmentWorkspace({
   const statusFilter = applied.columns?.status ?? []
   const activeStatus = statusFilter.length === 0 ? "all" : statusFilter.length === 1 ? statusFilter[0].value : null
 
+  // Grouping sorts by the grouped field first, so a group's shipments arrive
+  // together as batches load instead of scattering across the list.
+  const filterParams = shipmentFilterParams(applied)
+  const groupSortDir = applied.sort?.by === groupBy ? applied.sort.dir : "asc"
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteShipments(
       {
         pageSize: BATCH_SIZE,
-        ...shipmentFilterParams(applied),
+        ...filterParams,
+        ...(groupBy !== "none" ? { sortBy: groupBy, sortDir: groupSortDir } : {}),
       },
       enabled
     )
 
-  const shipments = data?.pages.flatMap((page) => page.items) ?? []
+  const loaded = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
+  const groups = useMemo(() => groupShipments(loaded, groupBy), [loaded, groupBy])
+  // Shipments in list order, minus collapsed groups — what the arrow keys walk through.
+  const shipments = useMemo(
+    () => groups.flatMap((group) => (collapsed.has(group.key) ? [] : group.shipments)),
+    [groups, collapsed]
+  )
   const total = data?.pages[0]?.pagination.total ?? 0
 
   const selectedParam = searchParams.get("shipment")
@@ -217,6 +313,20 @@ export function ShipmentWorkspace({
     Boolean(applied.sort) ||
     Object.values(applied.columns ?? {}).some((entries) => entries.length)
 
+  const changeGroupBy = (next: GroupBy) => {
+    setGroupBy(next)
+    setCollapsed(new Set())
+    scrollRef.current?.scrollTo({ top: 0 })
+  }
+
+  const toggleGroup = (key: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
   const setStatusTab = (value: string, label: string) => {
     const columns = { ...(applied.columns ?? {}) }
     if (value === "all") delete columns.status
@@ -305,12 +415,13 @@ export function ShipmentWorkspace({
                 "Loading…"
               ) : (
                 <>
-                  <span className="font-medium text-foreground tabular-nums">{shipments.length}</span>
+                  <span className="font-medium text-foreground tabular-nums">{loaded.length}</span>
                   {" of "}
                   <span className="tabular-nums">{total.toLocaleString("id-ID")}</span> shipments
                 </>
               )}
             </p>
+            <GroupMenu value={groupBy} onChange={changeGroupBy} />
             <DensityToggle value={density} onChange={setDensity} />
             <ShipmentExportButton applied={applied} totalRows={total} compact />
           </div>
@@ -332,7 +443,7 @@ export function ShipmentWorkspace({
             <ListSkeleton density={density} />
           ) : error ? (
             <p className="px-4 py-12 text-center text-sm text-muted-foreground">{error.message}</p>
-          ) : shipments.length === 0 ? (
+          ) : loaded.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
               <span className="flex size-12 items-center justify-center rounded-full bg-muted">
                 <IconShip className="size-6 text-muted-foreground" />
@@ -353,25 +464,68 @@ export function ShipmentWorkspace({
             </div>
           ) : (
             <>
-              {shipments.map((shipment) => (
-                <div role="listitem" key={shipment.id}>
-                  {density === "ticket" ? (
-                    <ShipmentTicketCard
-                      ref={setItemRef(shipment.id)}
-                      shipment={shipment}
-                      selected={shipment.id === activeId}
-                      onSelect={() => shipment.id && select(shipment.id)}
-                    />
-                  ) : (
-                    <ShipmentCompactRow
-                      ref={setItemRef(shipment.id)}
-                      shipment={shipment}
-                      selected={shipment.id === activeId}
-                      onSelect={() => shipment.id && select(shipment.id)}
-                    />
-                  )}
-                </div>
-              ))}
+              {groups.map((group) => {
+                const isCollapsed = collapsed.has(group.key)
+                const items = group.shipments.map((shipment) => (
+                  <div role="listitem" key={shipment.id}>
+                    {density === "ticket" ? (
+                      <ShipmentTicketCard
+                        ref={setItemRef(shipment.id)}
+                        shipment={shipment}
+                        selected={shipment.id === activeId}
+                        onSelect={() => shipment.id && select(shipment.id)}
+                      />
+                    ) : (
+                      <ShipmentCompactRow
+                        ref={setItemRef(shipment.id)}
+                        shipment={shipment}
+                        selected={shipment.id === activeId}
+                        groupBy={groupBy === "none" ? null : groupBy}
+                        onSelect={() => shipment.id && select(shipment.id)}
+                      />
+                    )}
+                  </div>
+                ))
+                if (groupBy === "none") return items
+                return (
+                  <div key={group.key} role="group" aria-label={group.label}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.key)}
+                      aria-expanded={!isCollapsed}
+                      className={cn(
+                        "sticky top-0 z-10 flex w-full cursor-pointer items-center gap-2 rounded-lg bg-card/95 px-3 py-2 text-left backdrop-blur",
+                        density === "ticket" && "mb-2 bg-background/95"
+                      )}
+                    >
+                      <IconChevronDown
+                        className={cn(
+                          "size-4 shrink-0 text-muted-foreground transition-transform",
+                          isCollapsed && "-rotate-90"
+                        )}
+                      />
+                      {group.hint ? (
+                        <span
+                          className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[11px] font-semibold text-secondary-foreground"
+                          title={group.label}
+                        >
+                          {group.hint}
+                        </span>
+                      ) : null}
+                      <span className="min-w-0 truncate text-xs font-semibold text-foreground" title={group.label}>
+                        {group.label}
+                      </span>
+                      <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {group.shipments.length}
+                        {hasNextPage && group === groups[groups.length - 1] ? "+" : ""}
+                      </span>
+                    </button>
+                    {isCollapsed ? null : (
+                      <div className={density === "ticket" ? "space-y-3" : undefined}>{items}</div>
+                    )}
+                  </div>
+                )
+              })}
               <div ref={sentinelRef} aria-hidden className="h-px" />
               {isFetchingNextPage ? (
                 <div className="pt-2">

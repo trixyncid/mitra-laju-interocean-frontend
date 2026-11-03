@@ -3,6 +3,7 @@
 import Link from "next/link"
 
 import UserActionCell from "@/components/action-cell/user-action-cell"
+import { ColumnFilterHeader } from "@/components/column-filter/column-filter"
 import { PersonAvatar } from "@/components/admin/person-avatar"
 import { RoleChip } from "@/components/ui/role-chip"
 import { StatusChip } from "@/components/ui/status-chip"
@@ -13,7 +14,6 @@ import {
   actionColumn,
   dateSort,
   sortDescFirst,
-  sortHeader,
   textSort,
 } from "@/lib/data-table"
 
@@ -50,7 +50,7 @@ export function getUserColumns({
   const columns: ColumnDef<User>[] = [
   {
     accessorKey: "name",
-    header: ({ column }) => sortHeader(column, "Name"),
+    header: () => <ColumnFilterHeader sortKey="name" label="Name" />,
     ...textSort,
     cell: ({ row }) => (
       <span className="flex items-center gap-3">
@@ -77,13 +77,13 @@ export function getUserColumns({
   },
   {
     accessorKey: "email",
-    header: ({ column }) => sortHeader(column, "Email"),
+    header: () => <ColumnFilterHeader sortKey="email" label="Email" />,
     ...textSort,
     cell: ({ row }) => <span className={secondaryText}>{row.original.email}</span>,
   },
   {
     accessorKey: "role",
-    header: ({ column }) => sortHeader(column, "Role"),
+    header: () => <ColumnFilterHeader field="role" sortKey="role" label="Role" />,
     ...textSort,
     cell: ({ row }) => (
       <RoleChip role={row.original.roleRef?.name ?? row.original.role} />
@@ -91,19 +91,19 @@ export function getUserColumns({
   },
   {
     accessorKey: "isActive",
-    header: ({ column }) => sortHeader(column, "Status"),
+    header: () => <ColumnFilterHeader field="status" label="Status" />,
     ...sortDescFirst,
     cell: ({ row }) => <StatusChip active={row.original.isActive !== false} />,
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => sortHeader(column, "Created"),
+    header: () => <ColumnFilterHeader field="createdAt" sortKey="createdAt" label="Created" />,
     ...dateSort,
     cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.createdAt)}</span>,
   },
   {
     accessorKey: "updatedAt",
-    header: ({ column }) => sortHeader(column, "Updated"),
+    header: () => <ColumnFilterHeader field="updatedAt" sortKey="updatedAt" label="Updated" />,
     ...dateSort,
     cell: ({ row }) => <span className={secondaryText}>{localDate(row.original.updatedAt)}</span>,
   },

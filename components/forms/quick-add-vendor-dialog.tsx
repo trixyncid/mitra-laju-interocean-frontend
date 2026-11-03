@@ -29,10 +29,13 @@ export function QuickAddVendorDialog({
   open,
   onOpenChange,
   onCreated,
+  serviceIds,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreated: (vendor: Vendor) => void
+  /** Services to tag the new vendor with, e.g. the shipment line it was added from. */
+  serviceIds?: string[]
 }) {
   const createVendor = useCreateVendor()
   const { can } = usePermissions()
@@ -52,6 +55,7 @@ export function QuickAddVendorDialog({
           vendorName: value.vendorName,
           shipmentTypes: value.shipmentTypes,
           npwp: value.npwp.trim() === "" ? null : value.npwp,
+          ...(serviceIds?.length ? { serviceIds } : {}),
           isActive: true,
         },
         {

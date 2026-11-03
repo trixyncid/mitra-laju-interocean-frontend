@@ -70,6 +70,16 @@ export const salesService = {
     setColumnParams(query, { columns: params.columns })
     return apiClient.get<SalesFacet[]>(`/sales/facets?${query.toString()}`)
   },
+  /** Downloads the list as Excel: same search, column filters and order as on screen. */
+  exportExcel: async (params: Omit<SalesListParams, "page" | "pageSize">): Promise<{ rowCount: number | null }> => {
+    const query = new URLSearchParams({ salesType: params.salesType ?? "all" })
+    if (params.search) query.set("search", params.search)
+    if (params.customerId) query.set("customerId", params.customerId)
+    setColumnParams(query, params)
+    const fallbackFilename = `sales-jobs-${new Date().toISOString().slice(0, 10)}.xlsx`
+    const result = await apiClient.download(`/sales/export?${query.toString()}`, fallbackFilename)
+    return { rowCount: result.rowCount }
+  },
   getById: async (id: string): Promise<Sales> => apiClient.get<Sales>(`/sales/${id}`),
   create: async (sales: SalesInput) => apiClient.post<Sales>("/sales", sales),
   update: async (id: string, sales: SalesUpdate) => apiClient.put<Sales>(`/sales/${id}`, sales),

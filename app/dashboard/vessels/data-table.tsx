@@ -1,27 +1,12 @@
 "use client"
 
-import { ServerEntityDataTable } from "@/components/server-entity-data-table"
-import type { Vessel } from "@/app/dashboard/vessels/columns"
-import type { AppliedTableFilters } from "@/components/data-table-toolbar"
-import {
-  ACTIVE_STATUS_OPTIONS,
-  type TableFilterConfig,
-} from "@/lib/data-table-filters"
 import { ColumnDef } from "@tanstack/react-table"
 
-export const vesselFilters: TableFilterConfig<Vessel> = {
-  status: {
-    id: "isActive",
-    label: "Status",
-    options: ACTIVE_STATUS_OPTIONS,
-    getValue: (row) => row.isActive,
-  },
-  date: {
-    id: "etd",
-    label: "ETD",
-    getValue: (row) => row.etd,
-  },
-}
+import { ServerEntityDataTable } from "@/components/server-entity-data-table"
+import type { Vessel } from "@/app/dashboard/vessels/columns"
+import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
+import type { AppliedTableFilters } from "@/components/data-table-toolbar"
+import { VesselExportButton } from "@/components/vessels/vessel-export-button"
 
 interface DataTableProps {
   columns: ColumnDef<Vessel>[]
@@ -36,6 +21,7 @@ interface DataTableProps {
   onPageSizeChange: (pageSize: number) => void
 }
 
+/** Status, dates and sorting live in the column headers' Excel-style menus. */
 export function DataTable({
   columns,
   data,
@@ -60,8 +46,9 @@ export function DataTable({
       onApply={onApply}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
-      searchPlaceholder="Search by vessel name..."
-      filters={vesselFilters}
+      searchPlaceholder="Search vessel or voyage..."
+      extra={<VesselExportButton applied={applied} totalRows={totalRows} />}
+      beforeTable={<ActiveColumnFilters />}
     />
   )
 }

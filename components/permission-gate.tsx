@@ -85,7 +85,8 @@ export function PermissionGate({
           can("VENDOR", action) ||
           can("PORT", action) ||
           can("VESSEL", action) ||
-          can("CONTAINER", action)
+          can("CONTAINER", action) ||
+          can("SERVICE", action)
       }
     } else {
       allowed = canWrite(resource)

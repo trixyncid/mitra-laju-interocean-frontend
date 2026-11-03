@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { shipmentReference } from "@/lib/shipment-reference"
+import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
 import { useEffect, useMemo, type ReactNode } from "react"
 import { IconArrowRight, IconShip } from "@tabler/icons-react"
 
@@ -115,13 +115,14 @@ function LabeledStack({
 }) {
   return (
     <div className="flex min-w-0 max-w-[16rem] flex-col gap-0.5">
-      {items.map((item) => (
-        <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
+      {items.map((item, index) => (
+        <div key={`${item.label}-${index}`} className="flex min-w-0 items-baseline gap-1.5">
           <span
             className={cn(
-              "w-14 shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
+              "w-14 shrink-0 truncate text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
               labelClassName
             )}
+            title={item.label}
           >
             {item.label}
           </span>
@@ -482,7 +483,7 @@ export function DashboardShipmentsByVoyage() {
                   </span>
                   <div>
                   <p className={cn("font-semibold", brandText)}>
-                    {voyage.vesselName} / {voyage.voyageNumber}
+                    {vesselLabel(voyage)}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     ETD {formatDateTime(voyage.etd)}
@@ -501,7 +502,7 @@ export function DashboardShipmentsByVoyage() {
                     <TableHead className={tableHeaderCell}>Customer</TableHead>
                     <TableHead className={tableHeaderCell}>Route</TableHead>
                     <TableHead className={tableHeaderCell}>Booking / BL</TableHead>
-                    <TableHead className={tableHeaderCell}>Book To</TableHead>
+                    <TableHead className={tableHeaderCell}>Services</TableHead>
                     <TableHead className={cn(tableHeaderCell, "min-w-[10rem]")}>
                       Remarks
                     </TableHead>
@@ -519,6 +520,7 @@ export function DashboardShipmentsByVoyage() {
                           reference={shipmentReference({
                             customerName: shipment.customerName,
                             vesselName: voyage.vesselName,
+                            voyageNumber: voyage.voyageNumber,
                           })}
                           canReadShipments={canReadShipments}
                         />
@@ -546,13 +548,17 @@ export function DashboardShipmentsByVoyage() {
                         />
                       </TableCell>
                       <TableCell className={tableCellClass}>
-                        <LabeledStack
-                          labelClassName="w-16"
-                          items={[
-                            { label: "Trucking", value: shipment.truckingBookTo },
-                            { label: "Freight", value: shipment.freightBookTo },
-                          ]}
-                        />
+                        {shipment.services.length ? (
+                          <LabeledStack
+                            labelClassName="w-16 normal-case tracking-normal text-[11px]"
+                            items={shipment.services.map((line) => ({
+                              label: line.serviceName,
+                              value: line.vendor,
+                            }))}
+                          />
+                        ) : (
+                          <span className={secondaryText}>—</span>
+                        )}
                       </TableCell>
                       <TableCell
                         className={cn(

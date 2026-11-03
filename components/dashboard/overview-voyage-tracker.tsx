@@ -16,6 +16,7 @@ import { useDashboardShipmentsByVoyage } from "@/hooks/use-dashboard-shipments-b
 import { usePermissions } from "@/hooks/use-permissions"
 import { formatCalendarDate } from "@/lib/date-input"
 import { cn, getInitialContactName } from "@/lib/utils"
+import { vesselLabel } from "@/lib/shipment-reference"
 
 function mostCommon(values: (string | null)[]) {
   const counts = new Map<string, number>()
@@ -186,7 +187,7 @@ export function OverviewVoyageTracker() {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Vessel / Voyage</p>
               <p className="line-clamp-2 text-[17px] font-medium tracking-[-0.01em] text-foreground">
-                {voyage.vesselName} / {voyage.voyageNumber}
+                {vesselLabel(voyage)}
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">

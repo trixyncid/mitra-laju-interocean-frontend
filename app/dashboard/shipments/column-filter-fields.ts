@@ -11,8 +11,8 @@ export const SHIPMENT_FILTER_FIELDS: Record<string, ColumnFilterField> = {
   loading: { label: "Loading out", kind: "date" },
   eta: { label: "ETA", kind: "date" },
   bl: { label: "BL number", kind: "list" },
-  trucking: { label: "Trucking", kind: "list" },
-  freight: { label: "Freight", kind: "list" },
+  service: { label: "Services", kind: "list" },
+  serviceVendor: { label: "Service vendor", kind: "list" },
 }
 
 export const SHIPMENT_SORT_LABELS: Record<string, string> = {
@@ -40,6 +40,6 @@ export const SHIPMENT_FILTER_PILLS: { field?: string; sortKey?: string; label: s
   { field: "loading", sortKey: "loading", label: "Loading out" },
   { field: "eta", sortKey: "eta", label: "ETA" },
   { field: "bl", label: "BL number" },
-  { field: "freight", label: "Freight" },
-  { field: "trucking", label: "Trucking" },
+  { field: "service", label: "Services" },
+  { field: "serviceVendor", label: "Service vendor" },
 ]

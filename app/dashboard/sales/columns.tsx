@@ -11,28 +11,14 @@ import { formatPercent, MARGIN_TONE } from "@/components/sellings/selling-margin
 import { SalesRowActions } from "@/components/sales/sales-row-actions"
 import { actionColumn } from "@/lib/data-table"
 import { secondaryText } from "@/lib/design"
-import { shipmentReference } from "@/lib/shipment-reference"
+import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
 import { SALES_TYPE_LABEL, type Sales } from "@/lib/types/sales"
 import { cn, localDate } from "@/lib/utils"
+import { salesBilling } from "@/lib/sales-billing"
 
 const STATE_TONE: Record<JobState, string> = { ...MARGIN_TONE, nothing: MARGIN_TONE.uncosted }
 
-type Billing = { label: string; tone: string }
-
 const MUTED = "bg-muted text-muted-foreground"
-const WARN = "bg-[var(--mli-warning-container)] text-[var(--mli-on-warning-container)]"
-const OK = "bg-[var(--mli-success-container)] text-[var(--mli-on-success-container)]"
-
-/** Where the job's billing stands, from its sellings and their invoices. */
-export function salesBilling(sales: Sales): Billing {
-  const { sellings } = sales
-  if (!sellings.length) return { label: "Nothing to bill", tone: MUTED }
-  const billed = sellings.filter((selling) => selling.customerInvoice)
-  if (!billed.length) return { label: "Not billed", tone: WARN }
-  if (billed.length < sellings.length) return { label: "Partly billed", tone: WARN }
-  const unpaid = billed.some((selling) => selling.customerInvoice?.customerInvoiceStatus === "UNPAID")
-  return unpaid ? { label: "Billed, unpaid", tone: WARN } : { label: "Paid", tone: OK }
-}
 
 /** Whole rupiah keeps the table narrow; the exact amount is in the tooltip. */
 const money = (value: number, className?: string) => (
@@ -146,7 +132,7 @@ export const columns: ColumnDef<Sales>[] = [
             {op?.portDeparture?.portName ?? "—"}
             <IconArrowRight className="size-3 shrink-0" />
             {op?.portDestination?.portName ?? "—"}
-            {op?.vessel ? ` · ${op.vessel.vesselName}` : ""}
+            {op?.vessel ? ` · ${vesselLabel(op.vessel)}` : ""}
           </span>
         </div>
       )

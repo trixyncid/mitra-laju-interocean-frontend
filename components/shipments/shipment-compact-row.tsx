@@ -6,7 +6,7 @@ import { IconArrowRight } from "@tabler/icons-react"
 import type { Shipment } from "@/app/dashboard/shipments/columns"
 import { dayMonth } from "@/components/shipments/shipment-format"
 import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
-import { shipmentReference } from "@/lib/shipment-reference"
+import { vesselLabel } from "@/lib/shipment-reference"
 import { cn } from "@/lib/utils"
 
 const STATUS_DOT: Record<string, string> = {
@@ -26,12 +26,14 @@ const STATUS_LABEL: Record<string, string> = {
 type Props = {
   shipment: Shipment
   selected?: boolean
+  /** The field the list is grouped by; its group header already shows it, so the row leaves it out. */
+  groupBy?: "customer" | "vessel" | null
   onSelect: () => void
 }
 
 /** Dense, scannable list row — about a fifth of a full ticket's height. */
 export const ShipmentCompactRow = forwardRef<HTMLButtonElement, Props>(function ShipmentCompactRow(
-  { shipment, selected = false, onSelect },
+  { shipment, selected = false, groupBy = null, onSelect },
   ref
 ) {
   const op = shipment.shipmentOperational
@@ -40,6 +42,10 @@ export const ShipmentCompactRow = forwardRef<HTMLButtonElement, Props>(function 
   const eta = dayMonth(op?.eta)
   const containers = op?.shipmentOperationalContainers?.length ?? 0
   const status = shipment.status?.toUpperCase?.() ?? ""
+  const customer = shipment.customerCode?.customerName?.trim() || "No customer"
+  const vessel = vesselLabel(op?.vessel) ?? "No vessel"
+  const title =
+    groupBy === "customer" ? vessel : groupBy === "vessel" ? customer : `${customer} · ${vessel}`
 
   return (
     <button
@@ -63,8 +69,8 @@ export const ShipmentCompactRow = forwardRef<HTMLButtonElement, Props>(function 
       />
       <div className="min-w-0 flex-1 space-y-0.5">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-foreground">
-            {shipmentReference(shipment)}
+          <span className="truncate text-sm font-semibold text-foreground" title={title}>
+            {title}
           </span>
           {op?.shipmentType ? <ShipmentTypeTag type={op.shipmentType} className="shrink-0" /> : null}
           <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -83,7 +89,6 @@ export const ShipmentCompactRow = forwardRef<HTMLButtonElement, Props>(function 
           </span>
         </div>
         <p className="truncate text-xs text-muted-foreground">
-          {op?.vessel?.voyageNumber ? `Voyage ${op.vessel.voyageNumber} · ` : ""}
           {op?.bookingNumber?.trim() ? `${op.bookingNumber.trim()} · ` : ""}
           {`${containers} ctr`}
         </p>

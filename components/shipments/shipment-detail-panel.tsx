@@ -14,7 +14,7 @@ import {
 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
-import { dayMonth, shortDate, vendorLabel } from "@/components/shipments/shipment-format"
+import { dayMonth, shortDate } from "@/components/shipments/shipment-format"
 import { CopyButton } from "@/components/ui/copy-button"
 import { ShipmentDeleteButton } from "@/components/shipments/shipment-delete-button"
 import CreateSellingInvoiceForm from "@/components/forms/create-selling-invoice-form"
@@ -32,9 +32,10 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { useShipmentById, useUpdateShipment } from "@/hooks/use-shipments"
 import { glassTabsTrigger } from "@/lib/design"
 import { LEGACY_INVOICE_SCREENS_ENABLED } from "@/lib/feature-flags"
-import { shipmentReference } from "@/lib/shipment-reference"
+import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
 import type { ShipmentStatus } from "@/lib/shipment-status"
 import type { ShipmentDetail, ShipmentOperationalContainer } from "@/lib/types/entity-details"
+import { ShipmentServiceList } from "@/components/shipments/shipment-service-list"
 import { cn, localDate } from "@/lib/utils"
 import { shipmentsService } from "@/services/shipments.service"
 
@@ -91,7 +92,7 @@ function EmptyNote({ icon: Icon, text, action }: { icon: typeof IconBox; text: s
 function RouteTimeline({ op }: { op: NonNullable<ShipmentDetail["shipmentOperational"]> }) {
   const stops = [
     { label: "Loading in", date: dayMonth(op.loadingInAt), place: op.portDeparture?.portName, sub: op.portDeparture?.portCountry },
-    { label: "Loading out", date: dayMonth(op.loadingOutAt), place: `${op.vessel.vesselName}`, sub: `Voyage ${op.vessel.voyageNumber}` },
+    { label: "Loading out", date: dayMonth(op.loadingOutAt), place: vesselLabel(op.vessel) ?? undefined, sub: "Vessel" },
     { label: "ETA", date: dayMonth(op.eta), place: op.portDestination?.portName, sub: op.portDestination?.portCountry },
   ]
   return (
@@ -188,11 +189,8 @@ export function ShipmentDetailPanel({
         unloadingLocationId={op.unloadingLocationId ?? undefined}
         blNumber={op.blNumber ?? undefined}
         bookingNumber={op.bookingNumber ?? undefined}
-        truckingBookToId={op.truckingBookToId ?? undefined}
-        freightBookToId={op.freightBookToId ?? undefined}
+        services={op.services}
         remarks={op.remarks ?? undefined}
-        truckingBookTo={op.truckingBookTo}
-        freightBookTo={op.freightBookTo}
         customerCodeId={data.customerCodeId}
         customerShipperId={data.customerShipperId}
         vesselId={op.vesselId}
@@ -212,8 +210,6 @@ export function ShipmentDetailPanel({
         unloadingLocationId={undefined}
         blNumber={undefined}
         bookingNumber={undefined}
-        truckingBookToId={undefined}
-        freightBookToId={undefined}
         remarks={undefined}
         customerCodeId={data.customerCodeId}
         customerShipperId={data.customerShipperId}
@@ -264,7 +260,6 @@ export function ShipmentDetailPanel({
               <p className="truncate text-sm text-muted-foreground">
                 {data.customerCode.customerCode}
                 {data.customerShipper?.name ? ` · ${data.customerShipper.name}` : ""}
-                {op?.vessel?.voyageNumber ? ` · Voyage ${op.vessel.voyageNumber}` : ""}
               </p>
             </div>
           </div>
@@ -345,7 +340,7 @@ export function ShipmentDetailPanel({
                   <Field label="BL number" value={op.blNumber} copy={op.blNumber} />
                   <Field
                     label="Vessel / Voyage"
-                    value={`${op.vessel.vesselName} / ${op.vessel.voyageNumber}`}
+                    value={vesselLabel(op.vessel)}
                   />
                   <Field label="Shipment type" value={op.shipmentType ? <ShipmentTypeTag type={op.shipmentType} /> : null} />
                 </dl>
@@ -357,8 +352,16 @@ export function ShipmentDetailPanel({
                     value={`${data.customerCode.customerName} (${data.customerCode.customerCode})`}
                   />
                   <Field label="Shipper" value={data.customerShipper?.name} />
-                  <Field label="Trucking book to" value={vendorLabel(op.truckingBookTo)} />
-                  <Field label="Freight book to" value={vendorLabel(op.freightBookTo)} />
+                  <div className="min-w-0 sm:col-span-2">
+                    <dt className="text-xs text-muted-foreground">Services</dt>
+                    <dd className="mt-1 text-sm">
+                      {op.services?.length ? (
+                        <ShipmentServiceList lines={op.services} />
+                      ) : (
+                        <span className="text-muted-foreground">Not set</span>
+                      )}
+                    </dd>
+                  </div>
                 </dl>
               </Section>
               <Section title="Route & dates">

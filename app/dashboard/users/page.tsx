@@ -1,16 +1,19 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { IconLayoutGrid, IconPlus, IconTable } from "@tabler/icons-react"
 
 import { getUserColumns, type User } from "./columns"
-import { DataTable, userFilters } from "./data-table"
+import { DataTable } from "./data-table"
 import ErrorPage from "@/components/error-page"
 import { PersonAvatar } from "@/components/admin/person-avatar"
 import { roleLabelOf, TeamGrid } from "@/components/admin/team-grid"
 import { useViewPreference } from "@/components/admin/use-view-preference"
+import { ActiveColumnFilters, ColumnFilterBar } from "@/components/column-filter/column-filter"
 import { DataTableToolbar } from "@/components/data-table-toolbar"
+import { USER_FILTER_BAR } from "@/components/users/user-filter-fields"
+import { UserFilterProvider, userFilterParams } from "@/components/users/user-filter-provider"
 import { Button } from "@/components/ui/button"
 import TableSkeleton from "@/components/loading/table-skeleton"
 import { DashboardPage, DashboardPageCard } from "@/components/layout/dashboard-page"
@@ -137,48 +140,6 @@ function ViewSwitch({ value, onChange }: { value: (typeof VIEWS)[number]; onChan
   )
 }
 
-function RoleChips({
-  users,
-  value,
-  onChange,
-}: {
-  users: User[]
-  value: string | null
-  onChange: (next: string | null) => void
-}) {
-  const counts = new Map<string, number>()
-  for (const user of users) counts.set(roleLabelOf(user), (counts.get(roleLabelOf(user)) ?? 0) + 1)
-  const chips = [{ label: "Everyone", key: null as string | null, count: users.length }].concat(
-    [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([label, count]) => ({ label, key: label, count }))
-  )
-  if (counts.size < 2) return null
-
-  return (
-    <div className="flex flex-wrap gap-2" aria-label="Show a role">
-      {chips.map((chip) => {
-        const active = value === chip.key
-        return (
-          <button
-            key={chip.label}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(chip.key)}
-            className={cn(
-              "flex h-8 cursor-pointer items-center gap-2 rounded-full px-3 text-[13px] font-medium transition-colors",
-              active ? "brand-fill" : "bg-muted text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {chip.label}
-            <span className={cn("text-xs tabular-nums", active ? "text-primary-foreground/80" : "text-muted-foreground/80")}>
-              {chip.count}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 function CardPager({
   page,
   totalPages,
@@ -224,15 +185,9 @@ export default function UserManagementPage() {
     setPageSize,
     isRestored,
   } = usePersistedTableState("users")
+  // Role, status and dates are column filters; the table and the cards share them.
   const params = useMemo(
-    () => ({
-      page,
-      pageSize,
-      search: applied.search || undefined,
-      status: applied.status as "all" | "true" | "false",
-      from: applied.dateRange.from,
-      to: applied.dateRange.to,
-    }),
+    () => ({ page, pageSize, ...userFilterParams(applied) }),
     [page, pageSize, applied]
   )
   const {
@@ -246,13 +201,11 @@ export default function UserManagementPage() {
   const { data: session } = authClient.useSession()
   const { data, isLoading, error } = useUsers(params, isRestored)
   const [view, setView] = useViewPreference("mli.users.view", VIEWS, "cards")
-  const [roleFilter, setRoleFilter] = useState<string | null>(null)
   const users = useMemo(() => data?.items ?? [], [data?.items])
   const pagination = data?.pagination ?? { page, pageSize, total: 0, totalPages: 1 }
   const columns = getUserColumns({ canEditUsers, canDeleteUsers })
-  // A role picked on another page may not exist on this one.
-  const activeRole = roleFilter && users.some((user) => roleLabelOf(user) === roleFilter) ? roleFilter : null
-  const shownUsers = activeRole ? users.filter((user) => roleLabelOf(user) === activeRole) : users
+  const statusValues = applied.columns?.status?.map((entry) => entry.value) ?? []
+  const onlyInactive = statusValues.length === 1 && statusValues[0] === "inactive"
 
   if (isSessionPending || isRedirecting || !canViewUsers) {
     return (
@@ -284,61 +237,66 @@ export default function UserManagementPage() {
         <ViewSwitch value={view} onChange={setView} />
       </div>
 
-      {view === "table" ? (
-        <DashboardPageCard>
-          {loading ? (
-            <TableSkeleton />
-          ) : (
-            <DataTable
-              columns={columns}
-              data={users}
-              page={pagination.page}
-              pageSize={pagination.pageSize}
-              totalPages={pagination.totalPages}
-              totalRows={pagination.total}
-              applied={applied}
-              onApply={setApplied}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-            />
-          )}
-        </DashboardPageCard>
-      ) : (
-        <>
-          <div className="surface mb-6 space-y-3 rounded-2xl p-4">
-            <DataTableToolbar
-              searchPlaceholder="Search name or email..."
-              filters={userFilters}
-              applied={applied}
-              onApply={setApplied}
-              className="pb-0"
-            />
-            {loading ? null : <RoleChips users={users} value={activeRole} onChange={setRoleFilter} />}
-          </div>
-          {loading ? (
-            <DashboardPageCard>
+      <UserFilterProvider
+        applied={applied}
+        onChange={({ columns: nextColumns, sort }) => setApplied({ ...applied, columns: nextColumns, sort })}
+      >
+        {view === "table" ? (
+          <DashboardPageCard>
+            {loading ? (
               <TableSkeleton />
-            </DashboardPageCard>
-          ) : (
-            <>
-              <TeamGrid
-                users={shownUsers}
-                showInactiveOpen={applied.status === "false"}
-                canEditUsers={canEditUsers}
-                canDeleteUsers={canDeleteUsers}
-                selfId={session?.user?.id}
-              />
-              <CardPager
+            ) : (
+              <DataTable
+                columns={columns}
+                data={users}
                 page={pagination.page}
+                pageSize={pagination.pageSize}
                 totalPages={pagination.totalPages}
-                total={pagination.total}
-                shown={shownUsers.length}
+                totalRows={pagination.total}
+                applied={applied}
+                onApply={setApplied}
                 onPageChange={setPage}
+                onPageSizeChange={setPageSize}
               />
-            </>
-          )}
-        </>
-      )}
+            )}
+          </DashboardPageCard>
+        ) : (
+          <>
+            <div className="surface mb-6 space-y-3 rounded-2xl p-4">
+              <DataTableToolbar
+                searchPlaceholder="Search name or email..."
+                applied={applied}
+                onApply={setApplied}
+                className="pb-0"
+              />
+              <ColumnFilterBar items={USER_FILTER_BAR} />
+            </div>
+            <ActiveColumnFilters />
+            {loading ? (
+              <DashboardPageCard>
+                <TableSkeleton />
+              </DashboardPageCard>
+            ) : (
+              <>
+                <TeamGrid
+                  users={users}
+                  showInactiveOpen={onlyInactive}
+                  canEditUsers={canEditUsers}
+                  canDeleteUsers={canDeleteUsers}
+                  selfId={session?.user?.id}
+                />
+                <CardPager
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  total={pagination.total}
+                  shown={users.length}
+                  onPageChange={setPage}
+                />
+              </>
+            )}
+          </>
+        )}
+      </UserFilterProvider>
     </DashboardPage>
   )
 }

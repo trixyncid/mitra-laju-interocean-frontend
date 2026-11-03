@@ -19,6 +19,7 @@ import { RecordLink } from "@/components/record-link"
 import { formatPercent, MARGIN_TONE, sellingMargin } from "@/components/sellings/selling-margin"
 import { SellingRowActions } from "@/components/sellings/selling-row-actions"
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
+import { TableExportButton } from "@/components/table-export-button"
 import { useSellingLinesPage } from "@/hooks/use-selling-lines"
 import { actionColumn } from "@/lib/data-table"
 import { primaryText, secondaryText } from "@/lib/design"
@@ -201,6 +202,14 @@ export function SellingTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
         searchPlaceholder="Search description or sales number…"
+        extra={
+          <TableExportButton
+            module="SELLING"
+            noun="selling lines"
+            totalRows={pagination.total}
+            onExport={() => sellingLineService.exportExcel(listParams)}
+          />
+        }
         beforeTable={
           <>
             <ActiveColumnFilters />

@@ -4,9 +4,12 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
 import { formatIdr, formatIdrCompact } from "@/components/dashboard/overview-card"
+import { customerInvoiceFilterParams } from "@/components/customer-invoices/customer-invoice-filter-provider"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
 import { ServerEntityDataTable } from "@/components/server-entity-data-table"
+import { TableExportButton } from "@/components/table-export-button"
 import type { CustomerInvoice, CustomerInvoiceSummary } from "@/lib/types/customer-invoice"
+import { customerInvoiceService } from "@/services/customer-invoice.service"
 
 /** Totals across every filtered invoice (all pages), matching the split view's summary. */
 function InvoiceTotals({ summary }: { summary: CustomerInvoiceSummary }) {
@@ -79,6 +82,14 @@ export function DataTable({
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       searchPlaceholder="Search invoice #, customer, sales # or tax invoice…"
+      extra={
+        <TableExportButton
+          module="CUSTOMER_INVOICE"
+          noun="customer invoices"
+          totalRows={totalRows}
+          onExport={() => customerInvoiceService.exportExcel(customerInvoiceFilterParams(applied))}
+        />
+      }
       beforeTable={
         <>
           <ActiveColumnFilters />
