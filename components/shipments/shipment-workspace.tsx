@@ -13,7 +13,6 @@ import {
   IconArrowUp,
   IconChevronDown,
   IconLayoutList,
-  IconStack2,
   IconSearch,
   IconShip,
   IconTicket,
@@ -23,99 +22,31 @@ import {
 import { SHIPMENT_FILTER_PILLS } from "@/app/dashboard/shipments/column-filter-fields"
 import { ColumnFilterBar } from "@/components/column-filter/column-filter"
 import type { AppliedTableFilters } from "@/components/data-table-toolbar"
-import type { Shipment } from "@/app/dashboard/shipments/columns"
 import { ShipmentCompactRow } from "@/components/shipments/shipment-compact-row"
 import { ShipmentDetailPanel } from "@/components/shipments/shipment-detail-panel"
 import { ShipmentExportButton } from "@/components/shipments/shipment-export-button"
 import { ShipmentFilterProvider, shipmentFilterParams } from "@/components/shipments/shipment-filter-provider"
+import {
+  groupShipments,
+  groupSortParams,
+  ShipmentGroupMenu,
+  useShipmentGroupBy,
+  type ShipmentGroupBy,
+} from "@/components/shipments/shipment-grouping"
 import { ShipmentTicketCard } from "@/components/shipments/shipment-ticket-card"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useIsDesktop } from "@/hooks/use-is-desktop"
 import { usePersistedChoice } from "@/hooks/use-persisted-choice"
 import { useInfiniteShipments } from "@/hooks/use-shipments"
 import { SHIPMENT_LIFECYCLE_OPTIONS } from "@/lib/data-table-filters"
-import { vesselLabel } from "@/lib/shipment-reference"
 import { cn } from "@/lib/utils"
 
 const BATCH_SIZE = 30
 const SEARCH_DELAY_MS = 300
 
 type Density = "compact" | "ticket"
-type GroupBy = "none" | "customer" | "vessel"
-
-const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
-  { value: "none", label: "No grouping" },
-  { value: "customer", label: "Customer" },
-  { value: "vessel", label: "Vessel" },
-]
-
-type ShipmentGroup = { key: string; label: string; hint?: string; shipments: Shipment[] }
-
-/** Buckets the loaded shipments; groups keep the order they first appear in. */
-function groupShipments(shipments: Shipment[], groupBy: GroupBy): ShipmentGroup[] {
-  if (groupBy === "none") return [{ key: "all", label: "", shipments }]
-  const groups = new Map<string, ShipmentGroup>()
-  for (const shipment of shipments) {
-    let key: string
-    let label: string
-    let hint: string | undefined
-    if (groupBy === "customer") {
-      const customer = shipment.customerCode
-      key = shipment.customerCodeId || "none"
-      label = customer?.customerName?.trim() || "No customer"
-      hint = customer?.customerCode
-    } else {
-      const vessel = vesselLabel(shipment.shipmentOperational?.vessel)
-      key = vessel ?? "none"
-      label = vessel ?? "No vessel"
-    }
-    const group = groups.get(key)
-    if (group) group.shipments.push(shipment)
-    else groups.set(key, { key, label, hint, shipments: [shipment] })
-  }
-  return [...groups.values()]
-}
-
-function GroupMenu({ value, onChange }: { value: GroupBy; onChange: (value: GroupBy) => void }) {
-  const active = value !== "none"
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Group shipments"
-          title="Group shipments"
-          className={cn(
-            "flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-            active ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <IconStack2 className="size-4" />
-          {active ? GROUP_OPTIONS.find((option) => option.value === value)?.label : "Group"}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>Group by</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={value} onValueChange={(next) => onChange(next as GroupBy)}>
-          {GROUP_OPTIONS.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
+type GroupBy = ShipmentGroupBy
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
@@ -181,11 +112,7 @@ export function ShipmentWorkspace({
     ["compact", "ticket"],
     "compact"
   )
-  const [groupBy, setGroupBy] = usePersistedChoice<GroupBy>(
-    "mli:shipments:group",
-    ["none", "customer", "vessel"],
-    "none"
-  )
+  const [groupBy, setGroupBy] = useShipmentGroupBy()
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -204,13 +131,12 @@ export function ShipmentWorkspace({
   // Grouping sorts by the grouped field first, so a group's shipments arrive
   // together as batches load instead of scattering across the list.
   const filterParams = shipmentFilterParams(applied)
-  const groupSortDir = applied.sort?.by === groupBy ? applied.sort.dir : "asc"
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteShipments(
       {
         pageSize: BATCH_SIZE,
         ...filterParams,
-        ...(groupBy !== "none" ? { sortBy: groupBy, sortDir: groupSortDir } : {}),
+        ...groupSortParams(groupBy, applied),
       },
       enabled
     )
@@ -421,7 +347,7 @@ export function ShipmentWorkspace({
                 </>
               )}
             </p>
-            <GroupMenu value={groupBy} onChange={changeGroupBy} />
+            <ShipmentGroupMenu value={groupBy} onChange={changeGroupBy} />
             <DensityToggle value={density} onChange={setDensity} />
             <ShipmentExportButton applied={applied} totalRows={total} compact />
           </div>

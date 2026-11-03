@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Fragment, useMemo, useState } from "react"
+import { IconChevronDown } from "@tabler/icons-react"
 import {
   ColumnDef,
   flexRender,
@@ -17,6 +18,7 @@ import {
 } from "@/components/data-table-toolbar"
 import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
 import { ShipmentExportButton } from "@/components/shipments/shipment-export-button"
+import { groupShipments, ShipmentGroupMenu, type ShipmentGroupBy } from "@/components/shipments/shipment-grouping"
 import {
   Table,
   TableBody,
@@ -41,6 +43,8 @@ interface DataTableProps {
   onPageSizeChange: (pageSize: number) => void
   applied: AppliedTableFilters
   onApply: (next: AppliedTableFilters) => void
+  groupBy: ShipmentGroupBy
+  onGroupByChange: (groupBy: ShipmentGroupBy) => void
 }
 
 const emptyFilter: AppliedTableFilters = {
@@ -62,6 +66,8 @@ export function DataTable({
   onPageSizeChange,
   applied = emptyFilter,
   onApply,
+  groupBy,
+  onGroupByChange,
 }: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [showModifiedBy, setShowModifiedBy] = useState(false)
@@ -99,6 +105,50 @@ export function DataTable({
     },
   })
 
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const rows = table.getRowModel().rows
+  const visibleColumnCount = Math.max(table.getVisibleLeafColumns().length, 1)
+  // Groups cover the current page; the server sorts by the grouped field so
+  // each group's shipments sit together.
+  const rowByShipment = new Map(rows.map((row) => [row.original, row]))
+  const groups = groupShipments(rows.map((row) => row.original), groupBy).map((group) => ({
+    ...group,
+    rows: group.shipments.map((shipment) => rowByShipment.get(shipment)!),
+  }))
+
+  const changeGroupBy = (next: ShipmentGroupBy) => {
+    setCollapsed(new Set())
+    onGroupByChange(next)
+  }
+  const toggleGroup = (key: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
+  const renderRow = (row: (typeof rows)[number]) => (
+    <TableRow key={row.id} className={tableRowClass}>
+      {row.getVisibleCells().map((cell) => (
+        <TableCell
+          key={cell.id}
+          className={cn(
+            tableCellClass,
+            isActionColumn(cell.column.id) && stickyActionCell,
+            (
+              cell.column.columnDef.meta as
+                | { cellClassName?: string }
+                | undefined
+            )?.cellClassName
+          )}
+        >
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
+  )
+
   return (
     <div>
       <DataTableToolbar
@@ -120,6 +170,7 @@ export function DataTable({
               />
               Modified
             </label>
+            <ShipmentGroupMenu value={groupBy} onChange={changeGroupBy} className="h-10 px-4 text-sm" />
             <ShipmentExportButton applied={applied} totalRows={totalRows} />
           </div>
         }
@@ -152,31 +203,52 @@ export function DataTable({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className={tableRowClass}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        tableCellClass,
-                        isActionColumn(cell.column.id) && stickyActionCell,
-                        (
-                          cell.column.columnDef.meta as
-                            | { cellClassName?: string }
-                            | undefined
-                        )?.cellClassName
-                      )}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+            {rows.length && groupBy === "none" ? (
+              rows.map(renderRow)
+            ) : rows.length ? (
+              groups.map((group) => {
+                const isCollapsed = collapsed.has(group.key)
+                return (
+                  <Fragment key={group.key}>
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableCell colSpan={visibleColumnCount} className="p-0 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(group.key)}
+                          aria-expanded={!isCollapsed}
+                          className="sticky left-0 flex max-w-[min(100%,calc(100vw-4rem))] cursor-pointer items-center gap-2 rounded-lg bg-muted/70 px-3 py-2 text-left hover:bg-muted"
+                        >
+                          <IconChevronDown
+                            className={cn(
+                              "size-4 shrink-0 text-muted-foreground transition-transform",
+                              isCollapsed && "-rotate-90"
+                            )}
+                          />
+                          {group.hint ? (
+                            <span
+                              className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[11px] font-semibold text-secondary-foreground"
+                              title={group.label}
+                            >
+                              {group.hint}
+                            </span>
+                          ) : null}
+                          <span className="min-w-0 truncate text-xs font-semibold text-foreground" title={group.label}>
+                            {group.label}
+                          </span>
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            · {group.rows.length} on this page
+                          </span>
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                    {isCollapsed ? null : group.rows.map(renderRow)}
+                  </Fragment>
+                )
+              })
             ) : (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={Math.max(table.getVisibleLeafColumns().length, 1)}
+                  colSpan={visibleColumnCount}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No results.

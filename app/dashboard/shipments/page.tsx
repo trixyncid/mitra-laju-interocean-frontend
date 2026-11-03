@@ -20,6 +20,7 @@ import {
 } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
 import { ShipmentFilterProvider, shipmentFilterParams } from "@/components/shipments/shipment-filter-provider"
+import { groupSortParams, useShipmentGroupBy } from "@/components/shipments/shipment-grouping"
 import { ShipmentWorkspace } from "@/components/shipments/shipment-workspace"
 import { cn } from "@/lib/utils"
 
@@ -77,11 +78,12 @@ function ShipmentsContent() {
         "table"
     )
     const [view, setView] = useLinkedView(savedView, saveView, "shipment", "split")
+    const [groupBy, setGroupBy] = useShipmentGroupBy()
 
     // Both views filter by the Excel-style column filters (and search) only.
     const params = useMemo(
-        () => ({ page, pageSize, ...shipmentFilterParams(applied) }),
-        [page, pageSize, applied]
+        () => ({ page, pageSize, ...shipmentFilterParams(applied), ...groupSortParams(groupBy, applied) }),
+        [page, pageSize, applied, groupBy]
     )
 
     // The split view loads its own batches; the paged query only serves the table.
@@ -144,6 +146,11 @@ function ShipmentsContent() {
                                 onApply={setApplied}
                                 onPageChange={setPage}
                                 onPageSizeChange={setPageSize}
+                                groupBy={groupBy}
+                                onGroupByChange={(next) => {
+                                    setGroupBy(next)
+                                    setPage(1)
+                                }}
                             />
                         </ShipmentFilterProvider>
                     )}
