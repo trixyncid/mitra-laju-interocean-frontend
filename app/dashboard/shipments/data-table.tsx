@@ -18,7 +18,13 @@ import {
 } from "@/components/data-table-toolbar"
 import { ActiveColumnFilters } from "@/components/column-filter/column-filter"
 import { ShipmentExportButton } from "@/components/shipments/shipment-export-button"
-import { groupShipments, ShipmentGroupMenu, type ShipmentGroupBy } from "@/components/shipments/shipment-grouping"
+import {
+  groupShipments,
+  ShipmentGroupMenu,
+  ShipmentSortMenu,
+  VesselGroupExtras,
+  type ShipmentGroupBy,
+} from "@/components/shipments/shipment-grouping"
 import {
   Table,
   TableBody,
@@ -170,6 +176,11 @@ export function DataTable({
               />
               Modified
             </label>
+            <ShipmentSortMenu
+              value={applied.sort}
+              onChange={(sort) => onApply({ ...applied, sort })}
+              className="h-10 px-4 text-sm"
+            />
             <ShipmentGroupMenu value={groupBy} onChange={changeGroupBy} className="h-10 px-4 text-sm" />
             <ShipmentExportButton applied={applied} totalRows={totalRows} />
           </div>
@@ -212,11 +223,12 @@ export function DataTable({
                   <Fragment key={group.key}>
                     <TableRow className="border-0 hover:bg-transparent">
                       <TableCell colSpan={visibleColumnCount} className="p-0 pt-2">
+                        <div className="sticky left-0 flex max-w-[min(100%,calc(100vw-4rem))] items-center gap-2">
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.key)}
                           aria-expanded={!isCollapsed}
-                          className="sticky left-0 flex max-w-[min(100%,calc(100vw-4rem))] cursor-pointer items-center gap-2 rounded-lg bg-muted/70 px-3 py-2 text-left hover:bg-muted"
+                          className="flex min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-muted/70 px-3 py-2 text-left hover:bg-muted"
                         >
                           <IconChevronDown
                             className={cn(
@@ -239,6 +251,8 @@ export function DataTable({
                             · {group.rows.length} on this page
                           </span>
                         </button>
+                        {groupBy === "vessel" ? <VesselGroupExtras group={group} /> : null}
+                        </div>
                       </TableCell>
                     </TableRow>
                     {isCollapsed ? null : group.rows.map(renderRow)}

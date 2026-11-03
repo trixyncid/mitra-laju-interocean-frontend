@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useForm, useStore } from "@tanstack/react-form"
 import { useRouter } from "next/navigation"
 
@@ -61,6 +62,8 @@ import { SHIPMENT_TYPE_OPTIONS } from "@/lib/shipment-types"
 import { zodOnChange } from "@/lib/zod-form"
 import type { CustomerLocationOption } from "@/services/customers.service"
 import { vesselLabel } from "@/lib/shipment-reference"
+import { vesselKeys } from "@/lib/query-keys"
+import { vesselsService } from "@/services/vessels.service"
 
 type Shipper = {
   id: string
@@ -89,7 +92,8 @@ function activeLocations(locations: CustomerLocationOption[] | undefined) {
   return (locations ?? []).filter((location) => location.isActive !== false)
 }
 
-export default function ShipmentCreateForm() {
+/** `initialVesselId` preselects the vessel, e.g. from a voyage's Quick Add. */
+export default function ShipmentCreateForm({ initialVesselId }: { initialVesselId?: string } = {}) {
   const router = useRouter()
   const createShipment = useCreateShipmentWithOperational()
   const { allowedShipmentTypes, can } = usePermissions()
@@ -117,7 +121,7 @@ export default function ShipmentCreateForm() {
       customerShipperId: "-",
       status: "DRAFT" as ShipmentStatus,
       shipmentType: "",
-      vesselId: "",
+      vesselId: initialVesselId ?? "",
       portDepartureId: "",
       portDestinationId: "",
       loadingLocationId: "",
@@ -220,17 +224,30 @@ export default function ShipmentCreateForm() {
     return items
   }, [createdShipper, shippers])
 
+  // A preselected vessel may not be in the first page of search results, so
+  // fetch it and keep it among the options to give the field its label.
+  const { data: initialVessel } = useQuery({
+    queryKey: vesselKeys.detail(initialVesselId ?? ""),
+    queryFn: () => vesselsService.getById(initialVesselId!) as Promise<Vessel>,
+    enabled: Boolean(initialVesselId),
+  })
+
   const vesselItems = useMemo<SearchableComboboxOption[]>(() => {
     const items =
       vesselsData?.items?.map((vessel: Vessel) => ({
         value: vessel.id ?? "",
         label: vesselLabel(vessel) ?? "",
       })) ?? []
-    const extras = createdVessels.filter(
-      (vessel) => !items.some((item) => item.value === vessel.value)
+    const preselected = initialVessel?.id
+      ? [{ value: initialVessel.id, label: vesselLabel(initialVessel) ?? "" }]
+      : []
+    const extras = [...createdVessels, ...preselected].filter(
+      (vessel, index, all) =>
+        !items.some((item) => item.value === vessel.value) &&
+        all.findIndex((other) => other.value === vessel.value) === index
     )
     return [...extras, ...items]
-  }, [createdVessels, vesselsData?.items])
+  }, [createdVessels, initialVessel, vesselsData?.items])
 
   const activeCustomerLocations = useMemo(
     () => activeLocations(locations),

@@ -24,6 +24,8 @@ export const SHIPMENT_SORT_LABELS: Record<string, string> = {
   destination: "To",
   loading: "Loading out",
   eta: "ETA",
+  latest: "Latest",
+  etd: "ETD",
 }
 
 /**

@@ -30,7 +30,9 @@ import {
   groupShipments,
   groupSortParams,
   ShipmentGroupMenu,
+  ShipmentSortMenu,
   useShipmentGroupBy,
+  VesselGroupExtras,
   type ShipmentGroupBy,
 } from "@/components/shipments/shipment-grouping"
 import { ShipmentTicketCard } from "@/components/shipments/shipment-ticket-card"
@@ -347,6 +349,7 @@ export function ShipmentWorkspace({
                 </>
               )}
             </p>
+            <ShipmentSortMenu value={applied.sort} onChange={(sort) => applyFilters({ sort })} />
             <ShipmentGroupMenu value={groupBy} onChange={changeGroupBy} />
             <DensityToggle value={density} onChange={setDensity} />
             <ShipmentExportButton applied={applied} totalRows={total} compact />
@@ -415,14 +418,17 @@ export function ShipmentWorkspace({
                 if (groupBy === "none") return items
                 return (
                   <div key={group.key} role="group" aria-label={group.label}>
+                    <div
+                      className={cn(
+                        "sticky top-0 z-10 flex w-full items-center gap-2 rounded-lg bg-card/95 pr-2 backdrop-blur",
+                        density === "ticket" && "mb-2 bg-background/95"
+                      )}
+                    >
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.key)}
                       aria-expanded={!isCollapsed}
-                      className={cn(
-                        "sticky top-0 z-10 flex w-full cursor-pointer items-center gap-2 rounded-lg bg-card/95 px-3 py-2 text-left backdrop-blur",
-                        density === "ticket" && "mb-2 bg-background/95"
-                      )}
+                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-3 py-2 text-left"
                     >
                       <IconChevronDown
                         className={cn(
@@ -446,6 +452,8 @@ export function ShipmentWorkspace({
                         {hasNextPage && group === groups[groups.length - 1] ? "+" : ""}
                       </span>
                     </button>
+                    {groupBy === "vessel" ? <VesselGroupExtras group={group} /> : null}
+                    </div>
                     {isCollapsed ? null : (
                       <div className={density === "ticket" ? "space-y-3" : undefined}>{items}</div>
                     )}

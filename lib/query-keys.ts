@@ -94,6 +94,7 @@ export const vesselKeys = {
   all: ["vessels"] as const,
   lists: () => [...vesselKeys.all, "list"] as const,
   list: (params: unknown) => [...vesselKeys.lists(), params] as const,
+  detail: (id: string) => [...vesselKeys.all, "detail", id] as const,
 }
 
 export const userKeys = {

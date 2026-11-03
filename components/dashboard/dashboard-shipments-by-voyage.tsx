@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
+import { vesselLabel } from "@/lib/shipment-reference"
 import { useEffect, useMemo, type ReactNode } from "react"
 import { IconArrowRight, IconShip } from "@tabler/icons-react"
 
@@ -9,6 +9,7 @@ import type {
   DashboardVoyageGroup,
   VoyageStatus,
 } from "@/app/dashboard/dashboard-types"
+import { ShipmentQuickAddLink } from "@/components/shipments/shipment-grouping"
 import { ContainerSummaryTags } from "@/components/ui/container-summary-tags"
 import {
   Card,
@@ -490,16 +491,22 @@ export function DashboardShipmentsByVoyage() {
                   </p>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {voyage.shipments.length} shipment
-                  {voyage.shipments.length === 1 ? "" : "s"}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    {voyage.shipments.length} shipment
+                    {voyage.shipments.length === 1 ? "" : "s"}
+                  </p>
+                  <ShipmentQuickAddLink
+                    vesselId={voyage.vesselId}
+                    vesselName={vesselLabel(voyage) ?? "this vessel"}
+                  />
+                </div>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow className={tableHeaderRow}>
-                    <TableHead className={tableHeaderCell}>Shipment</TableHead>
                     <TableHead className={tableHeaderCell}>Customer</TableHead>
+                    <TableHead className={tableHeaderCell}>Vessel / Voyage</TableHead>
                     <TableHead className={tableHeaderCell}>Route</TableHead>
                     <TableHead className={tableHeaderCell}>Booking / BL</TableHead>
                     <TableHead className={tableHeaderCell}>Services</TableHead>
@@ -515,22 +522,18 @@ export function DashboardShipmentsByVoyage() {
                   {voyage.shipments.map((shipment) => (
                     <TableRow key={shipment.id} className={tableRowClass}>
                       <TableCell className={tableCellClass}>
-                        <OrderCell
-                          id={shipment.id}
-                          reference={shipmentReference({
-                            customerName: shipment.customerName,
-                            vesselName: voyage.vesselName,
-                            voyageNumber: voyage.voyageNumber,
-                          })}
-                          canReadShipments={canReadShipments}
-                        />
-                      </TableCell>
-                      <TableCell className={tableCellClass}>
                         <CustomerCell
                           name={shipment.customerName}
                           code={shipment.customerCode}
                           shipper={shipment.customerShipper}
                           type={shipment.shipmentType}
+                        />
+                      </TableCell>
+                      <TableCell className={tableCellClass}>
+                        <OrderCell
+                          id={shipment.id}
+                          reference={vesselLabel(voyage) ?? "No vessel"}
+                          canReadShipments={canReadShipments}
                         />
                       </TableCell>
                       <TableCell className={tableCellClass}>

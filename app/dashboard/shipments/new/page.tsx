@@ -1,12 +1,20 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { IconArrowLeft } from "@tabler/icons-react"
 
 import ShipmentCreateForm from "@/components/forms/shipment-create-form"
 import { Button } from "@/components/ui/button"
 import { DashboardPage, DashboardPageHeader } from "@/components/layout/dashboard-page"
 import { PermissionGate } from "@/components/permission-gate"
+
+/** `?vesselId=` (from a voyage's Quick Add) preselects the vessel. */
+function NewShipmentForm() {
+  const vesselId = useSearchParams().get("vesselId") ?? undefined
+  return <ShipmentCreateForm key={vesselId ?? "none"} initialVesselId={vesselId} />
+}
 
 export default function NewShipmentPage() {
   return (
@@ -24,7 +32,9 @@ export default function NewShipmentPage() {
             </Button>
           }
         />
-        <ShipmentCreateForm />
+        <Suspense fallback={null}>
+          <NewShipmentForm />
+        </Suspense>
       </DashboardPage>
     </PermissionGate>
   )

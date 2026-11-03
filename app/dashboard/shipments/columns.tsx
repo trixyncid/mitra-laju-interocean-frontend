@@ -69,7 +69,7 @@ export type Shipment = {
         loadingOutAt?: string | null
         portDeparture: { portName: string; portCountry: string } | null
         portDestination: { portName: string; portCountry: string } | null
-        vessel?: { vesselName: string; voyageNumber: string } | null
+        vessel?: { id?: string; vesselName: string; voyageNumber: string; etd?: string | null } | null
         services?: ShipmentServiceLine[]
         shipmentOperationalContainers?: ShipmentContainerSummary[]
     }
