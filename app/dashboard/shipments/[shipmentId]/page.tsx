@@ -56,6 +56,7 @@ import {
 } from "@/lib/design"
 import { ShipmentTypeTag } from "@/components/ui/shipment-type-tag"
 import { ShipmentServiceList } from "@/components/shipments/shipment-service-list"
+import { ShipmentSalesAction } from "@/components/shipments/shipment-sales-action"
 
 export type ShipmentOperationalContainer = {
     id?: string
@@ -361,6 +362,7 @@ export default function ShipmentDetailPage({
                         </div>
 
                         <div className="flex flex-col items-start gap-3 lg:items-end">
+                            <ShipmentSalesAction shipment={data} />
                             {canEditStatus ? (
                                 <div className="w-full min-w-[160px] sm:w-44">
                                     <p className="mb-1.5 text-xs font-semibold tracking-[0.05em] text-muted-foreground uppercase lg:text-right">

@@ -6,7 +6,8 @@ import { IconArrowLeft, IconPrinter } from "@tabler/icons-react"
 
 import { formatIdr } from "@/components/dashboard/overview-card"
 import { invoiceTotals } from "@/components/customer-invoices/invoice-format"
-import { InvoicePrintSheet, type InvoiceBillTo } from "@/components/customer-invoices/invoice-print-sheet"
+import { invoiceBillTo } from "@/components/customer-invoices/invoice-bill-to"
+import { InvoicePrintSheet } from "@/components/customer-invoices/invoice-print-sheet"
 import ErrorPage from "@/components/error-page"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -14,26 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { useCustomerById } from "@/hooks/use-customers"
 import { useCustomerInvoice } from "@/hooks/use-customer-invoices"
-import type { CustomerDetail, CustomerLocation } from "@/lib/types/entity-details"
 import { vendorInvoiceLineGross } from "@/lib/utils"
-
-function formatAddress(location: CustomerLocation) {
-  return [
-    location.addressLine1,
-    location.addressLine2,
-    location.addressLine3,
-    [location.city, location.province, location.postalCode].filter(Boolean).join(", "),
-    location.country,
-  ].filter((line): line is string => Boolean(line?.trim()))
-}
-
-/** The customer's first office address, when the role may read it. */
-function firstAddress(customer: CustomerDetail | undefined) {
-  const location = customer?.customerShippers
-    ?.filter((shipper) => shipper.isActive !== false)
-    .flatMap((shipper) => shipper.customerLocations ?? [])[0]
-  return location ? formatAddress(location) : undefined
-}
 
 export default function CustomerInvoicePrintPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   const { invoiceId } = use(params)
@@ -71,12 +53,10 @@ export default function CustomerInvoicePrintPage({ params }: { params: Promise<{
     )
   }
 
-  const billTo: InvoiceBillTo = {
-    name: invoice.sales.customer?.customerName ?? invoice.sales.shipment?.customerCode?.customerName ?? "—",
-    code: invoice.sales.customer?.customerCode,
-    npwp: customer?.npwp || null,
-    addressLines: firstAddress(customer),
-  }
+  const billTo = invoiceBillTo(
+    invoice.sales.customer ?? { customerName: invoice.sales.shipment?.customerCode?.customerName },
+    customer
+  )
 
   const allIncluded = excluded.size === 0
   const toggle = (id: string) =>

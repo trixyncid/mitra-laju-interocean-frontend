@@ -51,11 +51,11 @@ type FormState = {
   sellings: PickedLine[]
 }
 
-function initialState(sales?: Sales): FormState {
+function initialState(sales?: Sales, defaultShipment?: SalesShipment): FormState {
   return {
     salesType: sales?.salesType ?? "SHIPMENT",
-    shipment: sales?.shipment ?? null,
-    customerId: sales?.customerId ?? NONE,
+    shipment: sales?.shipment ?? defaultShipment ?? null,
+    customerId: sales?.customerId ?? defaultShipment?.customerCodeId ?? NONE,
     costings: [],
     sellings: [],
   }
@@ -92,9 +92,12 @@ export function SalesFormDialog({
   onSaved,
   defaultOpen = false,
   onOpenChange,
+  defaultShipment,
 }: {
   mode: "create" | "edit"
   sales?: Sales
+  /** Prefill a new shipment job with this shipment, e.g. when started from the shipment itself. */
+  defaultShipment?: SalesShipment
   trigger?: ReactNode
   onSaved?: (sales: Sales) => void
   /** Open on mount, e.g. when arriving from a "new sales job" link. */
@@ -106,7 +109,7 @@ export function SalesFormDialog({
     setOpenState(next)
     onOpenChange?.(next)
   }
-  const [values, setValues] = useState<FormState>(() => initialState(sales))
+  const [values, setValues] = useState<FormState>(() => initialState(sales, defaultShipment))
   const [shipmentError, setShipmentError] = useState<string>()
   const [linesOpen, setLinesOpen] = useState(false)
   const [lineTab, setLineTab] = useState<"costings" | "sellings">("costings")
@@ -199,7 +202,7 @@ export function SalesFormDialog({
         if (pending) return
         setOpen(next)
         if (next) {
-          setValues(initialState(sales))
+          setValues(initialState(sales, defaultShipment))
           setShipmentError(undefined)
           setLinesOpen(false)
           setCreating(null)

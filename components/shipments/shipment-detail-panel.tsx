@@ -36,6 +36,7 @@ import { shipmentReference, vesselLabel } from "@/lib/shipment-reference"
 import type { ShipmentStatus } from "@/lib/shipment-status"
 import type { ShipmentDetail, ShipmentOperationalContainer } from "@/lib/types/entity-details"
 import { ShipmentServiceList } from "@/components/shipments/shipment-service-list"
+import { ShipmentSalesAction } from "@/components/shipments/shipment-sales-action"
 import { cn, localDate } from "@/lib/utils"
 import { shipmentsService } from "@/services/shipments.service"
 
@@ -295,6 +296,7 @@ export function ShipmentDetailPanel({
             <ShipmentLifecycleChip status={data.status} />
           )}
           {canEdit && op ? operationalForm("edit") : null}
+          <ShipmentSalesAction shipment={data} size="sm" />
           {op ? (
             <p className="ml-auto text-xs text-muted-foreground">
               Updated {localDate(op.updatedAt)} by {op.updatedBy.name}

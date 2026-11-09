@@ -203,4 +203,6 @@ export type ShipmentDetail = Shipment & {
   shipmentOperational: ShipmentOperationalDetail | null
   shipmentOperationalAttachments: ShipmentOperationalAttachment[]
   sellings?: ShipmentLinkedSelling[]
+  /** The sales job (sales order) this shipment belongs to, if any. */
+  sales?: { id: string; salesNumber: string } | null
 }

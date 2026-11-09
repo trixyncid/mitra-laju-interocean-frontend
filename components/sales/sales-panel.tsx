@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import {
   IconArrowUpRight,
+  IconFileInvoice,
   IconPackages,
   IconPencil,
   IconShip,
@@ -13,6 +14,7 @@ import {
 } from "@tabler/icons-react"
 
 import { formatIdr } from "@/components/dashboard/overview-card"
+import { CustomerInvoiceFormDialog } from "@/components/customer-invoices/customer-invoice-form-dialog"
 import { JobFlow } from "@/components/sales/job-flow"
 import { SalesFormDialog } from "@/components/sales/sales-form-dialog"
 import { JOB_STATE_LABEL, salesPnl, type JobState } from "@/components/sales/sales-pnl"
@@ -37,6 +39,7 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { formatShipmentStatus } from "@/lib/shipment-status"
 import { shipmentReference } from "@/lib/shipment-reference"
 import { SALES_TYPE_LABEL, type Sales } from "@/lib/types/sales"
+import { CUSTOMER_INVOICE_MODULE_ENABLED } from "@/lib/feature-flags"
 import { cn, localDate } from "@/lib/utils"
 
 const STATE_TONE: Record<JobState, string> = { ...MARGIN_TONE, nothing: MARGIN_TONE.uncosted }
@@ -124,6 +127,8 @@ export function SalesPanel({
   const shipment = sales.shipment
   const op = shipment?.shipmentOperational
   const canEditJob = can("SALES", "edit")
+  const canInvoice = CUSTOMER_INVOICE_MODULE_ENABLED && can("CUSTOMER_INVOICE", "create")
+  const unbilledCount = sales.sellings.filter((line) => !line.customerInvoice).length
   const TypeIcon = sales.salesType === "SHIPMENT" ? IconShip : IconPackages
 
   return (
@@ -191,6 +196,28 @@ export function SalesPanel({
                 <Button variant="outline" size="sm">
                   <IconPencil className="size-4" />
                   Edit job
+                </Button>
+              }
+            />
+          ) : null}
+          {canInvoice ? (
+            <CustomerInvoiceFormDialog
+              mode="create"
+              salesId={sales.id}
+              trigger={
+                <Button
+                  size="sm"
+                  disabled={unbilledCount === 0}
+                  title={
+                    unbilledCount
+                      ? undefined
+                      : sales.sellings.length
+                        ? "Every selling is already billed"
+                        : "Add sellings first"
+                  }
+                >
+                  <IconFileInvoice className="size-4" />
+                  Create invoice
                 </Button>
               }
             />
